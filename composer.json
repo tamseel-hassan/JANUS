@@ -1,0 +1,11 @@
+{
+    "name": "xero/sflow",
+    "description": "trying to capture sflow from switch to php webpage",
+    "type": "library",
+    "authors": [
+        {
+            "name": "xero"
+        }
+    ],
+    "require": {}
+}

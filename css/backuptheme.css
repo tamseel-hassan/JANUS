@@ -1,0 +1,252 @@
+/* ============================================================
+   THEME VARIABLES - dark mode default
+   ============================================================ */
+:root {
+    --bg: #0f1724;
+    --card-bg: #0b1220;
+    --text: #eef2ff;
+    --text-muted: #cbd5e1;
+    --accent: #60a5fa;
+    --border: rgba(96,165,250,0.12);
+    --shadow: rgba(2,6,23,0.6);
+    --metric-total: #60a5fa;
+    --metric-up: #16a34a;
+    --metric-down: #ef4444;
+    --metric-uptime: #06b6d4;
+    --chart-text: #e6eef8;
+    --chart-grid: rgba(230,238,248,0.06);
+    --chart-angle: rgba(230,238,248,0.08);
+}
+
+/* ============================================================
+   LIGHT THEME
+   ============================================================ */
+[data-theme="light"] {
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #0f1724;
+    --text-muted: #475569;
+    --accent: #2563eb;
+    --border: #e2e8f0;
+    --shadow: rgba(2,6,23,0.04);
+    --metric-total: #2563eb;
+    --metric-up: #16a34a;
+    --metric-down: #dc2626;
+    --metric-uptime: #0891b2;
+    --chart-text: #1f2937;
+    --chart-grid: rgba(31,41,55,0.06);
+    --chart-angle: rgba(31,41,55,0.08);
+}
+
+/* ============================================================
+   GLOBAL ELEMENT STYLING
+   ============================================================ */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+#main-content {
+    margin-left: 250px;
+    padding: 20px;
+    transition: margin-left 0.3s ease;
+    margin-top: 68px;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+    background: var(--card-bg);
+    color: var(--text);
+    border-radius: 12px;
+    box-shadow: 0 6px 20px var(--shadow);
+    border: 1px solid var(--border);
+    transition: transform 0.22s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-6px) scale(1.01);
+}
+
+.card-header {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+}
+
+.card-header.bg-danger {
+    background: var(--metric-down) !important;
+}
+
+.card-header.bg-warning {
+    background: #f59e0b !important;
+    color: #0b1220;
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.table {
+    color: var(--text) !important;
+    background-color: var(--card-bg) !important;
+    border-color: var(--border) !important;
+}
+
+.table th,
+.table td {
+    color: var(--text) !important;
+    background-color: var(--card-bg) !important;
+    border-color: var(--border) !important;
+}
+
+.table strong {
+    color: var(--text) !important;
+}
+
+.table code {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--text) !important;
+}
+
+[data-theme="light"] .table code {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Dark mode table overrides */
+[data-theme="dark"] .table {
+    --bs-table-bg: var(--card-bg) !important;
+    --bs-table-striped-bg: #222236 !important;
+    --bs-table-striped-color: var(--text) !important;
+    --bs-table-active-bg: rgba(0, 0, 0, 0.2) !important;
+    --bs-table-hover-bg: rgba(0, 198, 255, 0.1) !important;
+    --bs-table-border-color: var(--border) !important;
+    --bs-table-accent-bg: transparent !important;
+    --bs-table-group-bg: var(--card-bg) !important;
+    --bs-table-color: var(--text) !important;
+    --bs-table-striped-color: var(--text) !important;
+    --bs-table-active-color: var(--text) !important;
+    --bs-table-hover-color: var(--text) !important;
+}
+
+/* Light mode table overrides */
+[data-theme="light"] .table {
+    --bs-table-bg: #ffffff !important;
+    --bs-table-striped-bg: #f8f9fa !important;
+    --bs-table-striped-color: var(--text) !important;
+    --bs-table-active-bg: rgba(0, 0, 0, 0.05) !important;
+    --bs-table-hover-bg: rgba(0, 123, 255, 0.05) !important;
+    --bs-table-border-color: var(--border) !important;
+    --bs-table-accent-bg: transparent !important;
+    --bs-table-group-bg: #ffffff !important;
+    --bs-table-color: var(--text) !important;
+    --bs-table-striped-color: var(--text) !important;
+    --bs-table-active-color: var(--text) !important;
+    --bs-table-hover-color: var(--text) !important;
+}
+
+/* Table header overrides */
+.table-dark {
+    background-color: var(--card-bg) !important;
+    color: var(--text) !important;
+}
+
+[data-theme="dark"] .table-dark th {
+    background-color: #1b1b2f !important;
+    color: var(--accent) !important;
+}
+
+[data-theme="light"] .table-dark th {
+    background-color: #e2e8f0 !important;
+    color: var(--text) !important;
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+.modal-content {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.modal-header {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+.modal-footer {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border-top: 1px solid var(--border) !important;
+}
+
+.modal-content label,
+.modal-content .form-label,
+.modal-content .form-group > label {
+    color: var(--text) !important;
+}
+
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+.form-control,
+.form-select {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 0.25rem rgba(0, 198, 255, 0.25) !important;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-primary {
+    background-color: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+
+.btn-secondary {
+    background-color: var(--border) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+/* ============================================================
+   RESPONSIVE TWEAKS
+   ============================================================ */
+@media (max-width: 992px) {
+    #main-content {
+        margin-left: 80px;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-menu {
+        display: none;
+    }
+}
+
+/* Fix modals appearing under topbar */
+.modal { z-index: 1060 !important; }
+.modal-backdrop { z-index: 1059 !important; }
+
+/* ============================================= */
+/* FINAL FIXES - MODALS ABOVE TOPBAR, NO FLICKER */
+/* ============================================= */
+.topbar { z-index: 1030 !important; }
+.modal { z-index: 1060 !important; }
+.modal-backdrop { z-index: 1059 !important; }
+.modal, .modal *, .modal-backdrop { transition: none !important; }
+.modal.show { display: block !important; }

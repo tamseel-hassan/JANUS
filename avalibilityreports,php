@@ -1,0 +1,607 @@
+<?php
+session_start();
+if (!isset($_SESSION['loggedin'])) {
+    header('Location: index.html');
+    exit;
+}
+
+require_once __DIR__ . '/db_config.php';
+
+date_default_timezone_set('Asia/Karachi'); // Adjust to your timezone
+
+// Fetch all devices for dropdown
+$devices_query = "SELECT id, name, city, sub_office, country FROM devices ORDER BY name ASC";
+$devices_result = mysqli_query($con, $devices_query);
+$devices = [];
+while ($row = mysqli_fetch_assoc($devices_result)) {
+    $devices[] = $row;
+}
+
+// Initialize variables
+$selected_device_id = isset($_POST['device_id']) ? intval($_POST['device_id']) : (isset($_GET['device_id']) ? intval($_GET['device_id']) : null);
+$time_range = isset($_POST['time_range']) ? $_POST['time_range'] : (isset($_GET['time_range']) ? $_GET['time_range'] : '24h');
+$start_date = isset($_POST['start_date']) ? $_POST['start_date'] : null;
+$end_date = isset($_POST['end_date']) ? $_POST['end_date'] : null;
+
+$report_data = null;
+$device_info = null;
+$current_status = null;
+$current_status_since = null;
+$last_status_change = null;
+$availability = 0;
+$avg_rtt = 'N/A';
+
+function formatDuration($seconds) {
+    $days = floor($seconds / 86400);
+    $hours = floor(($seconds % 86400) / 3600);
+    $minutes = floor(($seconds % 3600) / 60);
+    $secs = $seconds % 60;
+    $str = '';
+    if ($days) $str .= "$days days, ";
+    if ($hours) $str .= "$hours hours, ";
+    if ($minutes) $str .= "$minutes minutes, ";
+    if ($secs) $str .= "$secs seconds";
+    return rtrim($str, ', ');
+}
+
+if ($selected_device_id && $time_range) {
+    // Determine start and end times based on range
+    $end_time = date('Y-m-d H:i:s'); // Current time
+    switch ($time_range) {
+        case '24h':
+            $start_time = date('Y-m-d H:i:s', strtotime('-24 hours'));
+            break;
+        case '7d':
+            $start_time = date('Y-m-d H:i:s', strtotime('-7 days'));
+            break;
+        case '30d':
+            $start_time = date('Y-m-d H:i:s', strtotime('-30 days'));
+            break;
+        case 'custom':
+            if ($start_date && $end_date) {
+                $start_time = $start_date . ' 00:00:00';
+                $end_time = $end_date . ' 23:59:59';
+            } else {
+                $start_time = date('Y-m-d H:i:s', strtotime('-24 hours'));
+            }
+            break;
+        default:
+            $start_time = date('Y-m-d H:i:s', strtotime('-24 hours'));
+    }
+
+    // Fetch device info
+    foreach ($devices as $dev) {
+        if ($dev['id'] == $selected_device_id) {
+            $device_info = $dev;
+            break;
+        }
+    }
+
+    if ($device_info) {
+        // Check for export
+        if (isset($_POST['export_csv'])) {
+            header('Content-Type: text/csv');
+            header('Content-Disposition: attachment; filename="report_' . $device_info['name'] . '_' . date('Y-m-d') . '.csv"');
+            $output = fopen('php://output', 'w');
+            fputcsv($output, ['Status', 'Start Time', 'End Time', 'Duration']);
+            // We'll populate periods below
+        }
+
+        // Fetch ping logs for the device in the time range, ordered ASC for timeline processing
+        // UPDATED: Now queries BOTH ping_logs and ping_logs_archive tables
+        $logs_query = "
+            (SELECT status, checked_at, rtt_avg
+            FROM ping_logs
+            WHERE device_id = ? AND link_id IS NULL
+            AND checked_at >= ? AND checked_at <= ?)
+            
+            UNION ALL
+            
+            (SELECT status, checked_at, rtt_avg
+            FROM ping_logs_archive
+            WHERE device_id = ? AND link_id IS NULL
+            AND checked_at >= ? AND checked_at <= ?)
+            
+            ORDER BY checked_at ASC
+        ";
+        
+        $stmt = $con->prepare($logs_query);
+        // Bind parameters: device_id, start_time, end_time (for ping_logs)
+        // Then again: device_id, start_time, end_time (for ping_logs_archive)
+        $stmt->bind_param('ississ', $selected_device_id, $start_time, $end_time, $selected_device_id, $start_time, $end_time);
+        $stmt->execute();
+        $logs_result = $stmt->get_result();
+        $logs = [];
+        $sum_rtt = 0;
+        $count_rtt = 0;
+        while ($row = mysqli_fetch_assoc($logs_result)) {
+            $logs[] = $row;
+            if ($row['status'] === 'up' && $row['rtt_avg'] !== null) {
+                $sum_rtt += $row['rtt_avg'];
+                $count_rtt++;
+            }
+        }
+        $stmt->close();
+
+        if ($count_rtt > 0) {
+            $avg_rtt = round($sum_rtt / $count_rtt, 1);
+        }
+
+        // Process logs to calculate periods, changes, availability
+        $periods = [];
+        $total_time = strtotime($end_time) - strtotime($start_time);
+        $total_up_time = 0;
+        $total_down_time = 0;
+
+        if (!empty($logs)) {
+            $current_status = $logs[count($logs) - 1]['status']; // Latest status
+            $last_status_change = null;
+            $current_start = $logs[0]['checked_at']; // Start with first log
+            $prev_status = $logs[0]['status'];
+
+            for ($i = 1; $i < count($logs); $i++) {
+                if ($logs[$i]['status'] !== $prev_status) {
+                    // Status change detected
+                    $period_end = $logs[$i]['checked_at'];
+                    $duration = strtotime($period_end) - strtotime($current_start);
+                    $periods[] = [
+                        'status' => $prev_status,
+                        'start' => $current_start,
+                        'end' => $period_end,
+                        'duration' => $duration
+                    ];
+                    if ($prev_status === 'up') {
+                        $total_up_time += $duration;
+                    } else {
+                        $total_down_time += $duration;
+                    }
+                    $current_start = $period_end;
+                    $prev_status = $logs[$i]['status'];
+                    $last_status_change = $period_end;
+                }
+            }
+
+            // Add the last (current) period up to end_time
+            $duration = strtotime($end_time) - strtotime($current_start);
+            $periods[] = [
+                'status' => $prev_status,
+                'start' => $current_start,
+                'end' => $end_time,
+                'duration' => $duration
+            ];
+            if ($prev_status === 'up') {
+                $total_up_time += $duration;
+            } else {
+                $total_down_time += $duration;
+            }
+
+            $current_status_since = $current_start;
+            if (!$last_status_change) {
+                $last_status_change = $current_start; // No change in period
+            }
+        } else {
+            $current_status = 'unknown';
+            $current_status_since = 'N/A';
+            $last_status_change = 'N/A';
+        }
+
+        // Calculate availability percentage
+        $availability = $total_time > 0 ? round(($total_up_time / $total_time) * 100, 2) : 0;
+
+        // Number of outages
+        $num_outages = 0;
+        $sum_outage_duration = 0;
+        foreach ($periods as $period) {
+            if ($period['status'] === 'down') {
+                $num_outages++;
+                $sum_outage_duration += $period['duration'];
+            }
+        }
+        $avg_outage_duration = $num_outages > 0 ? $sum_outage_duration / $num_outages : 0;
+
+        // Prepare report data
+        $report_data = [
+            'periods' => $periods,
+            'total_logs' => count($logs),
+            'start_time' => $start_time,
+            'end_time' => $end_time,
+            'total_up_time' => $total_up_time,
+            'total_down_time' => $total_down_time,
+            'num_outages' => $num_outages,
+            'avg_outage_duration' => $avg_outage_duration
+        ];
+
+        // Prepare RTT data for chart
+        $rtt_labels = [];
+        $rtt_data = [];
+        foreach ($logs as $log) {
+            $rtt_labels[] = $log['checked_at'];
+            $rtt_data[] = ($log['status'] === 'up') ? $log['rtt_avg'] : null;
+        }
+
+        if (isset($_POST['export_csv'])) {
+            foreach ($periods as $period) {
+                fputcsv($output, [
+                    strtoupper($period['status']),
+                    date('Y-m-d H:i:s', strtotime($period['start'])),
+                    date('Y-m-d H:i:s', strtotime($period['end'])),
+                    formatDuration($period['duration'])
+                ]);
+            }
+            fclose($output);
+            exit;
+        }
+    }
+}
+
+mysqli_close($con);
+
+$theme = $_COOKIE['theme'] ?? 'dark';
+?>
+<!DOCTYPE html>
+<html lang="en" data-theme="<?= htmlspecialchars($theme) ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Reports - Janus</title>
+
+    <!-- LOCAL Bootstrap CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- LOCAL Font Awesome -->
+    <link rel="stylesheet" href="css/font-awesome/css/all.min.css">
+    <!-- LOCAL Bootstrap JS for dropdowns (loaded early for topbar) -->
+    <script src="js/bootstrap.bundle.min.js"></script>
+
+    <link rel="stylesheet" href="css/theme.css">
+
+    <!-- LOCAL Chart.js -->
+    <script src="js/chart.js"></script>
+    <!-- Note: You may need to download chartjs-adapter-date-fns locally or use a different approach -->
+    <!-- For now, using basic Chart.js without date adapter -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script> -->
+
+    <style>
+        .status-up { color: #00ff7f; }
+        .status-down { color: #ff4c4c; }
+        .badge-up { background: #00c853; color: #fff; }
+        .badge-down { background: #d50000; color: #fff; }
+        .chart-container { position: relative; height: 300px; margin: 20px 0; }
+        
+        /* For date pickers in dark mode */
+        [data-theme="dark"] input[type="date"] {
+            background: var(--card-bg);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body class="loggedin">
+
+<?php include 'topbar.php'; ?>
+<?php include 'sidebar.php'; ?>
+
+<div id="main-content">
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-file-alt"></i> Reports</h2>
+                <p class="lead">Comprehensive device monitoring reports and analytics</p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Select Device and Time Range</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Device</label>
+                        <select class="form-select" name="device_id" required>
+                            <option value="">-- Select Device --</option>
+                            <?php foreach ($devices as $dev): ?>
+                                <option value="<?= $dev['id'] ?>" <?= $dev['id'] == $selected_device_id ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($dev['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Time Range</label>
+                        <select class="form-select" name="time_range" id="time_range" required>
+                            <option value="24h" <?= $time_range == '24h' ? 'selected' : '' ?>>Last 24 Hours</option>
+                            <option value="7d" <?= $time_range == '7d' ? 'selected' : '' ?>>Last 7 Days</option>
+                            <option value="30d" <?= $time_range == '30d' ? 'selected' : '' ?>>Last 30 Days</option>
+                            <option value="custom" <?= $time_range == 'custom' ? 'selected' : '' ?>>Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 <?= $time_range !== 'custom' ? 'd-none' : '' ?>" id="custom-range">
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" name="start_date" value="<?= $start_date ?>">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">End Date</label>
+                                <input type="date" class="form-control" name="end_date" value="<?= $end_date ?>">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-chart-line"></i> Generate Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <?php if ($report_data && $device_info): ?>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        Report for <?= htmlspecialchars($device_info['name']) ?>
+                        <small class="text-muted">(<?= $device_info['city'] ?>, <?= $device_info['sub_office'] ?>, <?= $device_info['country'] ?>)</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-3">
+                            <strong>Current Status:</strong>
+                            <span class="badge <?= $current_status == 'up' ? 'badge-up' : 'badge-down' ?>">
+                                <?= strtoupper($current_status) ?>
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Current Status Since:</strong><br>
+                            <?= $current_status_since ? date('Y-m-d H:i:s', strtotime($current_status_since)) : 'N/A' ?>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Last Status Change:</strong><br>
+                            <?= $last_status_change ? date('Y-m-d H:i:s', strtotime($last_status_change)) : 'N/A' ?>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Availability:</strong>
+                            <span class="fs-5 text-primary"><?= $availability ?>%</span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-3">
+                            <strong>Average RTT (when up):</strong><br>
+                            <?= $avg_rtt ?> ms
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Total Uptime:</strong><br>
+                            <?= formatDuration($report_data['total_up_time']) ?>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Total Downtime:</strong><br>
+                            <?= formatDuration($report_data['total_down_time']) ?>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Number of Outages:</strong><br>
+                            <?= $report_data['num_outages'] ?>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <strong>Average Outage Duration:</strong><br>
+                            <?= $report_data['num_outages'] > 0 ? formatDuration($report_data['avg_outage_duration']) : 'N/A' ?>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Report Period:</strong><br>
+                            <?= date('Y-m-d H:i:s', strtotime($report_data['start_time'])) ?> to
+                            <?= date('Y-m-d H:i:s', strtotime($report_data['end_time'])) ?>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Availability Overview</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="availabilityChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">RTT Over Time</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="rttChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3">Status Periods (Timeline)</h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($report_data['periods'] as $period): ?>
+                                    <tr>
+                                        <td>
+                                            <span class="status-<?= $period['status'] ?>">
+                                                <i class="fas fa-circle"></i> <?= strtoupper($period['status']) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= date('Y-m-d H:i:s', strtotime($period['start'])) ?></td>
+                                        <td><?= date('Y-m-d H:i:s', strtotime($period['end'])) ?></td>
+                                        <td><?= formatDuration($period['duration']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($report_data['periods'])): ?>
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            No logs available for this period.
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form method="post" class="mt-3">
+                        <input type="hidden" name="device_id" value="<?= $selected_device_id ?>">
+                        <input type="hidden" name="time_range" value="<?= $time_range ?>">
+                        <?php if ($time_range === 'custom'): ?>
+                            <input type="hidden" name="start_date" value="<?= $start_date ?>">
+                            <input type="hidden" name="end_date" value="<?= $end_date ?>">
+                        <?php endif; ?>
+                        <button type="submit" name="export_csv" value="1" class="btn btn-success">
+                            <i class="fas fa-file-csv"></i> Export to CSV
+                        </button>
+                    </form>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script>
+// Custom range toggle
+document.getElementById('time_range').addEventListener('change', function() {
+    document.getElementById('custom-range').classList.toggle('d-none', this.value !== 'custom');
+});
+
+// Sidebar margin adjustment
+document.addEventListener('DOMContentLoaded', function(){
+    const s = document.getElementById('sidebar');
+    const c = document.getElementById('main-content');
+
+    function adj(){
+        c.style.marginLeft = s && s.classList.contains('collapsed') ? '80px' : '250px';
+    }
+
+    adj();
+
+    if(s) {
+        new MutationObserver(adj).observe(s, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+});
+
+// Charts
+<?php if ($report_data): ?>
+    // Get CSS variable for text color
+    function getCssVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+    
+    // Availability Pie Chart
+    new Chart(document.getElementById('availabilityChart'), {
+        type: 'pie',
+        data: {
+            labels: ['Uptime', 'Downtime'],
+            datasets: [{
+                data: [<?= $report_data['total_up_time'] ?>, <?= $report_data['total_down_time'] ?>],
+                backgroundColor: ['#00c853', '#d50000']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: getCssVar('--text')
+                    }
+                }
+            }
+        }
+    });
+
+    // RTT Line Chart (without date-fns adapter - using regular time formatting)
+    // Note: For better date formatting, you might want to download chartjs-adapter-date-fns locally
+    new Chart(document.getElementById('rttChart'), {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($rtt_labels) ?>,
+            datasets: [{
+                label: 'RTT (ms)',
+                data: <?= json_encode($rtt_data) ?>,
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 2,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    // Basic time scale - will work without date-fns adapter
+                    type: 'time',
+                    time: {
+                        unit: 'hour',
+                        displayFormats: {
+                            hour: 'MMM d, HH:mm'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Time',
+                        color: getCssVar('--text')
+                    },
+                    ticks: {
+                        color: getCssVar('--text')
+                    },
+                    grid: {
+                        color: getCssVar('--border')
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'RTT (ms)',
+                        color: getCssVar('--text')
+                    },
+                    ticks: {
+                        color: getCssVar('--text')
+                    },
+                    grid: {
+                        color: getCssVar('--border')
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: getCssVar('--text')
+                    }
+                }
+            }
+        }
+    });
+<?php endif; ?>
+</script>
+
+</body>
+</html>

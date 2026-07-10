@@ -1,0 +1,277 @@
+<?php
+// ss/traffic.php - Self-contained Traffic Analysis report
+
+session_start();
+if (!isset($_SESSION['loggedin'])) {
+    die('Unauthorized');
+}
+
+// Helper: format bytes
+function formatBytes($bytes) {
+    if ($bytes == 0) return '0 B';
+    $i = floor(log($bytes, 1024));
+    return round($bytes / pow(1024, $i), 2) . ' ' . ['B','KB','MB','GB','TB'][$i];
+}
+
+// Helper parse
+function parseMessage($msg) {
+    $parsed = [];
+    if (preg_match_all('/(\w+)=(?:"([^"]*)"|\'([^\']*)\'|([^ \t]+))/', $msg, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $m) {
+            $value = $m[2] !== '' ? $m[2] : ($m[3] !== '' ? $m[3] : $m[4]);
+            $parsed[$m[1]] = $value;
+        }
+    }
+    return $parsed;
+}
+
+// DB connection
+$con = mysqli_connect('localhost', 'root', 'xerozerox3r0', 'alogin');
+if (mysqli_connect_errno()) {
+    echo '<div class="alert alert-danger">DB connection failed: ' . mysqli_connect_error() . '</div>';
+    exit;
+}
+
+// Parameters
+$start  = $_GET['start']  ?? date('Y-m-d H:i:s', strtotime('-24 hours'));
+$end    = $_GET['end']    ?? date('Y-m-d H:i:s');
+$device = $_GET['device'] ?? '';
+
+$device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
+
+// Query both tables
+$query = "
+    SELECT message, received_at, source_ip
+    FROM (
+        SELECT message, received_at, source_ip
+        FROM syslog_entries
+        WHERE received_at BETWEEN '$start' AND '$end'
+          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%')
+          $device_where
+        UNION ALL
+        SELECT message, received_at, source_ip
+        FROM syslog_entries_archive
+        WHERE received_at BETWEEN '$start' AND '$end'
+          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%')
+          $device_where
+    ) AS combined
+    ORDER BY received_at DESC
+    LIMIT 10000
+";
+
+$result = mysqli_query($con, $query);
+if (!$result) {
+    echo '<div class="alert alert-danger">Query error: ' . mysqli_error($con) . '</div>';
+    mysqli_close($con);
+    exit;
+}
+
+$total_flows = 0;
+$total_sent = 0;
+$total_received = 0;
+$sources = [];
+$destinations = [];
+$bandwidth_timeline = [];
+$traffic_dist = ['accepted' => 0, 'denied' => 0, 'timeout' => 0, 'other' => 0];
+
+while ($row = mysqli_fetch_assoc($result)) {
+    $parsed = parseMessage($row['message']);
+    if (!isset($parsed['srcip'], $parsed['dstip'])) continue;
+
+    $total_flows++;
+    $sent = intval($parsed['sentbyte'] ?? 0);
+    $rcvd = intval($parsed['rcvdbyte'] ?? 0);
+    $total_sent += $sent;
+    $total_received += $rcvd;
+
+    $src = $parsed['srcip'];
+    $sources[$src] = ($sources[$src] ?? ['ip' => $src, 'count' => 0, 'bandwidth' => 0]);
+    $sources[$src]['count']++;
+    $sources[$src]['bandwidth'] += ($sent + $rcvd);
+
+    $dst = $parsed['dstip'];
+    $destinations[$dst] = ($destinations[$dst] ?? ['ip' => $dst, 'count' => 0, 'bandwidth' => 0]);
+    $destinations[$dst]['count']++;
+    $destinations[$dst]['bandwidth'] += ($sent + $rcvd);
+
+    $hour = date('Y-m-d H:00', strtotime($row['received_at']));
+    $bandwidth_timeline[$hour] = ($bandwidth_timeline[$hour] ?? 0) + ($sent + $rcvd);
+
+    $action = strtolower($parsed['action'] ?? 'other');
+    if ($action === 'accept') $traffic_dist['accepted']++;
+    elseif ($action === 'deny') $traffic_dist['denied']++;
+    elseif ($action === 'timeout') $traffic_dist['timeout']++;
+    else $traffic_dist['other']++;
+}
+
+uasort($sources, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
+uasort($destinations, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
+
+mysqli_close($con);
+?>
+
+<!-- HTML Output -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-icon text-info"><i class="fas fa-exchange-alt"></i></div>
+            <div class="stat-value"><?= number_format($total_flows) ?></div>
+            <div class="stat-label">Total Flows</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-icon text-success"><i class="fas fa-upload"></i></div>
+            <div class="stat-value"><?= formatBytes($total_sent) ?></div>
+            <div class="stat-label">Data Sent</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-icon text-primary"><i class="fas fa-download"></i></div>
+            <div class="stat-value"><?= formatBytes($total_received) ?></div>
+            <div class="stat-label">Data Received</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-icon text-warning"><i class="fas fa-tachometer-alt"></i></div>
+            <div class="stat-value"><?= formatBytes($total_sent + $total_received) ?></div>
+            <div class="stat-label">Total Bandwidth</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-4">
+    <div class="col-lg-6">
+        <div class="report-card">
+            <h5>Bandwidth Over Time</h5>
+            <div class="chart-container">
+                <canvas id="bandwidthChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="report-card">
+            <h5>Traffic Distribution</h5>
+            <div class="chart-container">
+                <canvas id="trafficDistChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-4">
+    <div class="col-lg-6">
+        <div class="report-card">
+            <h5>Top Source IPs</h5>
+            <div class="table-container">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Source IP</th>
+                            <th>Flows</th>
+                            <th>Bandwidth</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach (array_slice($sources, 0, 10) as $rank => $s): ?>
+                            <tr>
+                                <td><?= $rank + 1 ?></td>
+                                <td><code><?= htmlspecialchars($s['ip']) ?></code></td>
+                                <td><?= number_format($s['count']) ?></td>
+                                <td><?= formatBytes($s['bandwidth']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($sources)): ?>
+                            <tr><td colspan="4" class="text-center">No source data</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="report-card">
+            <h5>Top Destination IPs</h5>
+            <div class="table-container">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Destination IP</th>
+                            <th>Flows</th>
+                            <th>Bandwidth</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach (array_slice($destinations, 0, 10) as $rank => $d): ?>
+                            <tr>
+                                <td><?= $rank + 1 ?></td>
+                                <td><code><?= htmlspecialchars($d['ip']) ?></code></td>
+                                <td><?= number_format($d['count']) ?></td>
+                                <td><?= formatBytes($d['bandwidth']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($destinations)): ?>
+                            <tr><td colspan="4" class="text-center">No destination data</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js scripts -->
+<script src="../js/chart.js"></script>
+<script>
+const bandwidthData = {
+    labels: <?= json_encode(array_keys($bandwidth_timeline)) ?>,
+    values: <?= json_encode(array_values($bandwidth_timeline)) ?>
+};
+
+const trafficDistData = <?= json_encode($traffic_dist) ?>;
+
+new Chart(document.getElementById('bandwidthChart'), {
+    type: 'line',
+    data: {
+        labels: bandwidthData.labels,
+        datasets: [{
+            label: 'Bandwidth (MB)',
+            data: bandwidthData.values,
+            borderColor: '#00c6ff',
+            backgroundColor: 'rgba(0,198,255,0.1)',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+new Chart(document.getElementById('trafficDistChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Accepted', 'Denied', 'Timeout', 'Other'],
+        datasets: [{
+            data: [
+                trafficDistData.accepted || 0,
+                trafficDistData.denied   || 0,
+                trafficDistData.timeout  || 0,
+                trafficDistData.other    || 0
+            ],
+            backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#6b7280']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+</script>

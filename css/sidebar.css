@@ -1,0 +1,161 @@
+/* -------------------------------------------
+   SIDEBAR - Glassy Aurora Theme
+-------------------------------------------- */
+:root {
+    --sb-bg-dark: rgba(25, 30, 40, 0.65);
+    --sb-border-dark: rgba(255,255,255,0.06);
+    --sb-text-dark: #e8eef7;
+    --sb-hover-dark: rgba(0,198,255,0.18);
+    --sb-active-dark: rgba(0,198,255,0.28);
+    --sb-bg-light: #ffffff;
+    --sb-border-light: #e5e7eb;
+    --sb-text-light: #2d3748;
+    --sb-hover-light: #edf2f7;
+    --sb-active-light: #dbeafe;
+    --sb-accent: #00c6ff;
+}
+
+[data-theme="dark"] .sidebar {
+    background: var(--sb-bg-dark);
+    border-right: 1px solid var(--sb-border-dark);
+    color: var(--sb-text-dark);
+}
+[data-theme="light"] .sidebar {
+    background: var(--sb-bg-light);
+    border-right: 1px solid var(--sb-border-light);
+    color: var(--sb-text-light);
+}
+
+.sidebar {
+    width: 260px;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    overflow-y: auto;
+    backdrop-filter: blur(15px);
+    transition: all 0.3s;
+    z-index: 1000;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--sb-border-light);
+}
+[data-theme="dark"] .sidebar-header {
+    border-bottom: 1px solid var(--sb-border-dark);
+}
+.sidebar-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--sb-accent);
+}
+.toggle-btn {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    transition: 0.3s;
+    color: inherit;
+}
+.toggle-btn:hover {
+    color: var(--sb-accent);
+    transform: rotate(90deg);
+}
+
+.sidebar-menu {
+    margin: 0;
+    padding: 10px 0;
+    list-style: none;
+}
+.sidebar-menu li {
+    margin: 4px 0;
+}
+.sidebar-menu a {
+    text-decoration: none;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-left: 3px solid transparent;
+    transition: 0.25s;
+    font-size: 15px;
+}
+[data-theme="light"] .sidebar-menu a { color: var(--sb-text-light); }
+[data-theme="light"] .sidebar-menu a:hover {
+    background: var(--sb-hover-light);
+    border-left-color: var(--sb-accent);
+    color: #1a202c;
+}
+[data-theme="light"] .sidebar-menu a.active {
+    background: var(--sb-active-light);
+    border-left-color: var(--sb-accent);
+    color: #1a202c;
+}
+[data-theme="dark"] .sidebar-menu a { color: var(--sb-text-dark); }
+[data-theme="dark"] .sidebar-menu a:hover {
+    background: var(--sb-hover-dark);
+    border-left-color: var(--sb-accent);
+    text-shadow: 0 0 8px var(--sb-accent);
+    color: #fff;
+}
+[data-theme="dark"] .sidebar-menu a.active {
+    background: var(--sb-active-dark);
+    border-left-color: var(--sb-accent);
+    color: #fff;
+    animation: neonGlow 3s infinite ease-in-out;
+}
+@keyframes neonGlow {
+    0%,100% { box-shadow: 0 0 10px rgba(0,198,255,0.35); }
+    50% { box-shadow: 0 0 25px rgba(0,198,255,0.55); }
+}
+
+/* Submenu */
+.submenu > .submenu-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px;
+}
+.submenu .caret {
+    opacity: 0.8;
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+.submenu .submenu-content {
+    display: none;
+    padding-left: 10px;
+}
+.submenu.open .submenu-content { display: block; }
+.submenu.open .caret { transform: rotate(-180deg); }
+
+/* Collapsed */
+.sidebar.collapsed { width: 78px; }
+.sidebar.collapsed .label { display: none; }
+.sidebar.collapsed .sidebar-title { display: none; }
+.sidebar.collapsed a { justify-content: center; }
+.sidebar.collapsed .submenu > .submenu-toggle { justify-content: center; }
+.sidebar.collapsed .submenu .caret { display: none; }
+
+/* Scrollbar */
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(0,198,255,0.3);
+    border-radius: 10px;
+}
+
+/* Main content adjustment */
+#main-content {
+    margin-left: 260px;
+    transition: margin-left 0.3s ease;
+    margin-top: 68px;
+    padding: 20px;
+}
+.sidebar.collapsed ~ #main-content {
+    margin-left: 78px;
+}
