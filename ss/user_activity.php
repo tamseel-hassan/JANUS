@@ -44,28 +44,28 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-users"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="user" class="icon-lucide s"></i></div>
             <div class="stat-value" data-raw="<?= count($users) ?>">0</div>
             <span class="stat-chip chip-info">Active Users</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-list"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="list" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= array_sum(array_column($users, 'events')) ?>">0</div>
             <span class="stat-chip chip-info">Total Events</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-user-lock"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="user" class="icon-lucide -lock"></i></div>
             <div class="stat-value" data-raw="<?= $total_failed ?>">0</div>
             <span class="stat-chip chip-danger">Failed Actions</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="map-marker-alt" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= !empty($users) ? max(array_map(fn($u)=>count($u['ips']), $users)) : 0 ?>">0</div>
             <span class="stat-chip chip-warning">Most IPs / User</span>
         </div>
@@ -73,7 +73,7 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-user-clock"></i> User Activity Summary</h5>
+    <h5><i data-lucide="user" class="icon-lucide -clock"></i> User Activity Summary</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>User</th><th>Events</th><th>Failed</th><th>Source IPs Used</th><th>Last Activity</th></tr></thead>

@@ -194,130 +194,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 $isDark = $theme !== 'light';
 ?>
 
-<style>
-/* ── Core component vars – work in both dark modal and light modal ── */
-.mitre-wrap {
-    --m-bg:        <?= $isDark ? '#1e293b' : '#ffffff' ?>;
-    --m-bg2:       <?= $isDark ? '#0f172a' : '#f8fafc' ?>;
-    --m-border:    <?= $isDark ? '#334155' : '#e2e8f0' ?>;
-    --m-text:      <?= $isDark ? '#f1f5f9' : '#0f172a' ?>;
-    --m-muted:     <?= $isDark ? '#94a3b8' : '#64748b' ?>;
-    --m-hover:     <?= $isDark ? 'rgba(0,198,255,0.07)' : '#f1f5f9' ?>;
-    --m-divider:   <?= $isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' ?>;
-}
-
-/* ── Header block ── */
-.mitre-wrap .mitre-header {
-    background: linear-gradient(135deg, rgba(239,68,68,.12), rgba(239,68,68,.04));
-    border-left: 4px solid #ef4444;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: var(--m-text);
-}
-
-/* ── Stat boxes ── */
-.mitre-wrap .mitre-stat {
-    background: var(--m-bg);
-    border: 1px solid var(--m-border);
-    border-radius: 8px;
-    padding: 15px;
-    text-align: center;
-    color: var(--m-text);
-}
-.mitre-wrap .mitre-stat-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #ef4444;
-}
-
-/* ── Event rows ── */
-.mitre-wrap .event-row {
-    border-bottom: 1px solid var(--m-divider);
-    padding: 10px;
-    color: var(--m-text);
-}
-.mitre-wrap .event-row:hover { background: var(--m-hover); }
-.mitre-wrap .event-row small.text-muted { color: var(--m-muted) !important; }
-
-/* ── Recommendation items ── */
-.mitre-wrap .recommendation-item {
-    padding: 8px 12px;
-    background: rgba(16,185,129,.1);
-    border-left: 3px solid #10b981;
-    margin-bottom: 8px;
-    border-radius: 4px;
-    color: var(--m-text);
-}
-
-/* ── NAV TABS – the main fix for black blocks ── */
-.mitre-wrap .nav-tabs {
-    border-bottom: 1px solid var(--m-border);
-}
-.mitre-wrap .nav-tabs .nav-link {
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 6px 6px 0 0;
-    color: var(--m-muted);
-    padding: 8px 14px;
-    font-size: 0.875rem;
-    transition: color .2s, background .2s;
-}
-.mitre-wrap .nav-tabs .nav-link:hover {
-    color: var(--m-text);
-    background: var(--m-hover);
-    border-color: var(--m-border) var(--m-border) transparent;
-}
-.mitre-wrap .nav-tabs .nav-link.active {
-    background: var(--m-bg);
-    color: var(--m-text);
-    border-color: var(--m-border) var(--m-border) var(--m-bg);
-    font-weight: 600;
-}
-
-/* ── Tables ── */
-.mitre-wrap .table {
-    color: var(--m-text);
-    border-color: var(--m-border);
-}
-.mitre-wrap .table th {
-    background: var(--m-bg2);
-    color: var(--m-muted);
-    border-color: var(--m-border);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-}
-.mitre-wrap .table td {
-    border-color: var(--m-border);
-    vertical-align: middle;
-}
-.mitre-wrap .table-hover tbody tr:hover {
-    background: var(--m-hover);
-    color: var(--m-text);
-}
-/* kill Bootstrap's built-in dark table overrides inside the modal */
-.mitre-wrap .table > :not(caption) > * > * {
-    background-color: transparent;
-}
-
-/* ── Tab content pane background ── */
-.mitre-wrap .tab-content {
-    background: var(--m-bg);
-    border: 1px solid var(--m-border);
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    padding: 12px;
-}
-
-/* ── code tags ── */
-.mitre-wrap code {
-    color: <?= $isDark ? '#38bdf8' : '#0369a1' ?>;
-    background: <?= $isDark ? 'rgba(56,189,248,.1)' : 'rgba(3,105,161,.08)' ?>;
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-</style>
+<link rel="stylesheet" href="/css/pages/ss_mitre_drilldown.css">
 
 <div class="mitre-wrap">
 
@@ -332,7 +209,7 @@ $isDark = $theme !== 'light';
     </div>
     <p class="mb-2"><?= htmlspecialchars($rule['description']) ?></p>
     <a href="<?= htmlspecialchars($rule['mitre_url']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
-        <i class="fas fa-external-link-alt"></i> View on MITRE ATT&CK
+        <i data-lucide="external-link-alt" class="icon-lucide"></i> View on MITRE ATT&CK
     </a>
 </div>
 
@@ -367,17 +244,17 @@ $isDark = $theme !== 'light';
 <!-- Timeline -->
 <?php if (!empty($timeline)): ?>
 <div class="mb-4">
-    <h6 style="color:var(--m-text)"><i class="fas fa-chart-line"></i> Detection Timeline</h6>
+    <h6 style="color:var(--m-text)"><i data-lucide="line-chart" class="icon-lucide"></i> Detection Timeline</h6>
     <canvas id="techniqueTimelineChart" style="height:200px;max-height:200px;"></canvas>
 </div>
 <?php endif; ?>
 
 <!-- Recommendations -->
 <div class="mb-4">
-    <h6 style="color:var(--m-text)"><i class="fas fa-shield-alt"></i> Recommended Actions</h6>
+    <h6 style="color:var(--m-text)"><i data-lucide="shield" class="icon-lucide"></i> Recommended Actions</h6>
     <?php foreach ($rule['recommendations'] as $rec): ?>
         <div class="recommendation-item">
-            <i class="fas fa-check-circle text-success"></i> <?= htmlspecialchars($rec) ?>
+            <i data-lucide="check-circle" class="icon-lucide text-success"></i> <?= htmlspecialchars($rec) ?>
         </div>
     <?php endforeach; ?>
 </div>
@@ -386,22 +263,22 @@ $isDark = $theme !== 'light';
 <ul class="nav nav-tabs mb-0" id="mitreTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#m-events" type="button">
-            <i class="fas fa-list"></i> Recent Events
+            <i data-lucide="list" class="icon-lucide"></i> Recent Events
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#m-sources" type="button">
-            <i class="fas fa-network-wired"></i> Source IPs
+            <i data-lucide="network" class="icon-lucide"></i> Source IPs
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#m-targets" type="button">
-            <i class="fas fa-bullseye"></i> Target IPs
+            <i data-lucide="bullseye" class="icon-lucide"></i> Target IPs
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#m-users" type="button">
-            <i class="fas fa-users"></i> Users Involved
+            <i data-lucide="user" class="icon-lucide s"></i> Users Involved
         </button>
     </li>
 </ul>
@@ -456,7 +333,7 @@ $isDark = $theme !== 'light';
                         <td><span class="badge bg-danger"><?= number_format($count) ?></span></td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary" onclick="parent.drillDownIP('<?= htmlspecialchars($ip) ?>')">
-                                <i class="fas fa-search"></i> Investigate
+                                <i data-lucide="search" class="icon-lucide"></i> Investigate
                             </button>
                         </td>
                     </tr>
@@ -476,7 +353,7 @@ $isDark = $theme !== 'light';
                         <td><span class="badge bg-warning"><?= number_format($count) ?></span></td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary" onclick="parent.drillDownIP('<?= htmlspecialchars($ip) ?>')">
-                                <i class="fas fa-search"></i> Investigate
+                                <i data-lucide="search" class="icon-lucide"></i> Investigate
                             </button>
                         </td>
                     </tr>

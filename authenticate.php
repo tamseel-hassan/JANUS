@@ -2,6 +2,11 @@
 session_start();
 require_once __DIR__ . '/db_config.php';
 
+$con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+if (!$con) {
+    die('Database connection failed: ' . mysqli_connect_error());
+}
+
 
 if (!isset($_POST['username'], $_POST['password'])) {
     exit('Please fill both the username and password fields!');

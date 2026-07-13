@@ -50,28 +50,28 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-door-open"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="door-open" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count($sessions) ?>">0</div>
             <span class="stat-chip chip-info">Remote Sessions</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-users"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="user" class="icon-lucide s"></i></div>
             <div class="stat-value" data-raw="<?= $unique_users ?>">0</div>
             <span class="stat-chip chip-info">Unique Users</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i class="fas fa-exchange-alt"></i></div>
+            <div class="stat-icon text-success"><i data-lucide="arrow-right-left" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $total_events ?>">0</div>
             <span class="stat-chip chip-success">Total VPN Events</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="shield" class="icon-lucide"></i></div>
             <div class="stat-value"><?= count($sessions) ? 'MONITORED' : 'IDLE' ?></div>
             <span class="stat-chip <?= count($sessions) ? 'chip-success' : 'chip-neutral' ?>">Tunnel Status</span>
         </div>
@@ -79,7 +79,7 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-user-shield"></i> Remote Access Sessions</h5>
+    <h5><i data-lucide="user" class="icon-lucide -shield"></i> Remote Access Sessions</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>User</th><th>Source IP</th><th>Tunnel</th><th>Events</th><th>First Seen</th><th>Last Seen</th></tr></thead>

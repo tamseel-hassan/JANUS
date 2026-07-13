@@ -353,53 +353,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <!-- Add Chart.js date adapter for time scale -->
     <script src="js/chartjs-adapter-date-fns.bundle.min.js"></script>
 
-    <style>
-        .status-up { color: #00ff7f; }
-        .status-down { color: #ff4c4c; }
-        .badge-up { background: #00c853; color: #fff; }
-        .badge-down { background: #d50000; color: #fff; }
-        .chart-container { position: relative; height: 300px; margin: 20px 0; }
-        
-        /* For date pickers in dark mode */
-        [data-theme="dark"] input[type="date"],
-        [data-theme="dark"] input[type="datetime-local"] {
-            background: var(--card-bg);
-            color: var(--text);
-            border-color: var(--border);
-        }
-        [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
-        [data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-        }
-        
-        .comment-badge {
-            cursor: pointer;
-            color: #007bff;
-        }
-        .comment-badge.has-comment {
-            color: #28a745;
-        }
-        .comment-modal .modal-dialog {
-            max-width: 600px;
-        }
-        .timeline-comment {
-            font-size: 0.85rem;
-            background: rgba(0,123,255,0.1);
-            padding: 5px 10px;
-            border-radius: 4px;
-            margin-top: 5px;
-        }
-        .escalation-badge {
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 10px;
-        }
-        .escalation-1 { background: #28a745; color: white; }
-        .escalation-2 { background: #ffc107; color: black; }
-        .escalation-3 { background: #dc3545; color: white; }
-        .mt-2 { margin-top: 0.5rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-    </style>
+    <link rel="stylesheet" href="css/pages/avalibility.css">
 </head>
 <body class="loggedin">
 
@@ -428,7 +382,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     
         <div class="row mb-4">
             <div class="col-12">
-                <h2><i class="fas fa-file-alt"></i> Reports & Incident Management</h2>
+                <h2><i data-lucide="file-alt" class="icon-lucide"></i> Reports & Incident Management</h2>
                 <p class="lead">Comprehensive device monitoring reports with incident tracking and resolution logging</p>
             </div>
         </div>
@@ -473,7 +427,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                     </div>
                     <div class="col-md-12">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-chart-line"></i> Generate Report
+                            <i data-lucide="line-chart" class="icon-lucide"></i> Generate Report
                         </button>
                     </div>
                 </form>
@@ -495,7 +449,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             <input type="hidden" name="end_datetime" value="<?= htmlspecialchars($end_datetime) ?>">
                         <?php endif; ?>
                         <button type="submit" name="export_csv" value="1" class="btn btn-success btn-sm">
-                            <i class="fas fa-file-csv"></i> Export to CSV
+                            <i data-lucide="file-csv" class="icon-lucide"></i> Export to CSV
                         </button>
                     </form>
                 </div>
@@ -599,7 +553,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     <tr>
                                         <td>
                                             <span class="status-<?= $period['status'] ?>">
-                                                <i class="fas fa-circle"></i> <?= strtoupper($period['status']) ?>
+                                                <i data-lucide="circle" class="icon-lucide"></i> <?= strtoupper($period['status']) ?>
                                             </span>
                                         </td>
                                         <td><?= date('Y-m-d H:i:s', strtotime($period['start'])) ?></td>
@@ -608,17 +562,17 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                         <td>
                                             <?php if ($period['status'] == 'down'): ?>
                                                 <button class="btn btn-sm btn-warning" onclick="openCommentModal('<?= $period['start'] ?>', '<?= $period['end'] ?>', 'down')">
-                                                    <i class="fas fa-exclamation-triangle"></i> Log Resolution
+                                                    <i data-lucide="triangle-alert" class="icon-lucide"></i> Log Resolution
                                                 </button>
                                             <?php else: ?>
                                                 <button class="btn btn-sm btn-outline-secondary" onclick="openCommentModal('<?= $period['start'] ?>', '<?= $period['end'] ?>', 'up')">
-                                                    <i class="fas fa-comment"></i> Add Note
+                                                    <i data-lucide="comment" class="icon-lucide"></i> Add Note
                                                 </button>
                                             <?php endif; ?>
                                             
                                             <?php if ($has_comment): ?>
                                                 <span class="badge bg-success" data-bs-toggle="tooltip" title="<?= htmlspecialchars($comment['comments']) ?>">
-                                                    <i class="fas fa-check-circle"></i> Logged
+                                                    <i data-lucide="check-circle" class="icon-lucide"></i> Logged
                                                 </span>
                                                 <?php if (!empty($comment['vendor_contacted'])): ?>
                                                     <span class="badge bg-info"><?= htmlspecialchars($comment['vendor_contacted']) ?></span>
@@ -633,7 +587,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                             
                                             <?php if ($has_comment && !empty($comment['comments'])): ?>
                                                 <div class="timeline-comment">
-                                                    <i class="fas fa-quote-left"></i> <?= htmlspecialchars(substr($comment['comments'], 0, 50)) ?>...
+                                                    <i data-lucide="quote-left" class="icon-lucide"></i> <?= htmlspecialchars(substr($comment['comments'], 0, 50)) ?>...
                                                 </div>
                                             <?php endif; ?>
                                         </td>
@@ -736,7 +690,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                     </div>
                     
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Logging actions helps track incident response time and vendor performance.
+                        <i data-lucide="info" class="icon-lucide"></i> Logging actions helps track incident response time and vendor performance.
                     </div>
                 </div>
                 <div class="modal-footer">

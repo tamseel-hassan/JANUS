@@ -57,28 +57,28 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i class="fas fa-arrow-up"></i></div>
+            <div class="stat-icon text-success"><i data-lucide="arrow-up" class="icon-lucide"></i></div>
             <div class="stat-value"><?= formatBytes($total_sent) ?></div>
             <span class="stat-chip chip-success">Total Sent</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-arrow-down"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="arrow-down" class="icon-lucide"></i></div>
             <div class="stat-value"><?= formatBytes($total_rcvd) ?></div>
             <span class="stat-chip chip-info">Total Received</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-bolt"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="zap" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $peak_hour ? formatBytes($peak_value) : '—' ?></div>
             <span class="stat-chip chip-warning">Peak Hour Volume</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-server"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="server" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count($per_device) ?>">0</div>
             <span class="stat-chip chip-info">Active Devices</span>
         </div>
@@ -86,14 +86,14 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-chart-area"></i> Sent vs Received Over Time<?= $peak_hour ? ' &middot; peak at ' . date('M d, H:i', strtotime($peak_hour)) : '' ?></h5>
+    <h5><i data-lucide="chart-area" class="icon-lucide"></i> Sent vs Received Over Time<?= $peak_hour ? ' &middot; peak at ' . date('M d, H:i', strtotime($peak_hour)) : '' ?></h5>
     <div class="chart-container" style="height:320px;">
         <canvas id="bwStackedChart"></canvas>
     </div>
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-server"></i> Bandwidth by Device</h5>
+    <h5><i data-lucide="server" class="icon-lucide"></i> Bandwidth by Device</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>Rank</th><th>Device / IP</th><th>Flows</th><th>Sent</th><th>Received</th><th>Total</th></tr></thead>
@@ -105,7 +105,7 @@ mysqli_close($con);
                 ?>
                     <tr>
                         <td><?= $rank + 1 ?></td>
-                        <td><a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($d['ip']) ?>')" class="clickable-ip"><i class="fas fa-search-plus"></i><?= htmlspecialchars($d['ip']) ?></a></td>
+                        <td><a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($d['ip']) ?>')" class="clickable-ip"><i data-lucide="zoom-in" class="icon-lucide"></i><?= htmlspecialchars($d['ip']) ?></a></td>
                         <td><?= number_format($d['flows']) ?></td>
                         <td><?= formatBytes($d['sent']) ?></td>
                         <td><?= formatBytes($d['rcvd']) ?></td>

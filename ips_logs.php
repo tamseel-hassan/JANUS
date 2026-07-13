@@ -171,225 +171,25 @@ if ($isAjax) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>IPS & App Control Logs · Shikra</title>
+<title>IPS & App Control Logs</title>
 <link href="/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
-<style>
-:root{
-    --card-bg: rgba(10,12,20,0.6);
-    --accent: #00c6ff;
-    --text-primary: #e6eef7;
-    --text-muted: #8b9bb5;
-}
-[data-theme="light"] { 
-    --card-bg: #fff; 
-    --accent:#2563eb; 
-    --text-primary: #1f2937;
-    --text-muted: #6b7280;
-}
-body.loggedin { 
-    background: linear-gradient(180deg,#041025 0%, #071028 60%); 
-    color: var(--text-primary); 
-    min-height:100vh; 
-}
-[data-theme="light"] body { 
-    background:#f5f8fb; 
-    color: var(--text-primary); 
-}
-
-.container-fluid { padding-top: 78px; }
-#main-content { 
-    margin-left:260px; 
-    transition: margin-left .25s ease; 
-    padding: 20px 24px; 
-}
-.sidebar.collapsed ~ #main-content { margin-left:78px; }
-
-.page-subtitle {
-    color: var(--text-muted) !important;
-}
-
-.flow-table th { 
-    position:sticky; 
-    top:0; 
-    background:var(--card-bg); 
-    z-index:10; 
-    color: var(--accent) !important; 
-    font-weight: bold; 
-    text-transform: uppercase; 
-    font-size: 0.85rem; 
-    letter-spacing: 0.05em;
-}
-
-.severity-critical { 
-    background-color:#dc2626 !important; 
-    color:#fff; 
-    font-weight:bold; 
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-.severity-high { 
-    background-color:#ea580c !important; 
-    color:#fff; 
-    font-weight:bold;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-.severity-medium { 
-    background-color:#f59e0b !important; 
-    color:#fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-.severity-low { 
-    background-color:#84cc16 !important; 
-    color:#fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-
-.action-blocked, .action-block { 
-    background-color:#ef4444 !important; 
-    color:#fff; 
-    font-weight:bold; 
-}
-.action-detected { 
-    background-color:#f59e0b !important; 
-    color:#fff; 
-}
-.action-allowed, .action-pass { 
-    background-color:#10b981 !important; 
-    color:#fff; 
-}
-
-.type-badge {
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.type-ips {
-    background-color: #8b5cf6;
-    color: white;
-}
-
-.type-app-ctrl {
-    background-color: #06b6d4;
-    color: white;
-}
-
-.details-link { 
-    cursor:pointer; 
-    color:var(--accent); 
-    text-decoration:underline; 
-}
-
-.stats-footer {
-    color: var(--text-muted) !important;
-    font-size: 0.9rem;
-}
-
-.modal-dialog {
-    margin-top: 70px;
-}
-
-.modal-content {
-    background: var(--card-bg);
-    color: var(--text-primary);
-    border: 1px solid rgba(0,198,255,0.2);
-}
-
-[data-theme="light"] .modal-content {
-    background: #fff;
-    color: #1f2937;
-    border: 1px solid #e5e7eb;
-}
-
-.modal-header {
-    border-bottom: 1px solid rgba(0,198,255,0.2);
-}
-
-[data-theme="light"] .modal-header {
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-footer {
-    border-top: 1px solid rgba(0,198,255,0.2);
-}
-
-[data-theme="light"] .modal-footer {
-    border-top: 1px solid #e5e7eb;
-}
-
-.update-indicator {
-    position: fixed;
-    top: 70px;
-    right: 20px;
-    background: rgba(0,198,255,0.9);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 1050;
-}
-
-.update-indicator.show {
-    opacity: 1;
-}
-
-.stats-card {
-    background: var(--card-bg);
-    border: 1px solid rgba(0,198,255,0.2);
-    border-radius: 8px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-[data-theme="light"] .stats-card {
-    border: 1px solid #e5e7eb;
-}
-
-.stat-icon {
-    font-size: 1.5rem;
-}
-
-.stat-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--accent);
-}
-
-.stat-label {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-@media (max-width: 992px) {
-    #main-content { margin-left:78px; }
-}
-</style>
+<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/pages/ips_logs.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/topbar.php'; ?>
 <?php include __DIR__ . '/sidebar.php'; ?>
 
 <div class="update-indicator" id="updateIndicator">
-    <i class="fas fa-sync-alt fa-spin"></i> Refreshing...
+    <i data-lucide="refresh-ccw" class="icon-lucide -alt fa-spin"></i> Refreshing...
 </div>
 
 <div id="main-content">
     <div class="container-fluid">
         <div class="row mb-4 align-items-center">
             <div class="col-md-6">
-                <h2><i class="fas fa-shield-alt"></i> IPS & Application Control Logs</h2>
+                <h2><i data-lucide="shield" class="icon-lucide"></i> IPS & Application Control Logs</h2>
                 <p class="page-subtitle mb-0">Real-time intrusion prevention and app control events</p>
             </div>
 <div class="col-md-6 text-end">
@@ -406,7 +206,7 @@ body.loggedin {
         <div class="row mb-4 g-3">
             <div class="col-md-2">
                 <div class="stats-card">
-                    <div class="stat-icon text-primary"><i class="fas fa-list"></i></div>
+                    <div class="stat-icon text-primary"><i data-lucide="list" class="icon-lucide"></i></div>
                     <div>
                         <div class="stat-value" id="totalLogs"><?= $total ?></div>
                         <div class="stat-label">Total Events</div>
@@ -415,7 +215,7 @@ body.loggedin {
             </div>
             <div class="col-md-2">
                 <div class="stats-card">
-                    <div class="stat-icon text-danger"><i class="fas fa-ban"></i></div>
+                    <div class="stat-icon text-danger"><i data-lucide="ban" class="icon-lucide"></i></div>
                     <div>
                         <div class="stat-value text-danger" id="blockedCount">-</div>
                         <div class="stat-label">Blocked</div>
@@ -424,7 +224,7 @@ body.loggedin {
             </div>
             <div class="col-md-2">
                 <div class="stats-card">
-                    <div class="stat-icon text-warning"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="stat-icon text-warning"><i data-lucide="triangle-alert" class="icon-lucide"></i></div>
                     <div>
                         <div class="stat-value text-warning" id="detectedCount">-</div>
                         <div class="stat-label">Detected</div>
@@ -433,7 +233,7 @@ body.loggedin {
             </div>
             <div class="col-md-2">
                 <div class="stats-card">
-                    <div class="stat-icon text-danger"><i class="fas fa-skull-crossbones"></i></div>
+                    <div class="stat-icon text-danger"><i data-lucide="skull-crossbones" class="icon-lucide"></i></div>
                     <div>
                         <div class="stat-value text-danger" id="criticalCount">-</div>
                         <div class="stat-label">Critical</div>
@@ -442,7 +242,7 @@ body.loggedin {
             </div>
             <div class="col-md-2">
                 <div class="stats-card">
-                    <div class="stat-icon" style="color: #ea580c;"><i class="fas fa-fire"></i></div>
+                    <div class="stat-icon" style="color: #ea580c;"><i data-lucide="fire" class="icon-lucide"></i></div>
                     <div>
                         <div class="stat-value" style="color: #ea580c;" id="highCount">-</div>
                         <div class="stat-label">High</div>
@@ -451,7 +251,7 @@ body.loggedin {
             </div>
             <div class="col-md-2">
                 <div class="stats-card">
-                    <div class="stat-icon text-info"><i class="fas fa-clock"></i></div>
+                    <div class="stat-icon text-info"><i data-lucide="clock" class="icon-lucide"></i></div>
                     <div>
                         <div class="stat-value text-info" id="refreshTimer">5s</div>
                         <div class="stat-label">Next Refresh</div>
@@ -471,7 +271,7 @@ body.loggedin {
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <button class="btn btn-primary" type="submit"><i class="fas fa-filter"></i></button>
+                    <button class="btn btn-primary" type="submit"><i data-lucide="filter" class="icon-lucide"></i></button>
                     <?php
                     $preserve = $_GET;
                     unset($preserve['device']);
@@ -489,7 +289,7 @@ body.loggedin {
                         <option value="medium" <?= $severity_filter==='medium'?'selected':'' ?>>Medium</option>
                         <option value="low" <?= $severity_filter==='low'?'selected':'' ?>>Low</option>
                     </select>
-                    <button class="btn btn-primary" type="submit"><i class="fas fa-filter"></i></button>
+                    <button class="btn btn-primary" type="submit"><i data-lucide="filter" class="icon-lucide"></i></button>
                     <?php
                     $preserve = $_GET;
                     unset($preserve['severity']);
@@ -501,7 +301,7 @@ body.loggedin {
             <div class="col-md-6">
                 <form method="get" class="d-flex">
                     <input type="text" name="search" class="form-control me-2" placeholder="Search IP, attack, app..." value="<?= htmlspecialchars($search) ?>">
-                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+                    <button class="btn btn-primary" type="submit"><i data-lucide="search" class="icon-lucide"></i></button>
                     <?php if ($search || $device_ip || $type_filter || $severity_filter): ?>
                         <a href="ips_logs.php" class="btn btn-outline-secondary ms-2">Clear</a>
                     <?php endif; ?>
@@ -743,3 +543,4 @@ window.addEventListener('beforeunload', () => {
 </script>
 </body>
 </html>
+

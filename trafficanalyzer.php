@@ -412,122 +412,8 @@ if ($isAjax) {
 <title>Traffic Flow Analyzer</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<style>
-/* ---------------------------------------------------------
-THEME VARIABLES - Adjusted for cooler, Forti Analyzer-like feel with softer blues and cleaner contrasts
---------------------------------------------------------- */
-:root {
-    --bg: #0a0e17;  /* Cooler dark background */
-    --card-bg: #1a1f2e;  /* Softer card bg */
-    --text: #d4d9e6;  /* Lighter text for better readability */
-    --text-muted: #8a94ad;
-    --accent: #4a90e2;  /* Cooler blue accent */
-    --border: rgba(74,144,226,0.15);
-    --shadow: rgba(0,0,0,0.4);
-    --menu-color: #4a90e2;
-    --menu-hover: #357abd;
-    --topbar-glass: rgba(10,14,23,0.75);
-    --metric-total: #4a90e2;
-    --metric-up: #27ae60;
-    --metric-down: #e74c3c;
-}
-[data-theme=light] {
-    --bg: #f0f4f8;  /* Softer light bg */
-    --card-bg: #ffffff;
-    --text: #2c3e50;  /* Darker text for contrast */
-    --text-muted: #7f8c8d;
-    --accent: #3498db;  /* Cool blue accent */
-    --border: #d6e0e9;
-    --shadow: rgba(0,0,0,0.08);
-    --menu-color: #3498db;
-    --menu-hover: #2980b9;
-    --topbar-glass: rgba(255,255,255,0.8);
-    --metric-total: #3498db;
-    --metric-up: #2ecc71;
-    --metric-down: #e74c3c;
-}
-/* Additional table styles for Forti Analyzer feel */
-table.table {
-    border-collapse: separate;
-    border-spacing: 0;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 0.9rem;  /* Slightly larger font for readability */
-}
-th {
-    background: var(--card-bg);
-    color: var(--text);
-    font-weight: 600;
-    text-transform: none;  /* No uppercase for a cleaner look */
-    padding: 0.75rem;
-    border-bottom: 2px solid var(--border);
-}
-td {
-    padding: 0.75rem;
-    vertical-align: middle;
-    border-top: 1px solid var(--border);
-}
-tr:nth-child(even) {
-    background: rgba(255,255,255,0.05);  /* Subtle alternating rows in dark */
-}
-[data-theme=light] tr:nth-child(even) {
-    background: #f8f9fa;  /* Light alternating rows */
-}
-tr:hover {
-    background: rgba(74,144,226,0.1);  /* Blue hover accent */
-}
-[data-theme=light] tr:hover {
-    background: #e9f3fb;
-}
-/* Action badges - Softer backgrounds, added icon margin */
-.action-badge {
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
-    font-weight: 500;
-    font-size: 0.8rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;  /* Space for icon */
-}
-.action-accept {
-    background: rgba(46,204,113,0.1);
-    color: #2ecc71;
-}
-.action-deny {
-    background: rgba(231,76,60,0.1);
-    color: #e74c3c;
-}
-.action-close {
-    background: rgba(243,156,18,0.1);
-    color: #f39c12;
-}
-.action-timeout {
-    background: rgba(243,156,18,0.1);
-    color: #f39c12;
-}
-.action-unknown {
-    background: rgba(149,165,166,0.1);
-    color: #95a5a6;
-}
-[data-theme=light] .action-accept { background: rgba(46,204,113,0.15); color: #27ae60; }
-[data-theme=light] .action-deny { background: rgba(231,76,60,0.15); color: #c0392b; }
-[data-theme=light] .action-close { background: rgba(243,156,18,0.15); color: #e67e22; }
-[data-theme=light] .action-timeout { background: rgba(243,156,18,0.15); color: #e67e22; }
-[data-theme=light] .action-unknown { background: rgba(149,165,166,0.15); color: #7f8c8d; }
-/* Other styles remain the same, assuming from original */
-.content { margin-left: 260px; padding: 70px 1rem 1rem; background: var(--bg); min-height: 100vh; }
-.card { background: var(--card-bg); border: 1px solid var(--border); box-shadow: 0 2px 8px var(--shadow); border-radius: 8px; overflow: hidden; }
-.stat-card { text-align: center; padding: 1rem; }
-.stat-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
-.stat-value { font-size: 2rem; font-weight: bold; }
-.stat-label { font-size: 0.85rem; color: var(--text-muted); }
-.bandwidth { display: flex; gap: 1rem; justify-content: center; font-size: 0.85rem; }
-.up { color: var(--metric-up); }
-.down { color: var(--metric-down); }
-.details-link { cursor: pointer; color: var(--accent); }
-.details-link:hover { color: var(--menu-hover); }
-.archive-indicator { font-size: 0.7rem; color: #ffc107; margin-left: 0.5rem; }
-#refreshTimer { font-weight: bold; color: var(--accent); }
-</style>
+<link rel="stylesheet" href="css/pages/trafficanalyzer.css">
+<link rel="stylesheet" href="/css/theme.css">
 </head>
 <body>
 <?php include 'topbar.php'; ?>
@@ -539,10 +425,10 @@ tr:hover {
             <div class="col-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-stream me-2"></i>Traffic Flow Analyzer</h5>
+                        <h5 class="mb-0"><i data-lucide="stream" class="icon-lucide me-2"></i>Traffic Flow Analyzer</h5>
                         <div class="d-flex gap-2">
-                            <button id="pauseBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-pause"></i> Pause</button>
-                            <button id="exportBtn" class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i> Export</button>
+                            <button id="pauseBtn" class="btn btn-sm btn-outline-secondary"><i data-lucide="pause" class="icon-lucide"></i> Pause</button>
+                            <button id="exportBtn" class="btn btn-sm btn-outline-primary"><i data-lucide="download" class="icon-lucide"></i> Export</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -550,42 +436,42 @@ tr:hover {
                         <div class="row g-3 mb-4">
                             <div class="col-md-2 col-6">
                                 <div class="stat-card border-end">
-                                    <div class="stat-icon"><i class="fas fa-network-wired"></i></div>
+                                    <div class="stat-icon"><i data-lucide="network" class="icon-lucide"></i></div>
                                     <div class="stat-value" id="totalFlows"><?= $total ?></div>
                                     <div class="stat-label">Total Flows</div>
                                 </div>
                             </div>
                             <div class="col-md-2 col-6">
                                 <div class="stat-card border-end">
-                                    <div class="stat-icon text-success"><i class="fas fa-check-circle"></i></div>
+                                    <div class="stat-icon text-success"><i data-lucide="check-circle" class="icon-lucide"></i></div>
                                     <div class="stat-value text-success" id="acceptedFlows">0</div>
                                     <div class="stat-label">Accepted</div>
                                 </div>
                             </div>
                             <div class="col-md-2 col-6">
                                 <div class="stat-card border-end">
-                                    <div class="stat-icon text-danger"><i class="fas fa-times-circle"></i></div>
+                                    <div class="stat-icon text-danger"><i data-lucide="x" class="icon-lucide -circle"></i></div>
                                     <div class="stat-value text-danger" id="deniedFlows">0</div>
                                     <div class="stat-label">Denied</div>
                                 </div>
                             </div>
                             <div class="col-md-2 col-6">
                                 <div class="stat-card border-end">
-                                    <div class="stat-icon text-warning"><i class="fas fa-ban"></i></div>
+                                    <div class="stat-icon text-warning"><i data-lucide="ban" class="icon-lucide"></i></div>
                                     <div class="stat-value text-warning" id="closeFlows">0</div>
                                     <div class="stat-label">Closed</div>
                                 </div>
                             </div>
                             <div class="col-md-2 col-6">
                                 <div class="stat-card border-end">
-                                    <div class="stat-icon text-info"><i class="fas fa-hourglass-end"></i></div>
+                                    <div class="stat-icon text-info"><i data-lucide="hourglass-end" class="icon-lucide"></i></div>
                                     <div class="stat-value text-info" id="timeoutFlows">0</div>
                                     <div class="stat-label">Timeout</div>
                                 </div>
                             </div>
                             <div class="col-md-2 col-6">
                                 <div class="stat-card">
-                                    <div class="stat-icon"><i class="fas fa-sync"></i></div>
+                                    <div class="stat-icon"><i data-lucide="refresh-ccw" class="icon-lucide"></i></div>
                                     <div class="stat-value" id="refreshTimer">5s</div>
                                     <div class="stat-label">Refresh</div>
                                 </div>
@@ -634,11 +520,11 @@ tr:hover {
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i> Apply Filters</button>
+                                <button type="submit" class="btn btn-primary w-100"><i data-lucide="filter" class="icon-lucide"></i> Apply Filters</button>
                             </div>
                             <div class="col-md-2">
                                 <a href="?view=<?= $view_mode === 'live' ? 'historical' : 'live' ?>" class="btn btn-outline-secondary w-100">
-                                    <i class="fas fa-<?= $view_mode === 'live' ? 'history' : 'bolt' ?>"></i> Switch to <?= $view_mode === 'live' ? 'Historical' : 'Live' ?> Mode
+                                    <i data-lucide="circle" class="icon-lucide fas fa-<?= $view_mode === 'live' ? 'history' : 'bolt' ?>"></i> Switch to <?= $view_mode === 'live' ? 'Historical' : 'Live' ?> Mode
                                 </a>
                             </div>
                         </form>
@@ -661,27 +547,27 @@ tr:hover {
                                 </thead>
                                 <tbody id="flowTableBody">
                                     <?php if (empty($flows)): ?>
-                                        <tr><td colspan="9" class="text-center text-muted py-5"><i class="fas fa-inbox fa-3x mb-3 d-block"></i>No traffic flows match your current filters</td></tr>
+                                        <tr><td colspan="9" class="text-center text-muted py-5"><i data-lucide="inbox" class="icon-lucide fa-3x mb-3 d-block"></i>No traffic flows match your current filters</td></tr>
                                     <?php else: ?>
                                         <?php foreach ($flows as $f): ?>
                                             <tr>
                                                 <td>
                                                     <?= date('H:i:s', strtotime($f['time'])) ?>
-                                                    <?= $f['is_archive'] ? '<span class="archive-indicator" title="Archived Log"><i class="fas fa-archive"></i></span>' : '' ?>
+                                                    <?= $f['is_archive'] ? '<span class="archive-indicator" title="Archived Log"><i data-lucide="archive" class="icon-lucide"></i></span>' : '' ?>
                                                 </td>
                                                 <td><code><?= $f['src'] ?></code></td>
                                                 <td><code><?= $f['dst'] ?></code></td>
                                                 <td><?= $f['service'] ?></td>
-                                                <td class="text-center"><span class="action-badge action-<?= $f['action'] ?>"><i class="fas fa-<?= $f['icon'] ?>"></i></span></td>
+                                                <td class="text-center"><span class="action-badge action-<?= $f['action'] ?>"><i data-lucide="circle" class="icon-lucide fas fa-<?= $f['icon'] ?>"></i></span></td>
                                                 <td><?= $f['policyid'] ?></td>
                                                 <td>
                                                     <div class="bandwidth">
-                                                        <span class="up"><i class="fas fa-arrow-up"></i> <?= number_format($f['sentbyte'] / 1024, 1) ?> KB</span>
-                                                        <span class="down"><i class="fas fa-arrow-down"></i> <?= number_format($f['rcvdbyte'] / 1024, 1) ?> KB</span>
+                                                        <span class="up"><i data-lucide="arrow-up" class="icon-lucide"></i> <?= number_format($f['sentbyte'] / 1024, 1) ?> KB</span>
+                                                        <span class="down"><i data-lucide="arrow-down" class="icon-lucide"></i> <?= number_format($f['rcvdbyte'] / 1024, 1) ?> KB</span>
                                                     </div>
                                                 </td>
                                                 <td><?= $f['devname'] ?></td>
-                                                <td><span class="details-link" onclick="showDetails(<?= $f['log_id'] ?>)"><i class="fas fa-search"></i></span></td>
+                                                <td><span class="details-link" onclick="showDetails(<?= $f['log_id'] ?>)"><i data-lucide="search" class="icon-lucide"></i></span></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -753,18 +639,18 @@ function showDetails(logId) {
     modalBody.innerHTML = `
         <div class="row g-3">
             <div class="col-md-6">
-                <h6><i class="fas fa-info-circle"></i> General Information</h6>
+                <h6><i data-lucide="info" class="icon-lucide"></i> General Information</h6>
                 <ul class="list-unstyled">
                     <li><strong>Log ID:</strong> ${p.logid || '-'}</li>
                     <li><strong>Session ID:</strong> ${p.sessionid || '-'}</li>
                     <li><strong>Virtual Domain:</strong> ${p.vd || 'root'}</li>
                     <li><strong>Date/Time:</strong> ${p.date || ''} ${p.time || ''}</li>
                     <li><strong>Duration:</strong> ${p.duration || '-'} sec</li>
-                    <li><strong>Archive Status:</strong> ${flow.is_archive ? '<span class="text-warning"><i class="fas fa-archive"></i> Archived</span>' : '<span class="text-success"><i class="fas fa-bolt"></i> Live</span>'}</li>
+                    <li><strong>Archive Status:</strong> ${flow.is_archive ? '<span class="text-warning"><i data-lucide="archive" class="icon-lucide"></i> Archived</span>' : '<span class="text-success"><i data-lucide="zap" class="icon-lucide"></i> Live</span>'}</li>
                 </ul>
             </div>
             <div class="col-md-6">
-                <h6><i class="fas fa-shield-alt"></i> Action & Policy</h6>
+                <h6><i data-lucide="shield" class="icon-lucide"></i> Action & Policy</h6>
                 <ul class="list-unstyled">
                     <li><strong>Action:</strong> <span class="action-badge action-${flow.action}">${flow.action.toUpperCase()}</span></li>
                     <li><strong>Policy ID:</strong> ${p.policyid || '-'}</li>
@@ -773,7 +659,7 @@ function showDetails(logId) {
                 </ul>
             </div>
             <div class="col-md-6">
-                <h6><i class="fas fa-arrow-right"></i> Source Information</h6>
+                <h6><i data-lucide="arrow-right" class="icon-lucide"></i> Source Information</h6>
                 <ul class="list-unstyled">
                     <li><strong>IP:</strong> <code>${p.srcip || '-'}</code></li>
                     <li><strong>Port:</strong> ${p.srcport || '-'}</li>
@@ -783,7 +669,7 @@ function showDetails(logId) {
                 </ul>
             </div>
             <div class="col-md-6">
-                <h6><i class="fas fa-arrow-left"></i> Destination Information</h6>
+                <h6><i data-lucide="arrow-left" class="icon-lucide"></i> Destination Information</h6>
                 <ul class="list-unstyled">
                     <li><strong>IP:</strong> <code>${p.dstip || '-'}</code></li>
                     <li><strong>Port:</strong> ${p.dstport || '-'}</li>
@@ -793,7 +679,7 @@ function showDetails(logId) {
                 </ul>
             </div>
             <div class="col-md-6">
-                <h6><i class="fas fa-server"></i> Application & Service</h6>
+                <h6><i data-lucide="server" class="icon-lucide"></i> Application & Service</h6>
                 <ul class="list-unstyled">
                     <li><strong>Service:</strong> ${p.service || '-'}</li>
                     <li><strong>Protocol:</strong> ${p.proto || '-'}</li>
@@ -802,7 +688,7 @@ function showDetails(logId) {
                 </ul>
             </div>
             <div class="col-md-6">
-                <h6><i class="fas fa-exchange-alt"></i> Traffic Statistics</h6>
+                <h6><i data-lucide="arrow-right-left" class="icon-lucide"></i> Traffic Statistics</h6>
                 <ul class="list-unstyled">
                     <li><strong>Sent Bytes:</strong> ${formatBytes(parseInt(p.sentbyte || 0))}</li>
                     <li><strong>Received Bytes:</strong> ${formatBytes(parseInt(p.rcvdbyte || 0))}</li>
@@ -811,7 +697,7 @@ function showDetails(logId) {
                 </ul>
             </div>
             <div class="col-12">
-                <h6><i class="fas fa-network-wired"></i> Device Information</h6>
+                <h6><i data-lucide="network" class="icon-lucide"></i> Device Information</h6>
                 <ul class="list-unstyled">
                     <li><strong>Device Name:</strong> ${p.devname || '-'}</li>
                     <li><strong>FortiGate IP:</strong> ${flow.source_ip}</li>
@@ -819,7 +705,7 @@ function showDetails(logId) {
                 </ul>
             </div>
             <div class="col-12">
-                <h6><i class="fas fa-code"></i> Raw Message</h6>
+                <h6><i data-lucide="code" class="icon-lucide"></i> Raw Message</h6>
                 <pre class="small bg-dark text-light p-3 rounded overflow-auto" style="max-height: 200px;">${flow.raw}</pre>
             </div>
         </div>
@@ -858,27 +744,27 @@ async function refreshTable() {
         // Update table body
         const tbody = document.getElementById('flowTableBody');
         if (data.flows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-5"><i class="fas fa-inbox fa-3x mb-3 d-block"></i>No traffic flows match your current filters</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-5"><i data-lucide="inbox" class="icon-lucide fa-3x mb-3 d-block"></i>No traffic flows match your current filters</td></tr>';
         } else {
             tbody.innerHTML = data.flows.map(f => `
                 <tr>
                     <td>
                         ${new Date(f.time).toLocaleTimeString()}
-                        ${f.is_archive ? '<span class="archive-indicator" title="Archived Log"><i class="fas fa-archive"></i></span>' : ''}
+                        ${f.is_archive ? '<span class="archive-indicator" title="Archived Log"><i data-lucide="archive" class="icon-lucide"></i></span>' : ''}
                     </td>
                     <td><code>${f.src}</code></td>
                     <td><code>${f.dst}</code></td>
                     <td>${f.service}</td>
-                    <td class="text-center"><span class="action-badge action-${f.action}"><i class="fas fa-${f.icon}"></i></span></td>
+                    <td class="text-center"><span class="action-badge action-${f.action}"><i data-lucide="circle" class="icon-lucide fas fa-${f.icon}"></i></span></td>
                     <td>${f.policyid}</td>
                     <td>
                         <div class="bandwidth">
-                            <span class="up"><i class="fas fa-arrow-up"></i> ${formatBytes(f.sentbyte)}</span>
-                            <span class="down"><i class="fas fa-arrow-down"></i> ${formatBytes(f.rcvdbyte)}</span>
+                            <span class="up"><i data-lucide="arrow-up" class="icon-lucide"></i> ${formatBytes(f.sentbyte)}</span>
+                            <span class="down"><i data-lucide="arrow-down" class="icon-lucide"></i> ${formatBytes(f.rcvdbyte)}</span>
                         </div>
                     </td>
                     <td>${f.devname}</td>
-                    <td><span class="details-link" onclick="showDetails(${f.log_id})"><i class="fas fa-search"></i></span></td>
+                    <td><span class="details-link" onclick="showDetails(${f.log_id})"><i data-lucide="search" class="icon-lucide"></i></span></td>
                 </tr>
             `).join('');
         }
@@ -946,7 +832,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pause button
     document.getElementById('pauseBtn').addEventListener('click', () => {
         isPaused = !isPaused;
-        document.getElementById('pauseBtn').innerHTML = isPaused ? '<i class="fas fa-play"></i> Resume' : '<i class="fas fa-pause"></i> Pause';
+        document.getElementById('pauseBtn').innerHTML = isPaused ? '<i data-lucide="play" class="icon-lucide"></i> Resume' : '<i data-lucide="pause" class="icon-lucide"></i> Pause';
     });
 
     // Export button

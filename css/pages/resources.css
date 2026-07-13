@@ -1,0 +1,52 @@
+/* ============================================================
+   Resource Utilization Styles - Midnight Violet Theme
+   ============================================================ */
+
+.progress-circle {
+    --size: 80px;
+    --bg-color: rgba(73, 80, 87, 0.5);
+    --value: 0;
+    --fg-color: var(--accent);
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--card-bg) 80%, transparent 0 99.9%, var(--card-bg) 0),
+                conic-gradient(var(--fg-color) calc(var(--value) * 1%), var(--bg-color) 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.progress-circle::before {
+    content: attr(data-value) '%';
+    font-weight: bold;
+}
+
+.cpu-high { --fg-color: var(--metric-down); }
+.cpu-medium { --fg-color: var(--metric-warning); }
+.cpu-low { --fg-color: var(--metric-up); }
+
+.traffic-in { color: var(--metric-up); font-weight: 600; }
+.traffic-out { color: var(--metric-down); font-weight: 600; }
+
+.network-stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.bandwidth-bar {
+    height: 4px;
+    background: rgba(178, 132, 190, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 3px;
+}
+
+.bandwidth-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--metric-up), var(--accent));
+    transition: width 0.3s;
+}

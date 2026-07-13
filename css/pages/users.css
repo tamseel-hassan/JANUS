@@ -1,0 +1,137 @@
+/* ============================================================
+   User Management Page Styles - Midnight Violet Theme
+   ============================================================ */
+
+#main-content { transition: margin-left 0.3s ease; }
+
+.role-badge { 
+    padding: .3em .8em; 
+    border-radius: 8px; /* Section 5: nested element */
+    font-size: .78rem; 
+    font-weight: 600; 
+}
+
+.password-strength { 
+    margin-top: 4px; 
+    height: 4px; 
+    background: var(--border); 
+    border-radius: 8px; 
+}
+
+.password-strength-bar { 
+    height: 100%; 
+    width: 0; 
+    border-radius: 8px; 
+    transition: width .3s, background .3s; 
+}
+
+.toast-container { 
+    position: fixed; 
+    top: 72px; 
+    right: 20px; 
+    z-index: 9999; 
+    min-width: 300px; 
+}
+
+/* Permission matrix */
+.perm-matrix { font-size: .78rem; }
+
+.perm-matrix th { 
+    font-size: .72rem; 
+    text-transform: uppercase; 
+    letter-spacing: .04em; 
+    color: var(--text-muted); 
+    padding: 8px 12px; 
+}
+
+.perm-matrix td { 
+    padding: 6px 12px; 
+    vertical-align: middle; 
+}
+
+.perm-matrix .cat-header td { 
+    background: rgba(178, 132, 190, 0.08); /* Midnight Violet soft tint */
+    font-weight: 700; 
+    font-size: .8rem; 
+    color: var(--accent); 
+    border-top: 1px solid var(--border); 
+}
+
+.perm-check { 
+    color: var(--metric-up); /* #4ade80 */
+    font-size: 1rem; 
+}
+
+.perm-cross { 
+    color: rgba(255, 240, 245, 0.2); 
+    font-size: .9rem; 
+}
+
+.perm-matrix .page-name { 
+    font-family: monospace; 
+    font-size: .75rem; 
+    color: var(--text-muted); 
+}
+
+/* Role info cards */
+.role-card { 
+    border-radius: 16px; /* Section 5: primary component */
+    padding: 16px; 
+    border: 1px solid var(--border); 
+    background: var(--card-bg); 
+    height: 100%; 
+}
+
+.role-card h6 { 
+    font-weight: 700; 
+    margin-bottom: 4px; 
+}
+
+.role-card small { 
+    color: var(--text-muted); 
+}
+
+/* User table */
+.user-table td { 
+    vertical-align: middle; 
+}
+
+.status-dot { 
+    display: inline-block; 
+    width: 8px; 
+    height: 8px; 
+    border-radius: 50%; 
+    margin-right: 5px; 
+}
+
+.status-dot.active { 
+    background: var(--metric-up); 
+    box-shadow: none; /* Subtle valid glow, if allowed, or remove */
+}
+
+.status-dot.disabled { 
+    background: var(--border); 
+}
+
+.form-label { 
+    color: var(--text) !important; 
+}
+
+.nav-tabs .nav-link { 
+    color: var(--text-muted); 
+    border: none; 
+    border-bottom: 2px solid transparent; 
+    padding: .6rem 1rem; 
+}
+
+.nav-tabs .nav-link.active { 
+    color: var(--accent); 
+    border-bottom-color: var(--accent); 
+    background: transparent; 
+    font-weight: 600; 
+}
+
+.nav-tabs { 
+    border-bottom: 1px solid var(--border); 
+    margin-bottom: 20px; 
+}

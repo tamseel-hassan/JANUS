@@ -62,33 +62,33 @@ if ($tl_result) { while ($row = mysqli_fetch_assoc($tl_result)) { $timeline[$row
 mysqli_close($con);
 ?>
 
-<div class="alert alert-info"><i class="fas fa-info-circle"></i> Anomaly = a source whose event volume this window is <strong>2 or more standard deviations</strong> above the mean across all reporting sources — a lightweight z-score outlier check, not a trained baseline model.</div>
+<div class="alert alert-info"><i data-lucide="info" class="icon-lucide"></i> Anomaly = a source whose event volume this window is <strong>2 or more standard deviations</strong> above the mean across all reporting sources — a lightweight z-score outlier check, not a trained baseline model.</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="triangle-alert" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count($anomalies) ?>">0</div>
             <span class="stat-chip chip-danger">Anomalous Sources</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-chart-bar"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="chart-bar" class="icon-lucide"></i></div>
             <div class="stat-value"><?= round($mean) ?></div>
             <span class="stat-chip chip-info">Mean Events / Source</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-ruler-vertical"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="ruler-vertical" class="icon-lucide"></i></div>
             <div class="stat-value"><?= round($stddev) ?></div>
             <span class="stat-chip chip-warning">Std. Deviation</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-server"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="server" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $n ?>">0</div>
             <span class="stat-chip chip-info">Sources Analyzed</span>
         </div>
@@ -96,14 +96,14 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-chart-line"></i> Total Event Volume</h5>
+    <h5><i data-lucide="line-chart" class="icon-lucide"></i> Total Event Volume</h5>
     <div class="chart-container">
         <canvas id="anomalyTimelineChart"></canvas>
     </div>
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-crosshairs"></i> Detected Anomalies</h5>
+    <h5><i data-lucide="crosshair" class="icon-lucide"></i> Detected Anomalies</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>Source</th><th>Event Count</th><th>Z-Score</th><th>Deviation</th><th></th></tr></thead>
@@ -116,7 +116,7 @@ mysqli_close($con);
                         <td><?= number_format($a['count']) ?></td>
                         <td><span class="score-badge <?= scoreClass($score) ?>"><?= $a['z'] ?></span></td>
                         <td><span class="badge bg-<?= $a['z'] >= 3 ? 'danger' : 'warning' ?>"><?= $a['z'] >= 3 ? 'SEVERE' : 'ELEVATED' ?></span></td>
-                        <td><button class="btn btn-outline-primary btn-sm" onclick="drillDownIP('<?= htmlspecialchars($a['ip']) ?>')"><i class="fas fa-search-plus"></i></button></td>
+                        <td><button class="btn btn-outline-primary btn-sm" onclick="drillDownIP('<?= htmlspecialchars($a['ip']) ?>')"><i data-lucide="zoom-in" class="icon-lucide"></i></button></td>
                     </tr>
                 <?php endforeach; ?>
                 <?php if (empty($anomalies)): ?>

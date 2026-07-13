@@ -1,0 +1,66 @@
+/* ============================================================
+   Scanner Styles - Midnight Violet Theme
+   ============================================================ */
+
+.scanner-header {
+    background: linear-gradient(180deg, #1a0b22 0%, var(--bg) 100%);
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.scanner-header::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 50%, var(--accent) 0%, transparent 70%);
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+.terminal-window {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px; /* Section 5: nested element */
+    border: 1px solid var(--border);
+    font-family: 'Consolas', 'Monaco', monospace;
+    padding: 1rem;
+    color: var(--accent); /* Midnight violet accent */
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+}
+
+.service-row { transition: background 0.2s; }
+.service-row:hover { background: rgba(178, 132, 190, 0.05); }
+
+.badge-critical { background: rgba(248, 113, 113, 0.15); color: var(--metric-down); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 8px;}
+.badge-high { background: rgba(243, 156, 18, 0.15); color: var(--metric-warning); border: 1px solid rgba(243, 156, 18, 0.3); border-radius: 8px;}
+.badge-medium { background: rgba(250, 204, 21, 0.15); color: var(--metric-warning); border: 1px solid rgba(250, 204, 21, 0.3); border-radius: 8px;}
+.badge-low { background: rgba(74, 222, 128, 0.15); color: var(--metric-up); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 8px;}
+
+/* Loading Animation */
+.scan-loader {
+    display: none;
+    text-align: center;
+    padding: 3rem;
+}
+.radar {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    margin: 0 auto 1rem;
+    position: relative;
+    animation: pulse 2s infinite;
+}
+.radar::after {
+    content: ''; position: absolute;
+    top: 50%; left: 50%;
+    width: 100%; height: 2px;
+    background: var(--accent);
+    transform-origin: 0 0;
+    animation: sweep 1.5s infinite linear;
+}
+@keyframes sweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes pulse { 0% { box-shadow: none; } 70% { box-shadow: none; } 100% { box-shadow: none; } }

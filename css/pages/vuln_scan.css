@@ -1,0 +1,9 @@
+/* ============================================================
+   Vuln Scan Styles - Midnight Violet Theme
+   ============================================================ */
+
+.scan-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; } /* Section 5: primary container */
+.cve-badge { background: var(--metric-down); color: white; font-size: 0.75rem; border-radius: 8px; padding: 2px 6px; }
+.os-badge { background: var(--accent); color: white; border-radius: 8px; padding: 2px 6px; }
+@keyframes pulse { 0%{opacity:0.5;} 50%{opacity:1;} 100%{opacity:0.5;} }
+.scanning-pulse { animation: pulse 1.5s infinite; }

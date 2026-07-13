@@ -1,0 +1,142 @@
+/* ============================================================
+   Icon Manager Styles - Midnight Violet Theme
+   ============================================================ */
+
+.upload-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px; /* Section 5: Primary */
+  padding: 28px;
+  margin-bottom: 28px;
+}
+.upload-card h5 {
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+/* Drop zones */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 16px; /* Section 5: Primary */
+  padding: 30px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  position: relative;
+}
+.drop-zone:hover,
+.drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(178, 132, 190, 0.06);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.drop-zone .dz-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+.drop-zone .dz-icon.up {
+  color: var(--metric-up);
+}
+.drop-zone .dz-icon.down {
+  color: var(--metric-down);
+}
+.drop-zone .dz-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.drop-zone .dz-preview {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.drop-zone .dz-preview img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+.drop-zone.has-file .dz-icon,
+.drop-zone.has-file .dz-label {
+  display: none;
+}
+.drop-zone.has-file .dz-preview {
+  display: flex;
+}
+
+/* Icon set grid */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+.icon-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px; /* Section 5: Primary */
+  padding: 16px 10px 12px;
+  text-align: center;
+  position: relative;
+  transition: box-shadow 0.2s;
+}
+.icon-card:hover {
+  box-shadow: none;
+}
+.icon-card .ic-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.icon-card .ic-pair {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.icon-card .ic-pair img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.icon-card .ic-pair .ic-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.icon-card .ic-pair .up-img {
+  filter: drop-shadow(0 0 4px var(--metric-up));
+}
+.icon-card .ic-pair .down-img {
+  filter: drop-shadow(0 0 4px var(--metric-down));
+}
+.icon-card .ic-missing {
+  font-size: 0.75rem;
+  color: var(--metric-down);
+  margin-top: 4px;
+}
+.icon-card .badge-builtin {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 0.65rem;
+  background: var(--accent);
+  color: #000;
+  border-radius: 16px;
+  padding: 2px 6px;
+  font-weight: 700;
+}
+.icon-card .btn-delete {
+  width: 100%;
+  font-size: 0.8rem;
+  border-radius: 16px;
+}

@@ -253,126 +253,48 @@ $critical_count = count(array_filter($brute_force_attacks, fn($a) => $a['risk_le
 mysqli_close($con);
 ?>
 
-<style>
-/* Module-local additions on top of the shared HUD theme in reports.php */
-.attack-detail {
-    position: relative;
-    background: var(--panel-raised);
-    border: 1px solid var(--red-dim);
-    border-left: 3px solid var(--red);
-    padding: 16px 18px;
-    margin-bottom: 14px;
-    border-radius: 2px;
-}
-.attack-detail.risk-critical { border-left-color: var(--red); }
-.attack-detail.risk-critical::before {
-    content: '';
-    position: absolute;
-    top: 14px; right: 16px;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--red);
-    box-shadow: 0 0 8px 1px var(--red);
-    animation: pulse-led 1.4s ease-in-out infinite;
-}
-.attack-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    color: var(--text-hi);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-.attack-body { font-size: 0.85rem; font-family: var(--font-sans); }
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--line);
-    flex-wrap: wrap;
-    gap: 6px;
-}
-.detail-row:last-child { border-bottom: none; }
-.detail-row code { font-family: var(--font-mono); color: var(--cyan); }
-.quarantine-btn { margin-top: 12px; display: flex; gap: 8px; }
-.port-badge {
-    background: rgba(157,140,255,0.12);
-    color: var(--violet);
-    border-left: 2px solid var(--violet);
-    padding: 3px 9px;
-    border-radius: 2px;
-    font-weight: 700;
-    font-size: 0.72rem;
-    font-family: var(--font-mono);
-    text-transform: uppercase;
-}
-
-.threat-meter {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-.threat-meter .lvl {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 5px 12px;
-    border-radius: 2px;
-}
-.threat-meter .lvl.high { background: rgba(255,77,94,0.12); color: var(--red); border-left: 2px solid var(--red); }
-.threat-meter .lvl.clear { background: rgba(43,232,164,0.12); color: var(--green); border-left: 2px solid var(--green); }
-
-.incidents-table tbody tr.incident-row { cursor: pointer; }
-.incidents-table tbody tr.incident-row:hover { background: rgba(41,211,238,0.05); }
-.incidents-table tbody tr.incident-row td { white-space: nowrap; }
-.incidents-table tbody tr.incident-row td:nth-child(4) { white-space: normal; }
-</style>
+<link rel="stylesheet" href="/css/pages/ss_bruteforce.css">
 
 <?php if ($has_firewall): ?>
 <div class="alert alert-info">
-    <i class="fas fa-shield-alt"></i>
+    <i data-lucide="shield" class="icon-lucide"></i>
     <strong>Automated Response Available:</strong> Connected to firewall <code><?= htmlspecialchars($firewall_ip) ?></code>. You can quarantine attacking IPs directly from this page.
 </div>
 <?php endif; ?>
 
 <div class="threat-meter">
     <?php if ($critical_count > 0): ?>
-        <span class="lvl high"><i class="fas fa-exclamation-triangle"></i> <?= $critical_count ?> Critical Threat<?= $critical_count > 1 ? 's' : '' ?> Detected</span>
+        <span class="lvl high"><i data-lucide="triangle-alert" class="icon-lucide"></i> <?= $critical_count ?> Critical Threat<?= $critical_count > 1 ? 's' : '' ?> Detected</span>
     <?php else: ?>
-        <span class="lvl clear"><i class="fas fa-check-circle"></i> No Critical Threats in Window</span>
+        <span class="lvl clear"><i data-lucide="check-circle" class="icon-lucide"></i> No Critical Threats in Window</span>
     <?php endif; ?>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-lock"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="lock" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= (int)$total_failed ?>">0</div>
             <span class="stat-chip chip-danger">Failed Auth Attempts</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-user-secret"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="user" class="icon-lucide -secret"></i></div>
             <div class="stat-value" data-raw="<?= count($brute_force_attacks) ?>">0</div>
             <span class="stat-chip chip-warning">Brute Force Attacks</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-users"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="user" class="icon-lucide s"></i></div>
             <div class="stat-value" data-raw="<?= count($ip_counts) ?>">0</div>
             <span class="stat-chip chip-info">Unique Attack Sources</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="shield" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $has_firewall ? 'ACTIVE' : 'INACTIVE' ?></div>
             <span class="stat-chip <?= $has_firewall ? 'chip-success' : 'chip-neutral' ?>">Auto-Response Status</span>
         </div>
@@ -383,7 +305,7 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-server"></i> Targeted Services</h5>
+            <h5><i data-lucide="server" class="icon-lucide"></i> Targeted Services</h5>
             <div class="table-container" style="max-height: 300px;">
                 <table class="table table-hover">
                     <thead><tr><th>Service</th><th>Failed Attempts</th></tr></thead>
@@ -404,7 +326,7 @@ mysqli_close($con);
     </div>
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-door-open"></i> Targeted Ports</h5>
+            <h5><i data-lucide="door-open" class="icon-lucide"></i> Targeted Ports</h5>
             <div class="table-container" style="max-height: 300px;">
                 <table class="table table-hover">
                     <thead><tr><th>Port</th><th>Service</th><th>Failed Attempts</th></tr></thead>
@@ -428,7 +350,7 @@ mysqli_close($con);
 
 <div class="report-card">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 4px;">
-        <h5 style="border-bottom:none; padding-bottom:0; margin-bottom:0;"><i class="fas fa-user-lock"></i> Authentication Brute Force Incidents</h5>
+        <h5 style="border-bottom:none; padding-bottom:0; margin-bottom:0;"><i data-lucide="user" class="icon-lucide -lock"></i> Authentication Brute Force Incidents</h5>
         <div style="display:flex; gap:14px; font-family:var(--font-mono); font-size:0.72rem; color:var(--text-mid);">
             <span><span class="score-badge score-red" style="width:18px;height:18px;font-size:0.6rem;"><?= count(array_filter($brute_force_attacks, fn($a)=>$a['risk_level']==='critical')) ?></span>Critical</span>
             <span><span class="score-badge score-amber" style="width:18px;height:18px;font-size:0.6rem;"><?= count(array_filter($brute_force_attacks, fn($a)=>$a['risk_level']==='high')) ?></span>High</span>
@@ -473,11 +395,11 @@ mysqli_close($con);
                             <td onclick="event.stopPropagation()">
                                 <?php if ($has_firewall): ?>
                                     <button class="btn btn-danger btn-sm" onclick="quarantineIP('<?= htmlspecialchars($bf['source_ip']) ?>', '<?= htmlspecialchars($firewall_ip) ?>', 'Brute force attack - <?= $bf['attempt_count'] ?> attempts on <?= htmlspecialchars($bf['port_name']) ?>')">
-                                        <i class="fas fa-ban"></i>
+                                        <i data-lucide="ban" class="icon-lucide"></i>
                                     </button>
                                 <?php else: ?>
                                     <a href="../responder.php?ip=<?= urlencode($bf['source_ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank" onclick="event.stopPropagation()">
-                                        <i class="fas fa-cog"></i>
+                                        <i data-lucide="settings" class="icon-lucide"></i>
                                     </a>
                                 <?php endif; ?>
                             </td>
@@ -486,7 +408,7 @@ mysqli_close($con);
                 </tbody>
             </table>
         <?php else: ?>
-            <div class="alert alert-success"><i class="fas fa-check-circle"></i> No brute force attempts detected</div>
+            <div class="alert alert-success"><i data-lucide="check-circle" class="icon-lucide"></i> No brute force attempts detected</div>
         <?php endif; ?>
     </div>
 </div>
@@ -518,43 +440,43 @@ function showIncidentDetail(idx) {
     if (!bf) return;
     const modal = new bootstrap.Modal(document.getElementById('drillDownModal'));
     document.getElementById('drillDownModalLabel').innerHTML =
-        `<i class="fas fa-user-lock"></i> ${bf.id} &middot; Brute Force Attack`;
+        `<i data-lucide="user" class="icon-lucide -lock"></i> ${bf.id} &middot; Brute Force Attack`;
 
     const usernamesRow = bf.usernames.length
-        ? `<div class="detail-row"><span><i class="fas fa-user"></i> Usernames tried: ${bf.usernames.map(u => escapeHtml(u)).join(', ')}</span></div>`
+        ? `<div class="detail-row"><span><i data-lucide="user" class="icon-lucide"></i> Usernames tried: ${bf.usernames.map(u => escapeHtml(u)).join(', ')}</span></div>`
         : '';
 
     const actionHtml = bf.has_firewall
         ? `<div class="quarantine-btn">
-                <button class="btn btn-danger btn-sm" onclick="quarantineIP('${bf.source_ip}', '${bf.firewall_ip}', 'Brute force attack - ${bf.attempt_count} attempts on ${bf.port_name}')"><i class="fas fa-ban"></i> Quarantine This IP</button>
-                <button class="btn btn-warning btn-sm" onclick="window.open('../responder.php?ip=${encodeURIComponent(bf.source_ip)}', '_blank')"><i class="fas fa-external-link-alt"></i> Manual Block</button>
+                <button class="btn btn-danger btn-sm" onclick="quarantineIP('${bf.source_ip}', '${bf.firewall_ip}', 'Brute force attack - ${bf.attempt_count} attempts on ${bf.port_name}')"><i data-lucide="ban" class="icon-lucide"></i> Quarantine This IP</button>
+                <button class="btn btn-warning btn-sm" onclick="window.open('../responder.php?ip=${encodeURIComponent(bf.source_ip)}', '_blank')"><i data-lucide="external-link-alt" class="icon-lucide"></i> Manual Block</button>
            </div>`
         : `<div class="quarantine-btn">
-                <a href="../responder.php?ip=${encodeURIComponent(bf.source_ip)}" class="btn btn-outline-warning btn-sm" target="_blank"><i class="fas fa-cog"></i> Configure Firewall to Block</a>
+                <a href="../responder.php?ip=${encodeURIComponent(bf.source_ip)}" class="btn btn-outline-warning btn-sm" target="_blank"><i data-lucide="settings" class="icon-lucide"></i> Configure Firewall to Block</a>
            </div>`;
 
     document.getElementById('drillDownContent').innerHTML = `
         <div class="attack-detail risk-${bf.risk_level}">
             <div class="attack-header">
-                <span><i class="fas fa-exclamation-triangle"></i> ${bf.id}</span>
+                <span><i data-lucide="triangle-alert" class="icon-lucide"></i> ${bf.id}</span>
                 <span class="badge bg-${bf.risk_level === 'critical' ? 'danger' : 'warning'}">${bf.risk_level.toUpperCase()} &middot; SCORE ${bf.score}</span>
             </div>
             <div class="attack-body">
                 <div class="detail-row">
-                    <span><i class="fas fa-user-secret"></i> Attacker: <code>${bf.source_ip}</code></span>
-                    <span><i class="fas fa-bullseye"></i> Target: <code>${bf.target_ip}</code></span>
+                    <span><i data-lucide="user" class="icon-lucide -secret"></i> Attacker: <code>${bf.source_ip}</code></span>
+                    <span><i data-lucide="bullseye" class="icon-lucide"></i> Target: <code>${bf.target_ip}</code></span>
                 </div>
                 <div class="detail-row">
-                    <span><i class="fas fa-hashtag"></i> Failed Attempts: <strong>${bf.attempt_count}</strong></span>
-                    <span><i class="fas fa-door-closed"></i> Service: <strong>${bf.service}</strong></span>
+                    <span><i data-lucide="hashtag" class="icon-lucide"></i> Failed Attempts: <strong>${bf.attempt_count}</strong></span>
+                    <span><i data-lucide="door-closed" class="icon-lucide"></i> Service: <strong>${bf.service}</strong></span>
                 </div>
                 <div class="detail-row">
-                    <span><i class="fas fa-hourglass-half"></i> Time Window: ${bf.time_window}</span>
-                    <span><i class="fas fa-clock"></i> First: ${bf.first_attempt}</span>
+                    <span><i data-lucide="hourglass-half" class="icon-lucide"></i> Time Window: ${bf.time_window}</span>
+                    <span><i data-lucide="clock" class="icon-lucide"></i> First: ${bf.first_attempt}</span>
                 </div>
                 <div class="detail-row">
-                    <span><i class="fas fa-network-wired"></i> Port: <code>${bf.port}</code> <span class="port-badge">${bf.port_name}</span></span>
-                    <span><i class="fas fa-clock"></i> Last: ${bf.last_attempt}</span>
+                    <span><i data-lucide="network" class="icon-lucide"></i> Port: <code>${bf.port}</code> <span class="port-badge">${bf.port_name}</span></span>
+                    <span><i data-lucide="clock" class="icon-lucide"></i> Last: ${bf.last_attempt}</span>
                 </div>
                 ${usernamesRow}
                 ${actionHtml}
@@ -575,7 +497,7 @@ window.showIncidentDetail = showIncidentDetail;
 <div class="row g-3 mt-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-map-marker-alt"></i> Top Attacking IPs</h5>
+            <h5><i data-lucide="map-marker-alt" class="icon-lucide"></i> Top Attacking IPs</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead><tr><th>Rank</th><th>IP Address</th><th>Total Attempts</th><th>Risk Level</th><th>Actions</th></tr></thead>
@@ -591,11 +513,11 @@ window.showIncidentDetail = showIncidentDetail;
                                 <td>
                                     <?php if ($has_firewall): ?>
                                         <button class="btn btn-danger btn-sm" onclick="quarantineIP('<?= htmlspecialchars($att['ip']) ?>', '<?= htmlspecialchars($firewall_ip) ?>', 'Multiple failed login attempts')">
-                                            <i class="fas fa-ban"></i>
+                                            <i data-lucide="ban" class="icon-lucide"></i>
                                         </button>
                                     <?php else: ?>
                                         <a href="../responder.php?ip=<?= urlencode($att['ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank">
-                                            <i class="fas fa-cog"></i>
+                                            <i data-lucide="settings" class="icon-lucide"></i>
                                         </a>
                                     <?php endif; ?>
                                 </td>
@@ -611,7 +533,7 @@ window.showIncidentDetail = showIncidentDetail;
     </div>
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-chart-line"></i> Attack Timeline</h5>
+            <h5><i data-lucide="line-chart" class="icon-lucide"></i> Attack Timeline</h5>
             <div class="chart-container">
                 <canvas id="bruteForceTimeline"></canvas>
             </div>
@@ -658,7 +580,7 @@ async function quarantineIP(ip, firewallIP, reason) {
     const btn = event.target.closest('button');
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Blocking...';
+    btn.innerHTML = '<i data-lucide="loader" class="icon-lucide fa-spin"></i> Blocking...';
     try {
         const formData = new FormData();
         formData.append('block_ip', '1');
@@ -668,7 +590,7 @@ async function quarantineIP(ip, firewallIP, reason) {
         const response = await fetch('../responder.php', { method: 'POST', body: formData });
         const text = await response.text();
         if (text.includes('blocked successfully')) {
-            btn.innerHTML = '<i class="fas fa-check"></i> Blocked';
+            btn.innerHTML = '<i data-lucide="check" class="icon-lucide"></i> Blocked';
             btn.classList.remove('btn-danger');
             btn.classList.add('btn-success');
             alert(`IP ${ip} has been successfully quarantined!`);

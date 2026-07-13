@@ -88,18 +88,13 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        .modal-content{background:var(--card-bg);color:var(--text)}.modal-header{border-bottom:1px solid var(--border)}.modal-footer{border-top:1px solid var(--border)}
-        .nav-tabs .nav-link{color:var(--text)}.nav-tabs .nav-link.active{background:var(--accent);color:#fff}
-        #main-content{margin-left:250px;transition:margin-left 0.3s;padding-top:70px}.sidebar.collapsed ~ #main-content{margin-left:78px}
-        .unread-row{font-weight:bold;background:rgba(255,193,7,0.1)}[data-theme="light"] .unread-row{background:rgba(255,193,7,0.2)}
-    </style>
+    <link rel="stylesheet" href="/css/pages/my_tasks.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../topbar.php'; ?>
 <?php include __DIR__ . '/../sidebar.php'; ?>
 <div id="main-content"><div class="container-fluid">
-    <h2 class="mb-4"><i class="fas fa-tasks me-2"></i> My Assigned Tasks</h2>
+    <h2 class="mb-4"><i data-lucide="tasks" class="icon-lucide me-2"></i> My Assigned Tasks</h2>
     <?php if (mysqli_num_rows($incidents) == 0): ?>
         <div class="alert alert-info">No assigned tasks.</div>
     <?php else: ?>
@@ -120,9 +115,9 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             ?></td>
             <td>
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#viewModal<?= $inc['id'] ?>" title="View"><i class="fas fa-eye"></i></button>
-                    <form method="POST"><input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>"><input type="hidden" name="id" value="<?= $inc['id'] ?>"><input type="hidden" name="action" value="change_status"><input type="hidden" name="new_status" value="in_progress"><button class="btn btn-primary" title="Start"><i class="fas fa-play"></i></button></form>
-                    <form method="POST"><input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>"><input type="hidden" name="id" value="<?= $inc['id'] ?>"><input type="hidden" name="action" value="change_status"><input type="hidden" name="new_status" value="resolved"><button class="btn btn-success" title="Resolve"><i class="fas fa-check"></i></button></form>
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#viewModal<?= $inc['id'] ?>" title="View"><i data-lucide="eye" class="icon-lucide"></i></button>
+                    <form method="POST"><input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>"><input type="hidden" name="id" value="<?= $inc['id'] ?>"><input type="hidden" name="action" value="change_status"><input type="hidden" name="new_status" value="in_progress"><button class="btn btn-primary" title="Start"><i data-lucide="play" class="icon-lucide"></i></button></form>
+                    <form method="POST"><input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>"><input type="hidden" name="id" value="<?= $inc['id'] ?>"><input type="hidden" name="action" value="change_status"><input type="hidden" name="new_status" value="resolved"><button class="btn btn-success" title="Resolve"><i data-lucide="check" class="icon-lucide"></i></button></form>
                 </div>
                 <!-- View Modal (simplified, but keep your original detailed modal if needed, just update DB queries inside) -->
                 <div class="modal fade" id="viewModal<?= $inc['id'] ?>" tabindex="-1">

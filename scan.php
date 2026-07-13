@@ -22,68 +22,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/theme.css">
-    <style>
-        .scanner-header {
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
-            border-bottom: 1px solid var(--accent);
-            padding: 2.5rem 0;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .scanner-header::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle at 50% 50%, var(--accent) 0%, transparent 70%);
-            opacity: 0.1;
-            pointer-events: none;
-        }
-        .terminal-window {
-            background: #0f172a;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            font-family: 'Consolas', 'Monaco', monospace;
-            padding: 1rem;
-            color: #22d3ee;
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 1.5rem;
-            font-size: 0.85rem;
-        }
-        .service-row { transition: background 0.2s; }
-        .service-row:hover { background: rgba(255,255,255,0.03); }
-        
-        .badge-critical { background: #ef4444; color: white; }
-        .badge-high { background: #f97316; color: white; }
-        .badge-medium { background: #eab308; color: black; }
-        .badge-low { background: #22c55e; color: white; }
-
-        /* Loading Animation */
-        .scan-loader {
-            display: none;
-            text-align: center;
-            padding: 3rem;
-        }
-        .radar {
-            width: 60px; height: 60px;
-            border-radius: 50%;
-            border: 2px solid var(--accent);
-            margin: 0 auto 1rem;
-            position: relative;
-            animation: pulse 2s infinite;
-        }
-        .radar::after {
-            content: ''; position: absolute;
-            top: 50%; left: 50%;
-            width: 100%; height: 2px;
-            background: var(--accent);
-            transform-origin: 0 0;
-            animation: sweep 1.5s infinite linear;
-        }
-        @keyframes sweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(96, 165, 250, 0); } 100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0); } }
-    </style>
+    <link rel="stylesheet" href="css/pages/scan.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -91,7 +30,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 
 <div id="main-content">
     <div class="scanner-header text-center">
-        <h2 class="mb-2"><i class="fas fa-satellite-dish"></i> Deep Packet Inspection Scanner</h2>
+        <h2 class="mb-2"><i data-lucide="satellite" class="icon-lucide"></i> Deep Packet Inspection Scanner</h2>
         <p class="text-muted">Janusscanning Engine | Service Version Detection | OS Fingerprinting</p>
     </div>
 
@@ -103,17 +42,17 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                     <label class="form-label text-muted">Target Host / IP Address</label>
                     <div class="input-group input-group-lg">
                         <span class="input-group-text bg-transparent border-secondary text-primary">
-                            <i class="fas fa-network-wired"></i>
+                            <i data-lucide="network" class="icon-lucide"></i>
                         </span>
                         <input type="text" name="target" class="form-control bg-transparent text-light border-secondary" 
                                placeholder="e.g. 192.168.1.10 or example.com" 
                                value="<?= isset($_POST['target']) ? htmlspecialchars($_POST['target']) : '' ?>" required>
                         <button type="submit" class="btn btn-primary px-4 fw-bold">
-                            <i class="fas fa-search"></i> INITIATE SCAN
+                            <i data-lucide="search" class="icon-lucide"></i> INITIATE SCAN
                         </button>
                     </div>
                     <div class="form-text mt-2">
-                        <i class="fas fa-info-circle"></i> This scan performs active service fingerprinting (`-sV`). Please allow 15-45 seconds.
+                        <i data-lucide="info" class="icon-lucide"></i> This scan performs active service fingerprinting (`-sV`). Please allow 15-45 seconds.
                     </div>
                 </form>
             </div>
@@ -174,7 +113,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     <div class="card h-100 border-primary">
                                         <div class="card-body text-center">
                                             <h6 class="text-muted text-uppercase">Target Status</h6>
-                                            <h3 class="text-success"><i class="fas fa-check-circle"></i> ONLINE</h3>
+                                            <h3 class="text-success"><i data-lucide="check-circle" class="icon-lucide"></i> ONLINE</h3>
                                             <p class="mb-0">'.$addr.'</p>
                                             <small class="text-muted">'.$hostName.'</small>
                                         </div>
@@ -202,7 +141,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 
                             echo '<div class="card">';
                             echo '<div class="card-header d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0"><i class="fas fa-list-ul"></i> Detected Services</h5>
+                                    <h5 class="mb-0"><i data-lucide="list" class="icon-lucide -ul"></i> Detected Services</h5>
                                     <span class="badge bg-dark">'.$addr.'</span>
                                   </div>';
                             echo '<div class="table-responsive">';

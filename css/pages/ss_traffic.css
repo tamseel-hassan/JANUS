@@ -1,0 +1,46 @@
+/* ============================================================
+   SS Traffic Styles - Midnight Violet Theme
+   ============================================================ */
+
+/* Module-local additions on top of the shared HUD theme in reports.php */
+.mix-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 8px; /* Section 5: nested */
+    overflow: hidden;
+    background: var(--border);
+    margin-top: 14px;
+    border: 1px solid var(--border);
+}
+.mix-bar span { height: 100%; }
+.mix-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+.mix-legend .dot { width: 8px; height: 8px; border-radius: 8px; display: inline-block; margin-right: 6px; }
+
+.mini-bar-track {
+    background: var(--border);
+    border-radius: 8px; /* Section 5: nested */
+    height: 5px;
+    width: 80px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+    border: 1px solid var(--border);
+}
+.mini-bar-fill { height: 100%; background: var(--accent); }
+
+.flow-split {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+}
+.flow-split .up { color: var(--metric-up); }
+.flow-split .down { color: var(--accent); }

@@ -10,13 +10,13 @@ $notificationCount = db_fetch("SELECT COUNT(*) AS c FROM incidents WHERE assigne
 <nav class="topbar">
     <div class="topbar-left">
         <button class="toggle-btn" id="sidebarToggle">
-            <i class="fas fa-bars"></i>
+            <i data-lucide="menu" class="icon-lucide"></i>
         </button>
         <a href="/home.php">
             <img src="/icon.jpg" class="logo-img" alt="Janus">
         </a>
         <form action="/search.php" method="GET" class="search-form">
-            <button type="submit"><i class="fas fa-search"></i></button>
+            <button type="submit"><i data-lucide="search" class="icon-lucide"></i></button>
             <input type="text" name="q" placeholder="Search…" autocomplete="off">
         </form>
         <ul class="nav-menu">
@@ -47,20 +47,20 @@ $notificationCount = db_fetch("SELECT COUNT(*) AS c FROM incidents WHERE assigne
     </div>
     <div class="topbar-right">
         <div class="status-item" title="Network Uptime">
-            <i class="fas fa-heartbeat text-primary"></i>
+            <i data-lucide="activity" class="icon-lucide text-primary"></i>
             <span class="status-value"><?= $uptimePct ?>%</span>
         </div>
         <div class="status-item">
-            <i class="fas fa-arrow-up text-success"></i>
+            <i data-lucide="arrow-up" class="icon-lucide text-success"></i>
             <span class="status-value"><?= $upDevices ?></span>
         </div>
         <div class="status-item">
-            <i class="fas fa-arrow-down text-danger"></i>
+            <i data-lucide="arrow-down" class="icon-lucide text-danger"></i>
             <span class="status-value"><?= $downDevices ?></span>
         </div>
         <div class="status-item dropdown">
             <a href="#" data-bs-toggle="dropdown">
-                <i class="fas fa-bell <?= $notificationCount ? 'text-danger' : '' ?>"></i>
+                <i data-lucide="bell" class="icon-lucide <?= $notificationCount ? 'text-danger' : '' ?>"></i>
                 <?php if($notificationCount): ?><span class="badge"><?= $notificationCount ?></span><?php endif; ?>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
@@ -73,7 +73,7 @@ $notificationCount = db_fetch("SELECT COUNT(*) AS c FROM incidents WHERE assigne
         </label>
         <div class="status-item dropdown">
             <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle"></i> <?= htmlspecialchars($_SESSION['name']) ?>
+                <i data-lucide="circle-user" class="icon-lucide"></i> <?= htmlspecialchars($_SESSION['name']) ?>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="/profile.php">Profile</a></li>

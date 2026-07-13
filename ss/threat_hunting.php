@@ -68,28 +68,28 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-crosshairs"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="crosshair" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $total_notable ?>">0</div>
             <span class="stat-chip chip-danger">Notable Events</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-biohazard"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="biohazard" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $severity_counts['critical'] ?>">0</div>
             <span class="stat-chip chip-danger">Critical</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="triangle-alert" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $severity_counts['high'] ?>">0</div>
             <span class="stat-chip chip-warning">High</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-info-circle"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="info" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $severity_counts['medium'] ?>">0</div>
             <span class="stat-chip chip-info">Medium</span>
         </div>
@@ -98,10 +98,10 @@ mysqli_close($con);
 
 <div class="report-card">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-        <h5 style="border-bottom:none; padding-bottom:0; margin-bottom:0;"><i class="fas fa-search"></i> Notable Event Feed</h5>
+        <h5 style="border-bottom:none; padding-bottom:0; margin-bottom:0;"><i data-lucide="search" class="icon-lucide"></i> Notable Event Feed</h5>
         <form onsubmit="event.preventDefault(); huntSearch();" style="display:flex; gap:8px;">
             <input type="text" id="huntQuery" class="form-control" placeholder="Search message content&hellip;" value="<?= htmlspecialchars($search) ?>" style="width:220px;">
-            <button class="btn btn-outline-primary btn-sm" type="submit"><i class="fas fa-search"></i></button>
+            <button class="btn btn-outline-primary btn-sm" type="submit"><i data-lucide="search" class="icon-lucide"></i></button>
         </form>
     </div>
     <div class="table-container" style="max-height:520px;">

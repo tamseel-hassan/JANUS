@@ -1,0 +1,330 @@
+/* ============================================================
+   Monitor Styles - Midnight Violet Theme
+   ============================================================ */
+
+/* Updated Content Margin to match the sidebar */
+#main-content {
+    margin-left: 260px; /* Standardised width */
+    padding: 80px 25px 25px 25px;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+.sidebar.collapsed ~ #main-content {
+    margin-left: 80px;
+}
+
+/* Enhanced Summary Box Styles */
+.summary-card {
+    padding: 20px;
+    border-radius: 16px; /* Section 5: Primary */
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: currentColor;
+    opacity: 0.7;
+}
+
+.summary-card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.summary-card .metric {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 10px 0;
+    line-height: 1;
+    color: inherit;
+}
+
+.summary-card .label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+    color: inherit;
+}
+
+.summary-card small {
+    color: inherit;
+    opacity: 0.8;
+}
+
+/* Color variants for summary cards */
+.summary-total {
+    background: linear-gradient(135deg, rgba(178, 132, 190, 0.15), var(--card-bg));
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.summary-up {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), var(--card-bg));
+    color: var(--metric-up);
+    border-color: var(--metric-up);
+}
+
+.summary-down {
+    background: linear-gradient(135deg, rgba(248, 113, 113, 0.15), var(--card-bg));
+    color: var(--metric-down);
+    border-color: var(--metric-down);
+}
+
+.summary-rtt {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), var(--card-bg));
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.card:hover {
+    box-shadow: none;
+}
+
+.table-dark thead th {
+    background: rgba(178, 132, 190, 0.05);
+    cursor: pointer;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding: 15px 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.table-dark tbody tr {
+    transition: all 0.2s ease;
+    color: var(--text);
+}
+
+.table-dark tbody td {
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+    padding: 12px;
+    vertical-align: middle;
+}
+
+.table-dark .bg-secondary {
+    background-color: var(--border) !important;
+    color: white !important;
+}
+
+/* Badge Styles */
+.badge-up {
+    background: var(--metric-up);
+    color: var(--card-bg);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.badge-down {
+    background: var(--metric-down);
+    color: var(--card-bg);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.badge-pending {
+    background: var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Stale data indicator - shown next to Last Check when checked_at is old */
+.stale-warning {
+    color: var(--metric-warning);
+    font-size: 0.75rem;
+    margin-left: 6px;
+    cursor: help;
+}
+
+/* Row flash animation when a row's data changes via polling or Check Now */
+@keyframes rowUpdateFlash {
+    0%   { background-color: rgba(178, 132, 190, 0.25); }
+    100% { background-color: transparent; }
+}
+tr.row-flash {
+    animation: rowUpdateFlash 1.2s ease-out;
+}
+
+/* Row currently being checked on-demand */
+tr.row-checking {
+    opacity: 0.6;
+}
+tr.row-checking td:first-child i.fa-network-wired {
+    display: none;
+}
+tr.row-checking td:first-child .checking-spinner {
+    display: inline-block !important;
+}
+.checking-spinner {
+    display: none;
+    margin-right: 8px;
+}
+
+/* Right-click context menu for device rows */
+#device-ctx-menu {
+    display: none;
+    position: fixed;
+    z-index: 5000;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px; /* Section 5: nested */
+    box-shadow: none;
+    min-width: 190px;
+    padding: 4px 0;
+    font-size: 14px;
+}
+#device-ctx-menu .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    cursor: pointer;
+    color: var(--text);
+    transition: background .15s;
+}
+#device-ctx-menu .ctx-item:hover { background: rgba(178, 132, 190,.15); color: var(--accent); }
+#device-ctx-menu .ctx-item.disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
+#device-ctx-menu .ctx-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* Clickable row hint */
+#deviceTable tbody tr { cursor: context-menu; }
+
+/* Polling indicator */
+#poll-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+#poll-indicator .poll-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--metric-up);
+    animation: pollPulse 2s ease-in-out infinite;
+}
+@keyframes pollPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Tab Styles */
+.tab-content {
+    min-height: 500px;
+    padding: 20px 0;
+}
+
+.nav-tabs {
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 24px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-bottom: -2px;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--accent);
+    background: rgba(178, 132, 190, 0.05);
+    border-bottom-color: var(--accent);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--accent);
+    background: transparent;
+    border-bottom: 3px solid var(--accent);
+}
+
+/* Resource Content Styles */
+#resourceContent {
+    min-height: 400px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.loading-spinner {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 60px 20px;
+}
+
+.loading-spinner i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: var(--accent);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #main-content {
+        padding: 80px 15px 15px 15px;
+    }
+
+    .summary-card .metric {
+        font-size: 2rem;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Filter button styles */
+.filter-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 8px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.filter-btn:hover {
+    opacity: 0.9;
+}
+
+.filter-btn.pakistan-only {
+    background: var(--metric-down);
+}
+
+.filter-btn.other-countries {
+    background: var(--metric-up);
+}
+
+.hidden {
+    display: none;
+}

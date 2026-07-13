@@ -45,21 +45,21 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-wrench"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="wrench" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count($changes) ?>">0</div>
             <span class="stat-chip chip-warning">Config Events</span>
         </div>
     </div>
     <div class="col-md-4">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-user-cog"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="user" class="icon-lucide -cog"></i></div>
             <div class="stat-value" data-raw="<?= count($by_admin) ?>">0</div>
             <span class="stat-chip chip-info">Admins Involved</span>
         </div>
     </div>
     <div class="col-md-4">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-history"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="history" class="icon-lucide"></i></div>
             <div class="stat-value"><?= !empty($changes) ? timeAgo($changes[0]['time']) : '—' ?></div>
             <span class="stat-chip chip-info">Most Recent Change</span>
         </div>
@@ -69,7 +69,7 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-lg-4">
         <div class="report-card">
-            <h5><i class="fas fa-user-cog"></i> Changes by Admin</h5>
+            <h5><i data-lucide="user" class="icon-lucide -cog"></i> Changes by Admin</h5>
             <div class="table-container" style="max-height:340px;">
                 <table class="table table-hover">
                     <thead><tr><th>Admin</th><th>Changes</th></tr></thead>
@@ -85,7 +85,7 @@ mysqli_close($con);
     </div>
     <div class="col-lg-8">
         <div class="report-card">
-            <h5><i class="fas fa-clipboard-list"></i> Change Log</h5>
+            <h5><i data-lucide="clipboard-list" class="icon-lucide"></i> Change Log</h5>
             <div class="table-container" style="max-height:340px;">
                 <table class="table table-hover">
                     <thead><tr><th>Time</th><th>Admin</th><th>Source</th><th>Path</th><th>Summary</th></tr></thead>

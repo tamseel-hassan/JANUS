@@ -60,377 +60,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <link href="css/font-awesome/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="css/theme.css">
 
-<style>
-body.loggedin { font-family: 'Segoe UI', sans-serif; }
-
-/* Updated Content Margin to match the sidebar */
-#main-content {
-    margin-left: 250px;
-    padding: 80px 25px 25px 25px;
-    min-height: 100vh;
-    transition: margin-left 0.3s ease;
-}
-.sidebar.collapsed ~ #main-content {
-    margin-left: 80px;
-}
-
-/* Enhanced Summary Box Styles */
-.summary-card {
-    padding: 20px;
-    border-radius: 12px;
-    text-align: center;
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
-    position: relative;
-    overflow: hidden;
-}
-
-.summary-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: currentColor;
-    opacity: 0.7;
-}
-
-.summary-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.summary-card .metric {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin: 10px 0;
-    line-height: 1;
-    color: inherit;
-}
-
-.summary-card .label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    opacity: 0.9;
-    color: inherit;
-}
-
-.summary-card small {
-    color: inherit;
-    opacity: 0.8;
-}
-
-/* Color variants for summary cards */
-.summary-total {
-    background: linear-gradient(135deg, rgba(96, 165, 250, 0.15), var(--card-bg));
-    color: #60a5fa;
-    border-color: #60a5fa;
-}
-
-.summary-up {
-    background: linear-gradient(135deg, rgba(22, 163, 74, 0.15), var(--card-bg));
-    color: #16a34a;
-    border-color: #16a34a;
-}
-
-.summary-down {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), var(--card-bg));
-    color: #ef4444;
-    border-color: #ef4444;
-}
-
-.summary-rtt {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), var(--card-bg));
-    color: #a855f7;
-    border-color: #a855f7;
-}
-
-/* Card Styles */
-.card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text);
-    margin-bottom: 20px;
-    transition: all 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-    background: var(--header-bg);
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-    font-weight: 600;
-    padding: 15px 20px;
-}
-
-/* Fix text colors in table */
-.table-dark {
-    background: var(--card-bg);
-    color: var(--text);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.table-dark thead th {
-    background: var(--header-bg);
-    cursor: pointer;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    color: var(--text);
-    border-bottom: 1px solid var(--border);
-    padding: 15px 12px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.table-dark thead th:hover {
-    background: var(--hover-bg);
-    color: var(--accent);
-}
-
-.table-dark tbody tr {
-    transition: all 0.2s ease;
-    color: var(--text);
-}
-
-.table-dark tbody tr:not(.hidden) {
-    background: var(--hover-bg);
-    transform: translateX(2px);
-}
-
-.table-dark tbody td {
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-    padding: 12px;
-    vertical-align: middle;
-}
-
-/* Fix specific text colors that were black */
-.table-dark .text-muted {
-    color: var(--text-muted) !important;
-}
-
-.table-dark .bg-secondary {
-    background-color: var(--metric-total) !important;
-    color: white !important;
-}
-
-/* Badge Styles */
-.badge-up {
-    background: #16a34a;
-    color: #fff;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.badge-down {
-    background: #ef4444;
-    color: #fff;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.badge-pending {
-    background: #94a3b8;
-    color: #fff;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-/* Stale data indicator - shown next to Last Check when checked_at is old */
-.stale-warning {
-    color: #f59e0b;
-    font-size: 0.75rem;
-    margin-left: 6px;
-    cursor: help;
-}
-
-/* Row flash animation when a row's data changes via polling or Check Now */
-@keyframes rowUpdateFlash {
-    0%   { background-color: rgba(0, 198, 255, 0.25); }
-    100% { background-color: transparent; }
-}
-tr.row-flash {
-    animation: rowUpdateFlash 1.2s ease-out;
-}
-
-/* Row currently being checked on-demand */
-tr.row-checking {
-    opacity: 0.6;
-}
-tr.row-checking td:first-child i.fa-network-wired {
-    display: none;
-}
-tr.row-checking td:first-child .checking-spinner {
-    display: inline-block !important;
-}
-.checking-spinner {
-    display: none;
-    margin-right: 8px;
-}
-
-/* Right-click context menu for device rows */
-#device-ctx-menu {
-    display: none;
-    position: fixed;
-    z-index: 5000;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    min-width: 190px;
-    padding: 4px 0;
-    font-size: 14px;
-}
-#device-ctx-menu .ctx-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 16px;
-    cursor: pointer;
-    color: var(--text);
-    transition: background .15s;
-}
-#device-ctx-menu .ctx-item:hover { background: rgba(0,198,255,.15); color: var(--accent); }
-#device-ctx-menu .ctx-item.disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
-#device-ctx-menu .ctx-divider { border-top: 1px solid var(--border); margin: 4px 0; }
-
-/* Clickable row hint */
-#deviceTable tbody tr { cursor: context-menu; }
-
-/* Polling indicator */
-#poll-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-#poll-indicator .poll-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #16a34a;
-    animation: pollPulse 2s ease-in-out infinite;
-}
-@keyframes pollPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-
-/* Tab Styles */
-.tab-content {
-    min-height: 500px;
-    padding: 20px 0;
-}
-
-.nav-tabs {
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 20px;
-}
-
-.nav-tabs .nav-link {
-    color: var(--text-muted);
-    background: transparent;
-    border: none;
-    border-bottom: 3px solid transparent;
-    padding: 12px 24px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    margin-bottom: -2px;
-}
-
-.nav-tabs .nav-link:hover {
-    color: var(--accent);
-    background: var(--hover-bg);
-    border-bottom-color: var(--accent);
-}
-
-.nav-tabs .nav-link.active {
-    color: var(--accent);
-    background: transparent;
-    border-bottom: 3px solid var(--accent);
-}
-
-/* Resource Content Styles */
-#resourceContent {
-    min-height: 400px;
-    background: var(--card-bg);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-}
-
-.loading-spinner {
-    text-align: center;
-    color: var(--text-muted);
-    padding: 60px 20px;
-}
-
-.loading-spinner i {
-    font-size: 2rem;
-    margin-bottom: 10px;
-    color: var(--accent);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    #main-content {
-        padding: 80px 15px 15px 15px;
-    }
-
-    .summary-card .metric {
-        font-size: 2rem;
-    }
-
-    .nav-tabs .nav-link {
-        padding: 10px 15px;
-        font-size: 0.9rem;
-    }
-}
-
-/* Filter button styles */
-.filter-btn {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    margin-left: 5px;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-
-.filter-btn:hover {
-    opacity: 0.9;
-}
-
-.filter-btn.pakistan-only {
-    background: var(--danger);
-}
-
-.filter-btn.other-countries {
-    background: var(--success);
-}
-
-.hidden {
-    display: none;
-}
-</style>
+<link rel="stylesheet" href="/css/pages/monitor.css">
 
 </head>
 
@@ -608,7 +238,7 @@ tr.row-checking td:first-child .checking-spinner {
       <div class="tab-pane fade" id="resourceTab" role="tabpanel" aria-labelledby="resource-tab">
         <div id="resourceContent">
             <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
+                <i data-lucide="loader" class="icon-lucide fa-spin"></i>
                 <p>Resource utilization data will load when you click this tab...</p>
             </div>
         </div>
@@ -619,14 +249,14 @@ tr.row-checking td:first-child .checking-spinner {
 <!-- Right-click context menu for device rows -->
 <div id="device-ctx-menu">
     <div class="ctx-item" id="ctx-check-now">
-        <i class="fas fa-bolt"></i> Check Now
+        <i data-lucide="zap" class="icon-lucide"></i> Check Now
     </div>
     <div class="ctx-divider"></div>
     <div class="ctx-item" id="ctx-view-report">
-        <i class="fas fa-file-alt"></i> View Availability Report
+        <i data-lucide="file-alt" class="icon-lucide"></i> View Availability Report
     </div>
     <div class="ctx-item" id="ctx-edit-device">
-        <i class="fas fa-edit"></i> Edit Device
+        <i data-lucide="edit" class="icon-lucide"></i> Edit Device
     </div>
 </div>
 
@@ -982,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const resourceContent = document.getElementById('resourceContent');
         resourceContent.innerHTML = `
             <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
+                <i data-lucide="loader" class="icon-lucide fa-spin"></i>
                 <p>Loading resource utilization data from resources.php...</p>
             </div>
         `;
@@ -1037,3 +667,4 @@ new MutationObserver(mutations => {
 <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

@@ -16,487 +16,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <link href="/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/css/font-aweso/css/all.min.css">
 <link rel="stylesheet" href="/css/theme.css">
-<style>
-/* ═══════════════════════════ NAC STYLES ═══════════════════════════ */
-/* Dark theme (default) */
-:root {
-  --nac-bg:        #0d1117;
-  --nac-surface:   #161b22;
-  --nac-card:      #161b22;
-  --nac-border:    #30363d;
-  --nac-accent:    #58a6ff;
-  --nac-green:     #3fb950;
-  --nac-red:       #f85149;
-  --nac-orange:    #f97316;
-  --nac-yellow:    #e3b341;
-  --nac-purple:    #a371f7;
-  --nac-text:      #e6edf3;
-  --nac-muted:     #8b949e;
-}
-/* Light theme — activated by <html data-theme="light"> */
-[data-theme="light"] {
-  --nac-bg:        #f0f4f8;
-  --nac-surface:   #ffffff;
-  --nac-card:      #ffffff;
-  --nac-border:    #d0d7de;
-  --nac-accent:    #0969da;
-  --nac-green:     #1a7f37;
-  --nac-red:       #cf222e;
-  --nac-orange:    #bc4c00;
-  --nac-yellow:    #9a6700;
-  --nac-purple:    #6639ba;
-  --nac-text:      #1f2328;
-  --nac-muted:     #57606a;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--nac-bg);
-  color: var(--nac-text);
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  transition: background .25s ease, color .25s ease;
-}
-
-/* Layout */
-#main-content { margin-left: 260px; transition: margin-left .3s; padding-top: 70px; padding: 70px 20px 20px 20px; min-height: 100vh; }
-@media(max-width:768px){ #main-content { margin-left: 0; } }
-
-/* Top bar */
-.nac-title   { font-size: 1rem; font-weight: 600; letter-spacing: .5px;
-               display: flex; align-items: center; gap: 8px; }
-.nac-title i { color: var(--nac-accent); }
-.nac-actions { display: flex; align-items: center; gap: 10px; }
-
-/* Search bar (top-right) */
-.nac-search-wrap { position: relative; }
-.nac-search-wrap input {
-  background: var(--nac-bg); border: 1px solid var(--nac-border);
-  color: var(--nac-text); padding: 6px 12px 6px 34px;
-  border-radius: 20px; font-size: .85rem; width: 280px;
-  transition: border-color .2s, width .2s;
-}
-.nac-search-wrap input:focus { outline: none; border-color: var(--nac-accent); width: 340px; }
-.nac-search-wrap .srch-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-  color: var(--nac-muted); font-size: .8rem; }
-.search-results {
-  position: absolute; top: calc(100% + 6px); right: 0; width: 520px; z-index: 1000;
-  background: var(--nac-surface); border: 1px solid var(--nac-border);
-  border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.5);
-  max-height: 400px; overflow-y: auto; display: none;
-}
-.search-results.show { display: block; }
-.sr-item {
-  padding: 10px 14px; border-bottom: 1px solid var(--nac-border);
-  cursor: pointer; transition: background .15s;
-}
-.sr-item:last-child { border-bottom: none; }
-.sr-item:hover { background: rgba(88,166,255,.07); }
-.sr-item .sr-main { font-size: .88rem; font-weight: 500; margin-bottom: 2px; }
-.sr-item .sr-sub  { font-size: .75rem; color: var(--nac-muted); }
-.sr-item .sr-badge { display: inline-block; padding: 1px 6px; border-radius: 3px;
-  font-size: .68rem; font-weight: 600; background: rgba(88,166,255,.15); color: var(--nac-accent); }
-.sr-item .sr-port { color: var(--nac-green); font-family: monospace; }
-.sr-no-result { padding: 16px; text-align: center; color: var(--nac-muted); font-size: .85rem; }
-
-/* Stat cards */
-.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-@media(min-width:1200px){ .stat-grid { grid-template-columns: repeat(6, 1fr); } }
-.stat-card.clickable { cursor:pointer; transition: all .2s; }
-.stat-card.clickable:hover { border-color:var(--nac-accent); transform:translateY(-2px); box-shadow:0 4px 14px rgba(88,166,255,.15); }
-.stat-card {
-  background: var(--nac-surface); border: 1px solid var(--nac-border);
-  border-radius: 8px; padding: 14px 16px;
-  display: flex; flex-direction: column; gap: 4px;
-}
-.stat-card .sc-label { font-size: .72rem; color: var(--nac-muted); text-transform: uppercase; letter-spacing: .5px; }
-.stat-card .sc-value { font-size: 1.6rem; font-weight: 700; line-height: 1; }
-.stat-card .sc-sub   { font-size: .72rem; color: var(--nac-muted); }
-.sc-green  { color: var(--nac-green); }
-.sc-red    { color: var(--nac-red); }
-.sc-orange { color: var(--nac-orange); }
-.sc-blue   { color: var(--nac-accent); }
-.sc-purple { color: var(--nac-purple); }
-.sc-yellow { color: var(--nac-yellow); }
-
-/* Two-column layout */
-.nac-grid { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
-
-/* Section panels */
-.nac-panel {
-  background: var(--nac-surface); border: 1px solid var(--nac-border);
-  border-radius: 8px; overflow: hidden;
-}
-.panel-header {
-  padding: 12px 16px; border-bottom: 1px solid var(--nac-border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.panel-header h3 { font-size: .88rem; font-weight: 600; display: flex; align-items: center; gap: 7px; }
-.panel-header h3 i { color: var(--nac-accent); }
-.panel-body { padding: 14px 16px; }
-
-/* Switch cards */
-.switch-list { display: flex; flex-direction: column; gap: 10px; }
-.switch-card {
-  background: var(--nac-bg); border: 1px solid var(--nac-border);
-  border-radius: 7px; padding: 12px 14px;
-  cursor: pointer; transition: border-color .2s, background .2s;
-  position: relative;
-}
-.switch-card:hover { border-color: var(--nac-accent); background: rgba(88,166,255,.04); }
-.switch-card.has-alarms { border-color: var(--nac-red); }
-.switch-card.offline    { border-color: var(--nac-border); opacity: .7; }
-
-.sc-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-.sc-status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.sc-status-dot.up    { background: var(--nac-green); box-shadow: 0 0 6px var(--nac-green); }
-.sc-status-dot.down  { background: var(--nac-red); }
-.sc-status-dot.pending { background: var(--nac-yellow); animation: pulse 1.5s infinite; }
-.sc-status-dot.error { background: var(--nac-orange); }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-.sc-hostname { font-weight: 600; font-size: .92rem; flex: 1; }
-.sc-ip       { font-size: .78rem; color: var(--nac-muted); font-family: monospace; }
-.sc-model    { font-size: .72rem; color: var(--nac-purple); background: rgba(163,113,247,.12);
-               padding: 1px 7px; border-radius: 4px; }
-
-.sc-row2 { display: flex; gap: 16px; font-size: .75rem; color: var(--nac-muted); }
-.sc-row2 span i { margin-right: 3px; }
-.sc-alarm-badge {
-  position: absolute; top: 8px; right: 10px;
-  background: var(--nac-red); color: #fff;
-  font-size: .65rem; font-weight: 700; padding: 2px 6px; border-radius: 10px;
-}
-
-.sc-portbar { display: flex; gap: 2px; flex-wrap: wrap; margin-top: 7px; }
-
-/* Card action buttons (edit/delete) */
-.sc-card-actions {
-  position: absolute; top: 8px; right: 10px;
-  display: none; gap: 4px; align-items: center;
-}
-.switch-card:hover .sc-card-actions { display: flex; }
-/* Don't show actions if alarm badge is there — shift them */
-.switch-card.has-alarms .sc-card-actions { right: 70px; }
-.sc-action-btn {
-  width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--nac-border);
-  background: var(--nac-surface); color: var(--nac-muted);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: .72rem; transition: all .15s;
-}
-.sc-action-btn:hover { background: var(--nac-accent); color: #0d1117; border-color: var(--nac-accent); }
-.sc-action-btn.sc-action-delete:hover { background: var(--nac-red); color: #fff; border-color: var(--nac-red); }
-.pb-slot {
-  width: 10px; height: 10px; border-radius: 2px;
-  transition: transform .1s;
-}
-.pb-slot:hover { transform: scale(1.5); }
-/* Green  = connected access port (cable in, link up) */
-.pb-slot.up-access  { background: var(--nac-green); }
-/* Blue   = trunk / uplink (link up, carries multiple VLANs) */
-.pb-slot.up-trunk   { background: var(--nac-accent); }
-/* Purple = LAG aggregate */
-.pb-slot.lag        { background: var(--nac-purple); }
-/* Dark grey = admin disabled (shutdown) — no cable expected */
-.pb-slot.down-admin { background: #3d4450; }
-/* Red = admin up but no link — cable unplugged or device off */
-.pb-slot.down-link  { background: var(--nac-red); opacity: 0.55; }
-
-/* Light theme overrides */
-[data-theme="light"] .pb-slot.up-access  { background: #1a7f37; }
-[data-theme="light"] .pb-slot.up-trunk   { background: #0969da; }
-[data-theme="light"] .pb-slot.lag        { background: #6639ba; }
-[data-theme="light"] .pb-slot.down-admin { background: #c8d0da; }
-[data-theme="light"] .pb-slot.down-link  { background: #cf222e; opacity: 0.5; }
-
-/* ── Switch Groups ── */
-.group-section { margin-bottom: 14px; }
-.group-header {
-  display: flex; align-items: center; gap: 9px; padding: 7px 11px;
-  border-radius: 7px 7px 0 0; background: var(--nac-bg);
-  border: 1px solid var(--nac-border); cursor: pointer; user-select: none;
-  transition: background .15s;
-}
-.group-header:hover { background: rgba(88,166,255,.05); }
-.group-color-bar { width: 3px; height: 18px; border-radius: 2px; flex-shrink: 0; }
-.group-title  { font-size: .82rem; font-weight: 700; flex: 1; }
-.group-meta   { font-size: .7rem; color: var(--nac-muted); }
-.group-chevron { color: var(--nac-muted); font-size: .72rem; transition: transform .2s; }
-.group-header.collapsed .group-chevron { transform: rotate(-90deg); }
-.group-body {
-  border: 1px solid var(--nac-border); border-top: none;
-  border-radius: 0 0 7px 7px; padding: 8px; display: flex;
-  flex-direction: column; gap: 7px;
-}
-.group-body.hidden { display: none; }
-.group-btns { display: flex; gap: 4px; }
-.group-btn {
-  background: none; border: 1px solid var(--nac-border); color: var(--nac-muted);
-  border-radius: 4px; padding: 2px 8px; font-size: .68rem; cursor: pointer; transition: all .15s;
-}
-.group-btn:hover { border-color: var(--nac-accent); color: var(--nac-accent); }
-.group-btn.del:hover { border-color: var(--nac-red); color: var(--nac-red); }
-.ungrouped-label {
-  font-size: .7rem; color: var(--nac-muted); text-transform: uppercase;
-  letter-spacing: .5px; padding: 6px 2px 5px;
-  display: flex; align-items: center; gap: 6px;
-}
-.ungrouped-label::after { content:''; flex:1; height:1px; background:var(--nac-border); }
-
-/* ── Fleet filter bar ── */
-.fleet-filter {
-  display: flex; gap: 7px; align-items: center;
-  padding: 8px 12px; border-bottom: 1px solid var(--nac-border); background: var(--nac-surface);
-}
-.fleet-filter-wrap { position: relative; flex: 1; min-width: 0; }
-.fleet-filter-wrap i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
-  color: var(--nac-muted); font-size: .72rem; pointer-events: none; }
-.fleet-filter input {
-  width: 100%; background: var(--nac-bg); border: 1px solid var(--nac-border);
-  color: var(--nac-text); padding: 5px 10px 5px 28px; border-radius: 6px; font-size: .8rem;
-}
-.fleet-filter input:focus { outline: none; border-color: var(--nac-accent); }
-.fleet-filter select {
-  background: var(--nac-bg); border: 1px solid var(--nac-border); color: var(--nac-text);
-  padding: 5px 8px; border-radius: 6px; font-size: .78rem; white-space: nowrap;
-}
-
-/* ── Global port bar legend (single, top of fleet) ── */
-.portbar-legend {
-  display: flex; gap: 14px; padding: 6px 13px;
-  border-bottom: 1px solid var(--nac-border);
-  font-size: .7rem; color: var(--nac-muted); flex-wrap: wrap; align-items: center;
-}
-.pbl-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px;
-           margin-right: 4px; vertical-align: middle; }
-
-/* ── Assign group select inside switch card ── */
-.assign-grp {
-  font-size: .68rem; background: var(--nac-surface); color: var(--nac-text);
-  border: 1px solid var(--nac-border); border-radius: 4px; padding: 2px 5px; cursor: pointer;
-}
-.alarm-feed { display: flex; flex-direction: column; gap: 6px; max-height: 480px; overflow-y: auto; }
-.alarm-item {
-  background: var(--nac-bg); border: 1px solid var(--nac-border);
-  border-left: 3px solid transparent;
-  border-radius: 6px; padding: 9px 12px;
-  font-size: .8rem;
-}
-.alarm-item.alarm-mac_moved  { border-left-color: var(--nac-orange); }
-.alarm-item.alarm-new_mac    { border-left-color: var(--nac-accent); }
-.alarm-item.alarm-vlan_change{ border-left-color: var(--nac-yellow); }
-.alarm-item.alarm-port_down  { border-left-color: var(--nac-red); }
-.alarm-item.alarm-port_up    { border-left-color: var(--nac-green); }
-.alarm-item.alarm-multi_mac  { border-left-color: var(--nac-purple); }
-.alarm-type { font-weight: 600; margin-bottom: 2px; }
-.alarm-detail { color: var(--nac-muted); font-size: .75rem; font-family: monospace; }
-.alarm-meta   { color: var(--nac-muted); font-size: .7rem; margin-top: 3px; }
-.alarm-ack-btn {
-  float: right; background: none; border: 1px solid var(--nac-border);
-  color: var(--nac-muted); font-size: .68rem; padding: 1px 6px;
-  border-radius: 3px; cursor: pointer; transition: all .15s;
-}
-.alarm-ack-btn:hover { background: var(--nac-green); color: #fff; border-color: var(--nac-green); }
-
-/* Buttons */
-.btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;
-       font-size: .82rem; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;
-       transition: all .15s; }
-.btn-primary { background: var(--nac-accent); color: #0d1117; }
-.btn-primary:hover { background: #79c0ff; }
-.btn-success { background: var(--nac-green); color: #0d1117; }
-.btn-danger  { background: var(--nac-red); color: #fff; }
-.btn-ghost   { background: transparent; border: 1px solid var(--nac-border); color: var(--nac-text); }
-.btn-ghost:hover { border-color: var(--nac-accent); color: var(--nac-accent); }
-.btn-sm { padding: 4px 10px; font-size: .75rem; }
-
-/* Modal */
-.nac-modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.7);
-  z-index: 9000; display: none; align-items: center; justify-content: center;
-}
-.nac-modal-overlay.show { display: flex; }
-.nac-modal-box {
-  background: var(--nac-surface); border: 1px solid var(--nac-border);
-  border-radius: 10px; width: 560px; max-width: 95vw; max-height: 90vh;
-  overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.6);
-}
-.nac-modal-header {
-  padding: 16px 20px; border-bottom: 1px solid var(--nac-border);
-  display: flex; justify-content: space-between; align-items: center;
-  position: sticky; top: 0; background: var(--nac-surface); z-index: 1;
-}
-.nac-modal-header h2 { font-size: 1rem; font-weight: 600; }
-.nac-modal-close { background: none; border: none; color: var(--nac-muted);
-  font-size: 1.2rem; cursor: pointer; line-height: 1; }
-.nac-modal-close:hover { color: var(--nac-text); }
-.nac-modal-body { padding: 20px; }
-.nac-modal-footer {
-  padding: 14px 20px; border-top: 1px solid var(--nac-border);
-  display: flex; justify-content: flex-end; gap: 8px;
-  position: sticky; bottom: 0; background: var(--nac-surface); z-index: 1;
-}
-
-/* Form elements inside modals */
-.form-row { margin-bottom: 14px; }
-.form-row label { display: block; font-size: .8rem; color: var(--nac-muted);
-  margin-bottom: 5px; font-weight: 500; }
-.form-row input, .form-row select, .form-row textarea {
-  width: 100%; background: var(--nac-bg); border: 1px solid var(--nac-border);
-  color: var(--nac-text); padding: 8px 10px; border-radius: 6px; font-size: .85rem;
-}
-.form-row input:focus, .form-row select:focus, .form-row textarea:focus {
-  outline: none; border-color: var(--nac-accent);
-}
-.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.form-hint { font-size: .72rem; color: var(--nac-muted); margin-top: 3px; }
-
-/* Switch detail panel (slide-over) */
-.detail-panel {
-  position: fixed; right: 0; top: 0; bottom: 0; width: 700px;
-  background: var(--nac-surface); border-left: 1px solid var(--nac-border);
-  z-index: 8000; transform: translateX(100%); transition: transform .3s ease;
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.detail-panel.open { transform: translateX(0); }
-.detail-panel-header {
-  padding: 14px 18px; border-bottom: 1px solid var(--nac-border);
-  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-}
-.detail-panel-body { flex: 1; overflow-y: auto; padding: 16px; }
-.detail-tabs { display: flex; gap: 4px; margin-bottom: 14px; }
-.dtab {
-  padding: 5px 14px; border-radius: 5px; border: none; cursor: pointer;
-  font-size: .8rem; font-weight: 500; background: transparent;
-  color: var(--nac-muted); transition: all .15s;
-}
-.dtab.active { background: rgba(88,166,255,.15); color: var(--nac-accent); }
-
-/* Port detail table */
-.port-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
-.port-table th { padding: 6px 10px; text-align: left; color: var(--nac-muted);
-  border-bottom: 1px solid var(--nac-border); font-weight: 500; font-size: .72rem; text-transform: uppercase; }
-.port-table td { padding: 6px 10px; border-bottom: 1px solid rgba(48,54,61,.5); vertical-align: middle; }
-.port-table tr:hover td { background: rgba(88,166,255,.04); }
-.port-name { font-family: monospace; font-weight: 600; color: var(--nac-accent); font-size: .82rem; }
-.vlan-badge { display: inline-block; padding: 1px 6px; border-radius: 3px;
-  background: rgba(163,113,247,.15); color: var(--nac-purple); font-size: .7rem; }
-.mac-mono { font-family: monospace; font-size: .78rem; }
-.via-trunk-badge {
-  display: inline-block; background: rgba(249,115,22,.12); color: var(--nac-orange);
-  border: 1px solid rgba(249,115,22,.25); border-radius: 4px;
-  font-size: .62rem; padding: 0px 4px; margin-left: 4px;
-  font-weight: 700; letter-spacing: .3px; vertical-align: middle; }
-.status-up   { color: var(--nac-green); }
-.status-down { color: var(--nac-red); }
-.trunk-badge { display: inline-block; padding: 1px 6px; border-radius: 3px;
-  background: rgba(88,166,255,.12); color: var(--nac-accent); font-size: .68rem; font-weight: 600; }
-
-/* SSH key helper box */
-.ssh-key-box {
-  background: var(--nac-bg); border: 1px solid var(--nac-border); border-radius: 6px;
-  padding: 12px; margin-top: 16px; font-size: .78rem;
-}
-.ssh-key-box code { font-family: monospace; background: rgba(88,166,255,.1);
-  padding: 2px 5px; border-radius: 3px; color: var(--nac-accent); }
-
-/* Responsive */
-@media (max-width: 1200px) {
-  .stat-grid { grid-template-columns: repeat(3, 1fr); }
-  .nac-grid  { grid-template-columns: 1fr; }
-  .detail-panel { width: 100%; }
-}
-.empty-state { text-align: center; padding: 40px 20px; color: var(--nac-muted); }
-.empty-state i { font-size: 2.5rem; margin-bottom: 10px; display: block; opacity: .4; }
-.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--nac-border);
-  border-top-color: var(--nac-accent); border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.poll-indicator { font-size: .72rem; color: var(--nac-muted); }
-.last-poll-time { font-family: monospace; }
-
-/* Setup guide */
-.setup-guide { background: rgba(88,166,255,.06); border: 1px solid rgba(88,166,255,.2);
-  border-radius: 8px; padding: 16px; margin-bottom: 16px; font-size: .82rem; }
-.setup-guide h4 { color: var(--nac-accent); margin-bottom: 8px; }
-.setup-step { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
-.step-num { background: var(--nac-accent); color: #0d1117; width: 18px; height: 18px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: .65rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
-.step-cmd { font-family: monospace; background: var(--nac-bg); padding: 4px 8px;
-  border-radius: 4px; color: var(--nac-green); font-size: .78rem; display: block; margin-top: 3px; }
-
-/* ── Light theme element overrides ─────────────────────────────────── */
-/* Switch cards */
-[data-theme="light"] .sc-card { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
-[data-theme="light"] .sc-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.12); }
-/* Port table rows */
-[data-theme="light"] .port-table tr:hover td { background: rgba(9,105,218,.05); }
-/* Stat cards */
-[data-theme="light"] .stat-card { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-/* Modal inputs & selects */
-[data-theme="light"] .nac-modal input,
-[data-theme="light"] .nac-modal select,
-[data-theme="light"] .nac-modal textarea {
-  background: #f6f8fa; color: #1f2328; border-color: #d0d7de;
-}
-[data-theme="light"] .nac-modal input:focus,
-[data-theme="light"] .nac-modal select:focus {
-  background: #fff; border-color: #0969da;
-  box-shadow: 0 0 0 3px rgba(9,105,218,.15);
-}
-/* Detail panel tabs */
-[data-theme="light"] .dtab.active { border-bottom-color: var(--nac-accent); color: var(--nac-accent); }
-[data-theme="light"] .dtab:hover  { color: var(--nac-text); }
-/* Setup guide code blocks */
-[data-theme="light"] .step-cmd { background: #f6f8fa; color: var(--nac-green); }
-/* Mac mono font */
-[data-theme="light"] .mac-mono { color: var(--nac-text); }
-/* Alarm items */
-[data-theme="light"] .alarm-item { border-left-color: var(--nac-border); }
-/* VLAN badge */
-[data-theme="light"] .vlan-badge { background: rgba(102,57,186,.1); }
-/* Search bar in topbar */
-[data-theme="light"] .nac-search-wrap input {
-  background: #f6f8fa; color: #1f2328; border-color: #d0d7de;
-}
-/* Debug panel */
-.dbg-section { margin-bottom: 18px; }
-.dbg-section h5 { font-size: .78rem; text-transform: uppercase; letter-spacing: .5px;
-  color: var(--nac-muted); margin-bottom: 6px; border-bottom: 1px solid var(--nac-border); padding-bottom: 4px; }
-.dbg-pre { background: var(--nac-bg); border: 1px solid var(--nac-border); border-radius: 6px;
-  padding: 10px; font-family: monospace; font-size: .72rem; white-space: pre-wrap; word-break: break-all;
-  max-height: 260px; overflow-y: auto; color: var(--nac-text); line-height: 1.5; }
-.dbg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-.dbg-kv { font-size: .78rem; padding: 4px 0; }
-.dbg-kv strong { color: var(--nac-accent); }
-.dbg-ok  { color: var(--nac-green); font-weight: 700; }
-.dbg-err { color: var(--nac-red);   font-weight: 700; }
-.dbg-warn{ color: var(--nac-yellow);font-weight: 700; }
-.dbg-cmd-row { display: flex; gap: 8px; margin-bottom: 10px; }
-.dbg-cmd-row input { flex: 1; background: var(--nac-bg); border: 1px solid var(--nac-border);
-  color: var(--nac-text); padding: 6px 10px; border-radius: 6px; font-family: monospace; font-size: .82rem; }
-.dbg-cmd-row input:focus { outline: none; border-color: var(--nac-accent); }
-.dbg-output-tabs { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
-.dbg-otab { background: var(--nac-bg); border: 1px solid var(--nac-border); color: var(--nac-muted);
-  padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: .75rem; transition: all .15s; }
-.dbg-otab.active, .dbg-otab:hover { border-color: var(--nac-accent); color: var(--nac-accent); }
-.dbg-stat-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
-.dbg-stat { text-align: center; min-width: 60px; }
-.dbg-stat .val { font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
-.dbg-stat .lbl { font-size: .68rem; color: var(--nac-muted); text-transform: uppercase; letter-spacing: .4px; }
-.topbar .fa-bell { display: inline-block !important; opacity:1 !important; }
-.topbar .fa-bell, .topbar .fas.fa-bell { display: inline-block !important; opacity:1 !important; visibility:visible !important; }
-.topbar .fa-bell,.topbar .fas.fa-bell,.topbar [class*="fa-bell"]{display:inline-block!important;opacity:1!important;visibility:visible!important;color:var(--text)!important;}
-/* ── Fix topbar & Font Awesome inside NAC ── */
-.topbar, .topbar * { box-sizing: content-box !important; margin: initial !important; padding: initial !important; }
-.topbar .fa, .topbar .fas, .topbar .far, .topbar .fab { font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
-.fas, .far, .fab { font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
-.btn .fas, .btn .far, .btn .fab { display: inline-block !important; }
-/* ── Fix topbar & Font Awesome inside NAC ── */
-.topbar, .topbar * { box-sizing: content-box !important; margin: initial !important; padding: initial !important; }
-.topbar .fa, .topbar .fas, .topbar .far, .topbar .fab { font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
-.fas, .far, .fab { font-family: "Font Awesome 6 Free" !important; font-weight: 900 !important; }
-.btn .fas, .btn .far, .btn .fab { display: inline-block !important; }
-</style>
+<link rel="stylesheet" href="/css/pages/nac.css">
 </head>
 <body>
 <?php include __DIR__ . '/../../topbar.php'; include __DIR__ . '/../../sidebar.php'; ?>
@@ -516,18 +36,18 @@ body {
         <div style="display:flex;gap:8px;align-items:center;">
           <!-- Search bar -->
           <div class="nac-search-wrap">
-            <i class="fas fa-search srch-icon"></i>
+            <i data-lucide="search" class="icon-lucide srch-icon"></i>
             <input type="text" id="globalSearch" placeholder="Search IP, MAC, hostname…" autocomplete="off">
             <div class="search-results" id="searchResults"></div>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="pollAll()">
-            <i class="fas fa-sync-alt"></i> Poll All
+            <i data-lucide="refresh-ccw" class="icon-lucide -alt"></i> Poll All
           </button>
           <button class="btn btn-ghost btn-sm" onclick="openGroupManager()" style="border-color:rgba(88,166,255,.4)">
             <i class="fas fa-layer-group" style="color:var(--nac-accent)"></i> Groups
           </button>
           <button class="btn btn-primary btn-sm" onclick="openAddSwitch()">
-            <i class="fas fa-plus"></i> Add Switch
+            <i data-lucide="plus" class="icon-lucide"></i> Add Switch
           </button>
         </div>
       </div>
@@ -551,7 +71,7 @@ body {
         <!-- Switch fleet panel -->
         <div class="nac-panel">
           <div class="panel-header">
-            <h3><i class="fas fa-server"></i> Switch Fleet</h3>
+            <h3><i data-lucide="server" class="icon-lucide"></i> Switch Fleet</h3>
             <div style="display:flex;gap:8px;align-items:center;">
               <span class="poll-indicator" id="lastPollInfo"></span>
             </div>
@@ -568,7 +88,7 @@ body {
           <!-- Filter bar -->
           <div class="fleet-filter">
             <div class="fleet-filter-wrap">
-              <i class="fas fa-filter"></i>
+              <i data-lucide="filter" class="icon-lucide"></i>
               <input type="text" id="fleetFilter" placeholder="Filter by name, IP, model…" oninput="filterFleet()">
             </div>
             <select id="fleetStatusFilter" onchange="filterFleet()">
@@ -583,7 +103,7 @@ body {
           <div class="panel-body" style="padding:10px 12px">
             <div id="switchList" class="switch-list">
               <div class="empty-state">
-                <i class="fas fa-network-wired"></i>
+                <i data-lucide="network" class="icon-lucide"></i>
                 <div style="font-size:.9rem;margin-bottom:6px;">No switches configured</div>
                 <div style="font-size:.8rem;">Click <strong>Add Switch</strong> to get started</div>
               </div>
@@ -632,7 +152,7 @@ body {
       <div id="analyticsPanel" style="display:none;margin-top:20px;">
         <div class="nac-panel">
           <div class="panel-header" style="gap:12px">
-            <h3><i class="fas fa-chart-network"></i> Network Analytics</h3>
+            <h3><i data-lucide="chart-network" class="icon-lucide"></i> Network Analytics</h3>
             <div style="display:flex;gap:6px;margin-left:auto">
               <button class="btn btn-ghost btn-sm" id="analytics-tab-topo"    onclick="showAnalyticsTab('topo')"    style="font-size:.75rem">🔗 Topology</button>
               <button class="btn btn-ghost btn-sm" id="analytics-tab-vlan"    onclick="showAnalyticsTab('vlan')"    style="font-size:.75rem">🏷 VLANs</button>
@@ -684,7 +204,7 @@ body {
             <!-- Unknown upstream tab -->
             <div id="analytics-unknown" style="display:none">
               <div style="font-size:.75rem;color:var(--nac-orange);margin-bottom:10px">
-                <i class="fas fa-exclamation-triangle"></i>
+                <i data-lucide="triangle-alert" class="icon-lucide"></i>
                 MACs on trunk ports with no known upstream switch — these devices are behind
                 switches you haven't added to Janusyet. Consider adding those switches.
               </div>
@@ -702,7 +222,7 @@ body {
             <!-- Multi-MAC / rogue port tab -->
             <div id="analytics-rogue" style="display:none">
               <div style="font-size:.75rem;color:var(--nac-orange);margin-bottom:10px">
-                <i class="fas fa-exclamation-triangle"></i>
+                <i data-lucide="triangle-alert" class="icon-lucide"></i>
                 Access ports with 2+ MACs — possible unmanaged switches, hubs, or DHCP pools
               </div>
               <div id="analytics-rogue-content"></div>
@@ -752,7 +272,7 @@ body {
         </div>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="btn btn-primary btn-sm" onclick="submitGroupSave()" id="grpSaveBtn">
-            <i class="fas fa-save"></i> Save Group
+            <i data-lucide="save" class="icon-lucide"></i> Save Group
           </button>
           <button class="btn btn-ghost btn-sm" onclick="resetGroupForm()" id="grpCancelBtn" style="display:none">
             Cancel Edit
@@ -864,14 +384,14 @@ body {
       </div>
 
       <div class="ssh-key-box" id="sw-ssh-hint" style="display:none">
-        <strong style="color:var(--nac-accent);"><i class="fas fa-info-circle"></i> SSH Method</strong><br>
+        <strong style="color:var(--nac-accent);"><i data-lucide="info" class="icon-lucide"></i> SSH Method</strong><br>
         Password auth is used via <code>expect</code>. If not installed:<br>
         <code>sudo apt install expect</code><br>
         Or use key-based auth: generate key with <code>ssh-keygen -t ed25519 -f /etc/janus/.ssh/nac_key -N ""</code>
         then add pubkey to switch.
       </div>
       <div class="ssh-key-box" id="sw-telnet-hint" style="display:none;border-color:rgba(249,115,22,.3);background:rgba(249,115,22,.06)">
-        <strong style="color:var(--nac-orange);"><i class="fas fa-exclamation-triangle"></i> Telnet — Legacy Mode</strong><br>
+        <strong style="color:var(--nac-orange);"><i data-lucide="triangle-alert" class="icon-lucide"></i> Telnet — Legacy Mode</strong><br>
         Telnet transmits credentials in plaintext. Use only on isolated management networks.<br>
         Requires <code>expect</code>: <code>sudo apt install expect</code><br>
         The switch must have <strong>line vty</strong> telnet access configured and optionally an
@@ -902,7 +422,7 @@ body {
           <span id="sw-snmp-test-result" style="margin-left:10px;font-size:.8rem"></span>
         </div>
         <div class="ssh-key-box" style="border-color:rgba(88,166,255,.3);background:rgba(88,166,255,.06)">
-          <strong style="color:var(--nac-accent);"><i class="fas fa-info-circle"></i> SNMP — Agentless Mode</strong><br>
+          <strong style="color:var(--nac-accent);"><i data-lucide="info" class="icon-lucide"></i> SNMP — Agentless Mode</strong><br>
           No SSH credentials needed. The switch must have SNMP v2c enabled.<br>
           Cisco: <code>snmp-server community public ro</code><br>
           JunOS: <code>set snmp community public authorization read-only</code>
@@ -913,7 +433,7 @@ body {
     <div class="nac-modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('addSwitchModal')">Cancel</button>
       <button class="btn btn-primary" onclick="submitAddSwitch()" id="addSwitchBtn">
-        <i class="fas fa-plus"></i> Add Switch
+        <i data-lucide="plus" class="icon-lucide"></i> Add Switch
       </button>
     </div>
   </div>
@@ -1042,7 +562,7 @@ body {
     <div class="nac-modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('editSwitchModal')">Cancel</button>
       <button class="btn btn-primary" onclick="submitEditSwitch()" id="editSwitchBtn">
-        <i class="fas fa-save"></i> Save Changes
+        <i data-lucide="save" class="icon-lucide"></i> Save Changes
       </button>
     </div>
   </div>
@@ -1073,7 +593,7 @@ body {
     <div class="nac-modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('deleteSwitchModal')">Cancel</button>
       <button class="btn btn-danger" onclick="submitDeleteSwitch()" id="deleteSwitchBtn">
-        <i class="fas fa-trash-alt"></i> Delete Permanently
+        <i data-lucide="trash" class="icon-lucide -alt"></i> Delete Permanently
       </button>
     </div>
   </div>
@@ -1088,7 +608,7 @@ body {
     </div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-ghost btn-sm" id="dp-poll-btn" onclick="pollCurrentSwitch()">
-        <i class="fas fa-sync-alt"></i> Poll Now
+        <i data-lucide="refresh-ccw" class="icon-lucide -alt"></i> Poll Now
       </button>
       <button class="btn btn-ghost btn-sm" onclick="closeDetailPanel()">&times; Close</button>
     </div>
@@ -1096,13 +616,13 @@ body {
   <div class="detail-panel-body">
     <div class="detail-tabs">
       <button class="dtab active" onclick="showDTab('ports',this)">
-        <i class="fas fa-ethernet"></i> Ports
+        <i data-lucide="ethernet" class="icon-lucide"></i> Ports
       </button>
       <button class="dtab" onclick="showDTab('macs',this)">
-        <i class="fas fa-fingerprint"></i> MACs
+        <i data-lucide="fingerprint" class="icon-lucide"></i> MACs
       </button>
       <button class="dtab" onclick="showDTab('events',this)">
-        <i class="fas fa-bell"></i> Events
+        <i data-lucide="bell" class="icon-lucide"></i> Events
       </button>
     </div>
     <div id="dp-ports"></div>
@@ -1349,10 +869,10 @@ function buildSwitchCard(sw) {
     ${hasAlarms ? `<div class="sc-alarm-badge">${sw.alarms} alarm${sw.alarms>1?'s':''}</div>` : ''}
     <div class="sc-card-actions" onclick="event.stopPropagation()">
       <button class="sc-action-btn" title="Edit" onclick="openEditSwitch(${sw.id})">
-        <i class="fas fa-pencil-alt"></i>
+        <i data-lucide="pencil" class="icon-lucide"></i>
       </button>
       <button class="sc-action-btn sc-action-delete" title="Delete" onclick="confirmDeleteSwitch(${sw.id},'${escHtml(sw.hostname)}')">
-        <i class="fas fa-trash-alt"></i>
+        <i data-lucide="trash" class="icon-lucide -alt"></i>
       </button>
     </div>
     <div class="sc-row1">
@@ -1363,19 +883,19 @@ function buildSwitchCard(sw) {
       ${sw.model ? `<div class="sc-model">${escHtml(sw.model)}</div>` : ''}
     </div>
     <div class="sc-row2">
-      <span><i class="fas fa-ethernet"></i>${sw.port_count||0} ports</span>
-      <span><i class="fas fa-fingerprint"></i>${sw.mac_count||0} MACs</span>
+      <span><i data-lucide="ethernet" class="icon-lucide"></i>${sw.port_count||0} ports</span>
+      <span><i data-lucide="fingerprint" class="icon-lucide"></i>${sw.mac_count||0} MACs</span>
       <span title="${sw.poll_duration ? sw.poll_duration+'s poll time' : ''}">
-        <i class="fas fa-clock"></i>${lastPoll}${sw.poll_duration ? ` <span style="color:var(--nac-muted);font-size:.65rem">(${sw.poll_duration}s)</span>` : ''}
+        <i data-lucide="clock" class="icon-lucide"></i>${lastPoll}${sw.poll_duration ? ` <span style="color:var(--nac-muted);font-size:.65rem">(${sw.poll_duration}s)</span>` : ''}
       </span>
       ${sw.connection_type === 'telnet'
-        ? `<span style="color:var(--nac-orange);font-size:.68rem;background:rgba(249,115,22,.1);padding:1px 5px;border-radius:3px"><i class="fas fa-terminal"></i> Telnet</span>`
+        ? `<span style="color:var(--nac-orange);font-size:.68rem;background:rgba(249,115,22,.1);padding:1px 5px;border-radius:3px"><i data-lucide="terminal" class="icon-lucide"></i> Telnet</span>`
         : sw.connection_type === 'snmp'
-          ? `<span style="color:var(--nac-accent);font-size:.68rem;background:rgba(88,166,255,.1);padding:1px 5px;border-radius:3px"><i class="fas fa-satellite-dish"></i> SNMP</span>`
-          : `<span style="color:var(--nac-green);font-size:.68rem;background:rgba(63,185,80,.1);padding:1px 5px;border-radius:3px"><i class="fas fa-lock"></i> SSH</span>`}
+          ? `<span style="color:var(--nac-accent);font-size:.68rem;background:rgba(88,166,255,.1);padding:1px 5px;border-radius:3px"><i data-lucide="satellite" class="icon-lucide"></i> SNMP</span>`
+          : `<span style="color:var(--nac-green);font-size:.68rem;background:rgba(63,185,80,.1);padding:1px 5px;border-radius:3px"><i data-lucide="lock" class="icon-lucide"></i> SSH</span>`}
       ${sw.poll_status==='error'
         ? `<span style="color:var(--nac-red)" title="${escHtml(sw.poll_error||'')}">
-             <i class="fas fa-exclamation-triangle"></i>${escHtml((sw.poll_error||'').substring(0,45))}
+             <i data-lucide="triangle-alert" class="icon-lucide"></i>${escHtml((sw.poll_error||'').substring(0,45))}
            </span>`
         : ''}
     </div>
@@ -1389,7 +909,7 @@ function renderSwitches(switches) {
 
   if (!switches.length) {
     list.innerHTML = `<div class="empty-state">
-      <i class="fas fa-network-wired"></i>
+      <i data-lucide="network" class="icon-lucide"></i>
       <div style="font-size:.9rem;margin-bottom:6px;">No switches configured</div>
       <div style="font-size:.8rem;">Click <strong>Add Switch</strong> to get started</div>
     </div>`;
@@ -1432,13 +952,13 @@ function renderSwitches(switches) {
         </div>
         <div class="group-btns" onclick="event.stopPropagation()">
           <button class="group-btn" title="Poll all switches in this group"
-            onclick="pollGroup(${g.id},this)"><i class="fas fa-sync-alt"></i></button>
+            onclick="pollGroup(${g.id},this)"><i data-lucide="refresh-ccw" class="icon-lucide -alt"></i></button>
           <button class="group-btn" title="Edit group"
-            onclick="editGroupInline(${g.id})"><i class="fas fa-pencil-alt"></i></button>
+            onclick="editGroupInline(${g.id})"><i data-lucide="pencil" class="icon-lucide"></i></button>
           <button class="group-btn del" title="Delete group (switches kept, ungrouped)"
-            onclick="deleteGroup(${g.id},'${escHtml(g.name)}')"><i class="fas fa-trash-alt"></i></button>
+            onclick="deleteGroup(${g.id},'${escHtml(g.name)}')"><i data-lucide="trash" class="icon-lucide -alt"></i></button>
         </div>
-        <i class="fas fa-chevron-down group-chevron"></i>
+        <i data-lucide="chevron-down" class="icon-lucide group-chevron"></i>
       </div>
       <div class="group-body ${collapsed?'hidden':''}" id="grp-body-${g.id}">
         ${members.length
@@ -1473,7 +993,7 @@ async function pollGroup(groupId, btn) {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:10px;height:10px;border-width:1px"></div>';
   btn.disabled = true;
   await nacAjax('poll_group', { group_id: groupId });
-  btn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+  btn.innerHTML = '<i data-lucide="refresh-ccw" class="icon-lucide -alt"></i>';
   btn.disabled = false;
   loadDashboard();
 }
@@ -1603,8 +1123,8 @@ async function refreshGroupManagerList() {
         ${g.notes ? `<div style="font-size:.72rem;color:var(--nac-muted)">${escHtml(g.notes)}</div>` : ''}
       </div>
       <span style="font-size:.72rem;color:var(--nac-muted);white-space:nowrap">${g.switch_count} switch${g.switch_count!=1?'es':''}</span>
-      <button class="group-btn" onclick="editGroupInline(${g.id})" title="Edit"><i class="fas fa-pencil-alt"></i></button>
-      <button class="group-btn del" onclick="deleteGroup(${g.id},'${escHtml(g.name)}')" title="Delete"><i class="fas fa-trash-alt"></i></button>
+      <button class="group-btn" onclick="editGroupInline(${g.id})" title="Edit"><i data-lucide="pencil" class="icon-lucide"></i></button>
+      <button class="group-btn del" onclick="deleteGroup(${g.id},'${escHtml(g.name)}')" title="Delete"><i data-lucide="trash" class="icon-lucide -alt"></i></button>
     </div>`).join('');
 }
 
@@ -1617,7 +1137,7 @@ function resetGroupForm() {
   document.getElementById('groupFormTitle').innerHTML =
     '<i class="fas fa-plus-circle" style="color:var(--nac-accent);margin-right:5px"></i>New Group';
   document.getElementById('grpCancelBtn').style.display = 'none';
-  document.getElementById('grpSaveBtn').innerHTML = '<i class="fas fa-save"></i> Save Group';
+  document.getElementById('grpSaveBtn').innerHTML = '<i data-lucide="save" class="icon-lucide"></i> Save Group';
 }
 
 function editGroupInline(id) {
@@ -1633,7 +1153,7 @@ function editGroupInline(id) {
   document.getElementById('groupFormTitle').innerHTML =
     `<i class="fas fa-pencil-alt" style="color:var(--nac-accent);margin-right:5px"></i>Editing: ${escHtml(g.name)}`;
   document.getElementById('grpCancelBtn').style.display = '';
-  document.getElementById('grpSaveBtn').innerHTML = '<i class="fas fa-save"></i> Update Group';
+  document.getElementById('grpSaveBtn').innerHTML = '<i data-lucide="save" class="icon-lucide"></i> Update Group';
   document.getElementById('grp-name').focus();
 }
 
@@ -1648,7 +1168,7 @@ async function submitGroupSave() {
   btn.innerHTML = '<div class="spinner" style="display:inline-block;width:12px;height:12px;border-width:2px"></div>';
   btn.disabled = true;
   const r = await nacAjax('group_save', { id, name, color, notes, sort_order: sort });
-  btn.innerHTML = id > 0 ? '<i class="fas fa-save"></i> Update Group' : '<i class="fas fa-save"></i> Save Group';
+  btn.innerHTML = id > 0 ? '<i data-lucide="save" class="icon-lucide"></i> Update Group' : '<i data-lucide="save" class="icon-lucide"></i> Save Group';
   btn.disabled = false;
   if (r && r.ok) { resetGroupForm(); await refreshGroupManagerList(); loadDashboard(); }
   else alert('Error: ' + (r?.error || 'Unknown'));
@@ -1701,7 +1221,7 @@ function renderDetailPorts(ports) {
   const lagMembers= ports.filter(p => p.port_type === 'lag-member');
 
   if (!physicalPorts.length && !irbPorts.length) {
-    document.getElementById('dp-ports').innerHTML = '<div class="empty-state"><i class="fas fa-ethernet"></i><div>No ports discovered yet — poll the switch first</div></div>';
+    document.getElementById('dp-ports').innerHTML = '<div class="empty-state"><i data-lucide="ethernet" class="icon-lucide"></i><div>No ports discovered yet — poll the switch first</div></div>';
     return;
   }
 
@@ -1743,7 +1263,7 @@ function renderDetailPorts(ports) {
       <td style="text-align:center;">${p.live_macs||0}</td>
       <td style="font-size:.72rem;min-width:110px" id="${bwId}">
         ${canBw
-          ? `<span style="color:var(--nac-muted);font-size:.68rem"><i class="fas fa-spinner fa-spin"></i></span>`
+          ? `<span style="color:var(--nac-muted);font-size:.68rem"><i data-lucide="loader" class="icon-lucide fa-spin"></i></span>`
           : `<span style="color:var(--nac-border)">—</span>`}
       </td>
       <td style="color:var(--nac-muted);font-size:.75rem;">${escHtml(desc)}</td>
@@ -1778,7 +1298,7 @@ function naturalSort(a, b) {
 
 function renderDetailMacs(macs) {
   if (!macs.length) {
-    document.getElementById('dp-macs').innerHTML = '<div class="empty-state"><i class="fas fa-fingerprint"></i><div>No MACs tracked yet — poll the switch first</div></div>';
+    document.getElementById('dp-macs').innerHTML = '<div class="empty-state"><i data-lucide="fingerprint" class="icon-lucide"></i><div>No MACs tracked yet — poll the switch first</div></div>';
     return;
   }
 
@@ -1889,7 +1409,7 @@ function oui(mac) {
 function renderDetailEvents(events) {
   const el = document.getElementById('dp-events');
   if (!events.length) {
-    el.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><div>No events recorded yet</div></div>';
+    el.innerHTML = '<div class="empty-state"><i data-lucide="history" class="icon-lucide"></i><div>No events recorded yet</div></div>';
     return;
   }
 
@@ -1971,7 +1491,7 @@ async function pollCurrentSwitch() {
   btn.innerHTML = '<div class="spinner"></div> Polling…';
   btn.disabled = true;
   const r = await nacAjax('poll_switch', { id: currentSwitchId });
-  btn.innerHTML = '<i class="fas fa-sync-alt"></i> Poll Now';
+  btn.innerHTML = '<i data-lucide="refresh-ccw" class="icon-lucide -alt"></i> Poll Now';
   btn.disabled = false;
   if (r && r.ok) {
     loadDetailPanel(currentSwitchId);
@@ -1986,7 +1506,7 @@ async function pollAll() {
   btn.innerHTML = '<div class="spinner"></div> Polling…';
   btn.disabled = true;
   await nacAjax('poll_all');
-  btn.innerHTML = '<i class="fas fa-sync-alt"></i> Poll All';
+  btn.innerHTML = '<i data-lucide="refresh-ccw" class="icon-lucide -alt"></i> Poll All';
   btn.disabled = false;
   loadDashboard();
 }
@@ -2162,7 +1682,7 @@ async function submitEditSwitch() {
   }
 
   const r = await nacAjax('edit_switch', payload);
-  btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+  btn.innerHTML = '<i data-lucide="save" class="icon-lucide"></i> Save Changes';
   btn.disabled = false;
 
   if (r && r.ok) {
@@ -2193,7 +1713,7 @@ async function submitDeleteSwitch() {
   btn.disabled = true;
 
   const r = await nacAjax('delete_switch', { id: pendingDeleteId });
-  btn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+  btn.innerHTML = '<i data-lucide="trash" class="icon-lucide -alt"></i> Delete Permanently';
   btn.disabled = false;
 
   if (r && r.ok) {
@@ -2244,7 +1764,7 @@ async function submitAddSwitch() {
   }
   const r = await nacAjax('add_switch', payload);
 
-  btn.innerHTML = '<i class="fas fa-plus"></i> Add Switch';
+  btn.innerHTML = '<i data-lucide="plus" class="icon-lucide"></i> Add Switch';
   btn.disabled = false;
 
   if (r && r.ok) {
@@ -2304,7 +1824,7 @@ async function doSearch(q) {
 
     const trunkWarning = isTrunk
       ? `<span style="color:var(--nac-yellow);font-size:.7rem;margin-left:6px">
-           <i class="fas fa-code-branch"></i> via trunk
+           <i data-lucide="code-branch" class="icon-lucide"></i> via trunk
          </span>
          <button onclick="event.stopPropagation();traceMac('${escHtml(r.mac||'')}',this)"
            style="font-size:.68rem;padding:1px 7px;margin-left:6px;background:rgba(59,130,246,.15);
@@ -2391,7 +1911,7 @@ async function openMacDetailModal(mac, r) {
         <div style="font-size:.85rem">
           ${r.nac_port ? `<span class="port-name">${escHtml(r.nac_port)}</span>` : '—'}
           ${r.nac_vlan ? `<span class="vlan-badge" style="margin-left:6px">${escHtml(r.nac_vlan)}</span>` : ''}
-          ${isTrunk ? `<span style="display:block;margin-top:3px;font-size:.7rem;color:var(--nac-yellow)"><i class="fas fa-code-branch"></i> via trunk</span>` : ''}
+          ${isTrunk ? `<span style="display:block;margin-top:3px;font-size:.7rem;color:var(--nac-yellow)"><i data-lucide="code-branch" class="icon-lucide"></i> via trunk</span>` : ''}
         </div>
       </div>
       ${r.vendor || r.oui_vendor ? `
@@ -2412,12 +1932,12 @@ async function openMacDetailModal(mac, r) {
       <button class="md-tab active" data-tab="history"
         style="padding:10px 18px;background:none;border:none;border-bottom:2px solid var(--nac-accent);
                color:var(--nac-accent);font-size:.82rem;font-weight:600;cursor:pointer">
-        <i class="fas fa-history"></i> Event History
+        <i data-lucide="history" class="icon-lucide"></i> Event History
       </button>
       <button class="md-tab" data-tab="ipam"
         style="padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;
                color:var(--nac-muted);font-size:.82rem;cursor:pointer">
-        <i class="fas fa-database"></i> IPAM Alerts
+        <i data-lucide="database" class="icon-lucide"></i> IPAM Alerts
       </button>
     </div>
 
@@ -2441,7 +1961,7 @@ async function openMacDetailModal(mac, r) {
       <button onclick="openSwitchByName('${escHtml(r.nac_switch_name)}');document.getElementById('macDetailModal').remove()"
         style="font-size:.78rem;padding:6px 14px;background:rgba(34,197,94,.15);color:var(--nac-green);
                border:1px solid rgba(34,197,94,.3);border-radius:6px;cursor:pointer">
-        <i class="fas fa-server"></i> Go to Switch
+        <i data-lucide="server" class="icon-lucide"></i> Go to Switch
       </button>` : ''}
       <button onclick="document.getElementById('macDetailModal').remove()"
         style="font-size:.78rem;padding:6px 14px;background:rgba(139,148,158,.12);color:var(--nac-muted);
@@ -2871,7 +2391,7 @@ const _bwCache = {};
 async function loadPortBw(switchId, portName, cellId) {
   const cell = document.getElementById(cellId);
   if (!cell) return;
-  cell.innerHTML = '<span style="color:var(--nac-muted)"><i class="fas fa-spinner fa-spin"></i></span>';
+  cell.innerHTML = '<span style="color:var(--nac-muted)"><i data-lucide="loader" class="icon-lucide fa-spin"></i></span>';
   const data = await nacAjax('port_bw', { switch_id: switchId, port_name: portName });
 
   // Cache result for port bar hover
@@ -2881,7 +2401,7 @@ async function loadPortBw(switchId, portName, cellId) {
   if (!data) { cell.innerHTML = '<span style="color:var(--nac-red);font-size:.68rem">err</span>'; return; }
   if (!data.ready) {
     cell.innerHTML = `<span style="color:var(--nac-muted);font-size:.68rem" title="${escHtml(data.message||'')}">
-      <i class="fas fa-clock"></i> pending</span>`;
+      <i data-lucide="clock" class="icon-lucide"></i> pending</span>`;
     return;
   }
   cell.innerHTML = _buildBwCell(data);
@@ -2949,7 +2469,7 @@ function loadAllPortBw(switchId, ports) {
     // Position near cursor
     tip.style.display = 'block';
     tip.innerHTML = `<div style="color:var(--nac-accent);font-weight:600;margin-bottom:4px;font-family:monospace">${escHtml(port)}</div>
-      <div style="color:var(--nac-muted);font-size:.68rem"><i class="fas fa-spinner fa-spin"></i> loading…</div>`;
+      <div style="color:var(--nac-muted);font-size:.68rem"><i data-lucide="loader" class="icon-lucide fa-spin"></i> loading…</div>`;
 
     const cacheKey = `${sw}::${port}`;
     let data = _bwCache[cacheKey];

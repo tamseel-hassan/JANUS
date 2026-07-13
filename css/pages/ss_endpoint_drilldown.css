@@ -1,0 +1,13 @@
+/* ============================================================
+   SS Endpoint Drilldown Styles - Midnight Violet Theme
+   ============================================================ */
+
+.detail-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 16px; flex-wrap: wrap; }
+.detail-tab-btn {
+    font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-mid); background: none; border: none;
+    padding: 9px 6px; margin-right: 16px; border-bottom: 2px solid transparent; cursor: pointer;
+}
+.detail-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.detail-pane { display: none; }
+.detail-pane.active { display: block; }

@@ -1,0 +1,57 @@
+/* ============================================================
+   Manage Styles - Midnight Violet Theme
+   ============================================================ */
+
+/* ==== NO FLICKER ==== */
+.modal, .modal *, .modal-backdrop { transition: none !important; }
+.modal.show { display: block !important; }
+.form-label { color: var(--text) !important; }
+#main-content { transition: margin-left .3s ease; }
+.custom-model { display: none; }
+
+.table code {
+    background: rgba(178, 132, 190, 0.1);
+    padding: 2px 6px;
+    border-radius: 8px; /* Section 5: nested */
+    color: var(--accent) !important;
+}
+[data-theme="light"] .table code {
+    background: rgba(178, 132, 190, 0.05);
+}
+
+/* Type badges */
+.type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px; /* Section 5: nested */
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.type-badge.firewall { background: var(--metric-down); color: white; }
+.type-badge.router { background: var(--accent); color: white; }
+.type-badge.switch { background: var(--metric-up); color: white; }
+.type-badge.server { background: var(--accent); color: white; }
+.type-badge.iot { background: var(--metric-warning); color: white; }
+.type-badge.wireless { background: var(--accent); color: white; }
+.type-badge.loadbalancer { background: #ec4899; color: white; }
+.type-badge.storage { background: var(--accent); color: white; }
+.type-badge.others { background: var(--border); color: white; }
+
+/* Summary cards */
+.summary-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px; /* Section 5: primary */
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.summary-card h6 {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+.summary-card .count {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+}

@@ -19,3 +19,7 @@ uploads/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Dependencies and temp
+node_modules/
+scratch/

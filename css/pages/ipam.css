@@ -1,0 +1,269 @@
+/* ============================================================
+   IPAM Styles - Midnight Violet Theme
+   ============================================================ */
+
+#main-content {
+  margin-left: 260px;
+  transition: margin-left 0.3s;
+  padding-top: 70px;
+}
+@media (max-width: 768px) {
+  #main-content {
+    margin-left: 0;
+  }
+}
+
+/* Row states */
+.row-active {
+  background: rgba(74, 222, 128, 0.07) !important;
+} /* var(--metric-up) */
+.row-inactive {
+  background: rgba(156, 163, 175, 0.07) !important;
+} /* var(--text-muted) */
+.row-reserved {
+  background: rgba(234, 179, 8, 0.07) !important;
+}
+.row-spoofing {
+  background: rgba(248, 113, 113, 0.2) !important;
+  animation: blink-row 1.1s infinite;
+} /* var(--metric-down) */
+.row-changed {
+  background: rgba(178, 132, 190, 0.12) !important;
+  animation: pulse-row 2s infinite;
+} /* var(--accent) */
+.row-unacked {
+  border-left: 3px solid var(--metric-down) !important;
+}
+@keyframes blink-row {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.38;
+  }
+}
+@keyframes pulse-row {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Stats */
+.stat-card {
+  
+  cursor: default;
+  
+}
+.stat-card:hover {
+  transform: none;
+  box-shadow: none;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Subnet pills */
+.sn-pill {
+  cursor: pointer;
+  border-radius: 16px;
+  transition: 0.2s;
+  border: 1px solid transparent;
+}
+.sn-pill:hover {
+  border-color: var(--accent);
+  background: rgba(178, 132, 190, 0.08);
+}
+.sn-pill.active-sn {
+  border-color: var(--accent) !important;
+  background: rgba(178, 132, 190, 0.14);
+}
+.sn-iface-badge {
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 16px;
+}
+
+/* Countdown */
+.cdring {
+  width: 36px;
+  height: 36px;
+}
+.cdring circle {
+  fill: none;
+  stroke-width: 3;
+}
+.cdring .bg {
+  stroke: var(--border);
+}
+.cdring .fill {
+  stroke: var(--metric-up);
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: stroke-dashoffset 1s linear;
+}
+[data-theme="dark"] .cdring .bg {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+/* Util bars */
+.util-bar {
+  height: 6px;
+  border-radius: 16px;
+  background: var(--border);
+  overflow: hidden;
+}
+.util-fill {
+  height: 100%;
+  transition: width 0.7s;
+}
+[data-theme="dark"] .util-bar {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Table */
+.ip-cell {
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+}
+.mac-cell {
+  font-family: "Courier New", monospace;
+  font-size: 0.82rem;
+}
+.note-cell {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ping-btn {
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 16px;
+  cursor: pointer;
+  user-select: none;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Toast */
+#toastStack {
+  position: fixed;
+  bottom: 1.4rem;
+  right: 1.4rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.35rem;
+}
+
+/* Subnet panel */
+.subnet-row {
+  border-left: 3px solid var(--accent);
+  transition: 0.2s;
+}
+.subnet-row:hover {
+  background: rgba(178, 132, 190, 0.05);
+}
+.subnet-scan-badge {
+  font-size: 0.68rem;
+}
+
+/* Scan progress */
+.scan-bar {
+  height: 4px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Card headers */
+.ch-dark {
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+/* History drilldown */
+.timeline-item {
+  position: relative;
+  padding: 0 0 18px 32px;
+  border-left: 2px solid rgba(178, 132, 190, 0.25);
+}
+.timeline-item:last-child {
+  padding-bottom: 0;
+  border-left: 2px solid transparent;
+}
+.timeline-dot {
+  position: absolute;
+  left: -9px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: #fff;
+}
+.tl-spoof {
+  background: var(--metric-down);
+}
+.tl-mac {
+  background: var(--metric-warning);
+}
+.tl-offline {
+  background: var(--text-muted);
+}
+.tl-online {
+  background: var(--metric-up);
+}
+.tl-new {
+  background: var(--accent);
+}
+.tl-info {
+  background: var(--accent);
+}
+.timeline-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.timeline-note {
+  font-size: 0.82rem;
+}
+.tl-acked {
+  opacity: 0.55;
+}
+
+/* Clickable alert rows */
+.row-changed td,
+.row-spoofing td {
+  cursor: pointer;
+}
+.row-changed:hover,
+.row-spoofing:hover {
+  filter: brightness(1.1);
+}
+.drill-hint {
+  font-size: 0.65rem;
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* Improved subnet pills */
+.sn-pill .sn-bar {
+  height: 3px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+  overflow: hidden;
+}
+.sn-pill .sn-bar-fill {
+  height: 100%;
+  border-radius: 16px;
+  transition: width 0.5s;
+}

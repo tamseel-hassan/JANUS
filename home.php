@@ -72,11 +72,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <!-- Local Chart.js -->
 <script src="js/chart.js"></script>
 <script src="js/chartjs-plugin-datalabels.min.js"></script>
-<style>
-.chart-container { position: relative; height: 300px; width: 100%; }
-.card-header.bg-danger, .card-header.bg-warning { color: #fff; }
-.metric { font-size: 2rem; font-weight: bold; }
-</style>
+<link rel="stylesheet" href="css/pages/home.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -96,25 +92,25 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card text-center p-3">
-            <div class="metric metric-total" style="color: purple;"><?= $total ?></div>
+            <div class="metric metric-total"><?= $total ?></div>
             <div class="label">Total Devices</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3">
-            <div class="metric metric-up" style="color: green;"><?= $up ?></div>
+            <div class="metric metric-up"><?= $up ?></div>
             <div class="label">Up</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3">
-            <div class="metric metric-down" style="color: red;"><?= $down ?></div>
+            <div class="metric metric-down"><?= $down ?></div>
             <div class="label">Down</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3">
-            <div class="metric metric-uptime" style="color: blue;"><?= $uptime ?>%</div>
+            <div class="metric metric-uptime"><?= $uptime ?>%</div>
             <div class="label">Network Uptime</div>
         </div>
     </div>
@@ -149,21 +145,21 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card border-primary text-center p-3">
-            <i class="fas fa-tasks fa-2x mb-2 text-primary"></i>
+            <i data-lucide="tasks" class="icon-lucide fa-2x mb-2 text-primary"></i>
             <div class="metric metric-up"><?= $my_tasks_count ?></div>
             <div class="label">My Assigned Tasks</div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card border-info text-center p-3">
-            <i class="fas fa-ticket-alt fa-2x mb-2 text-info"></i>
+            <i data-lucide="ticket-alt" class="icon-lucide fa-2x mb-2 text-info"></i>
             <div class="metric metric-total"><?= $open_tickets ?></div>
             <div class="label">Open Tickets</div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card border-danger text-center p-3">
-            <i class="fas fa-exclamation-triangle fa-2x mb-2 text-danger"></i>
+            <i data-lucide="triangle-alert" class="icon-lucide fa-2x mb-2 text-danger"></i>
             <div class="metric metric-down"><?= $overdue_tickets ?></div>
             <div class="label">Overdue Tickets</div>
         </div>

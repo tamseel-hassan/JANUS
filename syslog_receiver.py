@@ -8,10 +8,10 @@ import logging
 import os
 
 # Configuration Constants
-DB_HOST = 'localhost'
-DB_USER = 'janus_user'
-DB_PASS = 'Janus@DB@2026'
-DB_NAME = 'alogin'
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_USER = os.environ.get('DB_USER', 'janus_user')
+DB_PASS = os.environ.get('DB_PASS', 'Janus@DB@2026')
+DB_NAME = os.environ.get('DB_NAME', 'alogin')
 LOG_DIR = '/var/log/janus_siem'
 SYSLOG_HOST = '0.0.0.0'
 SYSLOG_PORT = 514

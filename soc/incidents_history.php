@@ -29,18 +29,13 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        #main-content{margin-left:250px;transition:margin-left 0.3s;padding-top:70px}.sidebar.collapsed ~ #main-content{margin-left:78px}
-        .modal-content{background:var(--card-bg);color:var(--text)}.modal-header{border-bottom:1px solid var(--border)}.modal-footer{border-top:1px solid var(--border)}
-        .badge-severity{padding:4px 8px;border-radius:4px}.severity-low{background:#6c757d;color:#fff}.severity-medium{background:#ffc107;color:#000}.severity-high{background:#fd7e14;color:#fff}.severity-critical{background:#dc3545;color:#fff}
-        .badge-status{padding:4px 8px;border-radius:4px}.status-open{background:#0d6efd}.status-in_progress{background:#fd7e14}.status-resolved{background:#198754}.status-closed{background:#6c757d}
-    </style>
+    <link rel="stylesheet" href="/css/pages/incidents_history.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../topbar.php'; ?>
 <?php include __DIR__ . '/../sidebar.php'; ?>
 <div id="main-content"><div class="container-fluid">
-    <h2 class="mb-4"><i class="fas fa-history me-2"></i> Incident History</h2>
+    <h2 class="mb-4"><i data-lucide="history" class="icon-lucide me-2"></i> Incident History</h2>
     <input type="text" id="tableSearch" class="form-control mb-3" placeholder="Search..." style="max-width:300px;">
     <?php if (mysqli_num_rows($incidents) == 0): ?>
         <div class="alert alert-info">No incidents found.</div>
@@ -57,7 +52,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <td><?= date('Y-m-d H:i', strtotime($inc['created_at'])) ?></td>
             <td><?= htmlspecialchars($inc['reporter']) ?></td>
             <td><?= htmlspecialchars($inc['assignee'] ?? 'Unassigned') ?></td>
-            <td><button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?= $inc['id'] ?>"><i class="fas fa-eye"></i> View</button>
+            <td><button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?= $inc['id'] ?>"><i data-lucide="eye" class="icon-lucide"></i> View</button>
                 <div class="modal fade" id="viewModal<?= $inc['id'] ?>" tabindex="-1">
                     <div class="modal-dialog modal-xl"><div class="modal-content">
                         <div class="modal-header"><h5>#<?= $inc['id'] ?> - <?= htmlspecialchars($inc['title']) ?></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>

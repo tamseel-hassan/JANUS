@@ -150,80 +150,7 @@ $icon_sets = getIconSets($icons_dir);
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/font-awesome/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/theme.css">
-    <style>
-        body.loggedin { font-family:'Segoe UI',sans-serif; margin:0; background:var(--bg); color:var(--text); }
-        #main-content { margin-left:260px; padding:80px 30px 40px; min-height:100vh; transition:margin-left .3s; }
-        .sidebar.collapsed ~ #main-content { margin-left:80px; }
-
-        .upload-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 28px;
-            margin-bottom: 28px;
-        }
-        .upload-card h5 { margin-bottom: 20px; font-weight: 700; }
-
-        /* Drop zones */
-        .drop-zone {
-            border: 2px dashed var(--border);
-            border-radius: 10px;
-            padding: 30px 16px;
-            text-align: center;
-            cursor: pointer;
-            transition: all .2s;
-            background: transparent;
-            position: relative;
-        }
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--accent);
-            background: rgba(0,198,255,.06);
-        }
-        .drop-zone input[type=file] {
-            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-        }
-        .drop-zone .dz-icon { font-size: 2rem; margin-bottom: 8px; }
-        .drop-zone .dz-icon.up   { color: #00ff7f; }
-        .drop-zone .dz-icon.down { color: #ff4c4c; }
-        .drop-zone .dz-label { font-size: .85rem; color: var(--text-muted); }
-        .drop-zone .dz-preview { display:none; flex-direction:column; align-items:center; gap:6px; }
-        .drop-zone .dz-preview img { width:56px; height:56px; object-fit:contain; }
-        .drop-zone.has-file .dz-icon,
-        .drop-zone.has-file .dz-label { display:none; }
-        .drop-zone.has-file .dz-preview { display:flex; }
-
-        /* Icon set grid */
-        .icon-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 16px;
-        }
-        .icon-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px 10px 12px;
-            text-align: center;
-            position: relative;
-            transition: box-shadow .2s;
-        }
-        .icon-card:hover { box-shadow: 0 4px 18px rgba(0,198,255,.15); }
-        .icon-card .ic-name { font-weight: 700; font-size: .9rem; margin-bottom: 10px; }
-        .icon-card .ic-pair { display:flex; justify-content:center; gap:12px; margin-bottom:10px; }
-        .icon-card .ic-pair img { width:36px; height:36px; object-fit:contain; }
-        .icon-card .ic-pair .ic-wrap { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--text-muted); }
-        .icon-card .ic-pair .up-img   { filter: drop-shadow(0 0 4px #00ff7f); }
-        .icon-card .ic-pair .down-img { filter: drop-shadow(0 0 4px #ff4c4c); }
-        .icon-card .ic-missing { font-size:.75rem; color:#ef4444; margin-top:4px; }
-        .icon-card .badge-builtin { position:absolute; top:8px; left:8px; font-size:.65rem; background:var(--accent); color:#000; border-radius:4px; padding:2px 6px; font-weight:700; }
-        .icon-card .btn-delete { width:100%; font-size:.8rem; }
-
-        /* Form control overrides */
-        .form-control, .form-select { background:var(--card-bg); border-color:var(--border); color:var(--text); }
-        .form-control:focus, .form-select:focus { border-color:var(--accent); box-shadow:0 0 0 .2rem rgba(0,198,255,.25); background:var(--card-bg); color:var(--text); }
-        .form-label { color:var(--text); }
-        .input-group-text { background:var(--card-bg); border-color:var(--border); color:var(--text-muted); }
-    </style>
+    <link rel="stylesheet" href="/css/pages/icon_manager.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -241,11 +168,11 @@ $icon_sets = getIconSets($icons_dir);
     <!-- Page header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2><i class="fas fa-icons"></i> Icon Set Manager</h2>
+            <h2><i data-lucide="icons" class="icon-lucide"></i> Icon Set Manager</h2>
             <p class="text-muted mb-0">Upload custom UP/DOWN icon pairs for use on topology maps</p>
         </div>
         <a href="maps.php" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-map-marked-alt"></i> Back to Maps
+            <i data-lucide="map-marked-alt" class="icon-lucide"></i> Back to Maps
         </a>
     </div>
 
@@ -258,7 +185,7 @@ $icon_sets = getIconSets($icons_dir);
 
     <!-- ── Upload form ──────────────────────────────────────────────────── -->
     <div class="upload-card">
-        <h5><i class="fas fa-upload"></i> Upload New Icon Set</h5>
+        <h5><i data-lucide="upload" class="icon-lucide"></i> Upload New Icon Set</h5>
 
         <form method="post" enctype="multipart/form-data" id="upload-form">
             <input type="hidden" name="action" value="upload">
@@ -268,7 +195,7 @@ $icon_sets = getIconSets($icons_dir);
                 <div class="col-md-3">
                     <label class="form-label fw-semibold">Icon Set Name <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                        <span class="input-group-text"><i data-lucide="tag" class="icon-lucide"></i></span>
                         <input type="text" name="set_name" id="set_name" class="form-control"
                                placeholder="e.g. vsat, vpn, cloud"
                                pattern="[a-zA-Z0-9_-]+"
@@ -283,7 +210,7 @@ $icon_sets = getIconSets($icons_dir);
                     <label class="form-label fw-semibold"><span style="color:#00ff7f">● UP</span> Icon (device online)</label>
                     <div class="drop-zone" id="dz-up">
                         <input type="file" name="icon_up" id="file-up" accept="image/*">
-                        <div class="dz-icon up"><i class="fas fa-arrow-up"></i></div>
+                        <div class="dz-icon up"><i data-lucide="arrow-up" class="icon-lucide"></i></div>
                         <div class="dz-label">Click or drag &amp; drop<br><small>PNG recommended · max 512 KB</small></div>
                         <div class="dz-preview">
                             <img id="preview-up" src="" alt="UP preview">
@@ -297,7 +224,7 @@ $icon_sets = getIconSets($icons_dir);
                     <label class="form-label fw-semibold"><span style="color:#ff4c4c">● DOWN</span> Icon (device offline)</label>
                     <div class="drop-zone" id="dz-down">
                         <input type="file" name="icon_down" id="file-down" accept="image/*">
-                        <div class="dz-icon down"><i class="fas fa-arrow-down"></i></div>
+                        <div class="dz-icon down"><i data-lucide="arrow-down" class="icon-lucide"></i></div>
                         <div class="dz-label">Click or drag &amp; drop<br><small>PNG recommended · max 512 KB</small></div>
                         <div class="dz-preview">
                             <img id="preview-down" src="" alt="DOWN preview">
@@ -309,7 +236,7 @@ $icon_sets = getIconSets($icons_dir);
                 <!-- Submit -->
                 <div class="col-md-1 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100" style="height:44px">
-                        <i class="fas fa-upload"></i>
+                        <i data-lucide="upload" class="icon-lucide"></i>
                     </button>
                 </div>
             </div>
@@ -325,7 +252,7 @@ $icon_sets = getIconSets($icons_dir);
     <!-- ── Existing icon sets ────────────────────────────────────────────── -->
     <div class="upload-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0"><i class="fas fa-layer-group"></i> Installed Icon Sets
+            <h5 class="mb-0"><i data-lucide="layers" class="icon-lucide"></i> Installed Icon Sets
                 <span class="badge bg-secondary ms-2"><?= count($icon_sets) ?></span>
             </h5>
             <small class="text-muted">Right-click any device on the map to apply an icon set</small>
@@ -360,7 +287,7 @@ $icon_sets = getIconSets($icons_dir);
                              alt="DOWN" onerror="this.src='images/icons/maps/nodedown.png'">
                         <?php else: ?>
                         <img src="images/icons/maps/nodedown.png" alt="DOWN (missing)" style="opacity:.3">
-                        <div class="ic-missing"><i class="fas fa-exclamation-triangle"></i> missing</div>
+                        <div class="ic-missing"><i data-lucide="triangle-alert" class="icon-lucide"></i> missing</div>
                         <?php endif; ?>
                         <span>DOWN</span>
                     </div>
@@ -371,12 +298,12 @@ $icon_sets = getIconSets($icons_dir);
                     <input type="hidden" name="action"   value="delete">
                     <input type="hidden" name="set_name" value="<?= htmlspecialchars($set['id']) ?>">
                     <button type="submit" class="btn btn-outline-danger btn-sm btn-delete">
-                        <i class="fas fa-trash"></i> Delete
+                        <i data-lucide="trash" class="icon-lucide"></i> Delete
                     </button>
                 </form>
                 <?php else: ?>
                 <button class="btn btn-outline-secondary btn-sm btn-delete" disabled>
-                    <i class="fas fa-lock"></i> Protected
+                    <i data-lucide="lock" class="icon-lucide"></i> Protected
                 </button>
                 <?php endif; ?>
             </div>
@@ -387,11 +314,11 @@ $icon_sets = getIconSets($icons_dir);
 
     <!-- ── Usage guide ───────────────────────────────────────────────────── -->
     <div class="upload-card">
-        <h5><i class="fas fa-info-circle"></i> How It Works</h5>
+        <h5><i data-lucide="info" class="icon-lucide"></i> How It Works</h5>
         <div class="row g-3">
             <div class="col-md-4">
                 <div class="p-3 rounded" style="background:rgba(0,198,255,.07);border:1px solid rgba(0,198,255,.2);">
-                    <div class="fw-bold mb-1"><i class="fas fa-upload text-info"></i> 1. Upload</div>
+                    <div class="fw-bold mb-1"><i data-lucide="upload" class="icon-lucide text-info"></i> 1. Upload</div>
                     <small>Give your icon set a short name (e.g. <code>cloud</code>), then upload the UP and DOWN PNG images.</small>
                 </div>
             </div>
@@ -475,3 +402,4 @@ document.getElementById('set_name').addEventListener('input', updateFilenamePrev
 </script>
 </body>
 </html>
+

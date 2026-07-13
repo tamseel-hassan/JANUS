@@ -1,0 +1,39 @@
+/* ============================================================
+   Responder Styles - Midnight Violet Theme
+   ============================================================ */
+
+.container-fluid { padding-top: 78px; }
+
+#main-content {
+    margin-left: 260px;
+    padding: 20px 24px;
+}
+
+.sidebar.collapsed ~ #main-content { margin-left: 78px; }
+
+.response-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px; /* Section 5: primary component */
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.action-box {
+    background: linear-gradient(135deg, rgba(178, 132, 190, 0.1), rgba(178, 132, 190, 0.05));
+    border: 2px solid var(--accent);
+    border-radius: 16px; /* Section 5: primary component */
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.fw-badge {
+    padding: 6px 12px;
+    border-radius: 8px; /* Section 5: nested element */
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+@media (max-width: 992px) {
+    #main-content { margin-left: 78px; }
+}

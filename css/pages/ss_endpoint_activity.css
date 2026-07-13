@@ -1,0 +1,9 @@
+/* ============================================================
+   SS Endpoint Activity Styles - Midnight Violet Theme
+   ============================================================ */
+
+.endpoint-row { cursor: pointer; }
+.endpoint-row:hover { background: var(--row-hover); }
+.online-dot { width: 8px; height: 8px; border-radius: 8px; display: inline-block; margin-right: 7px; }
+.online-dot.on { background: var(--metric-up); box-shadow: none; }
+.online-dot.off { background: var(--text-muted); }

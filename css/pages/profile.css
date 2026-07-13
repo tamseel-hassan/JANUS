@@ -1,0 +1,101 @@
+/* ============================================================
+   Profile Styles - Midnight Violet Theme
+   ============================================================ */
+
+.password-strength {
+    height: 5px;
+    margin-top: 5px;
+    background-color: var(--border);
+    border-radius: 8px; /* Section 5: nested */
+    overflow: hidden;
+}
+.password-strength-bar {
+    height: 100%;
+    width: 0;
+    transition: width 0.3s, background-color 0.3s;
+}
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+.password-requirements {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+.requirement {
+    display: flex;
+    align-items: center;
+    margin-bottom: 3px;
+}
+.requirement i {
+    margin-right: 5px;
+    width: 16px;
+    text-align: center;
+}
+.requirement.valid {
+    color: var(--metric-up);
+}
+.requirement.invalid {
+    color: var(--metric-down);
+}
+.toast {
+    z-index: 9999;
+}
+body {
+    background: linear-gradient(180deg, var(--bg) 0%, var(--card-bg) 100%);
+    color: var(--text);
+    min-height: 100vh;
+}
+.navbar {
+    background-color: var(--card-bg) !important;
+    border-bottom: 1px solid var(--border);
+}
+.table {
+    color: var(--text);
+}
+.table th {
+    background-color: var(--bg);
+    border-color: var(--border);
+}
+.table td {
+    border-color: var(--border);
+}
+.form-control {
+    background-color: rgba(0,0,0,0.2);
+    color: var(--text);
+    border-color: var(--border);
+    border-radius: 8px; /* Section 5: nested element */
+}
+.form-control:focus {
+    background-color: rgba(0,0,0,0.3);
+    color: var(--text);
+    border-color: var(--accent);
+}
+.btn-outline-light {
+    border-color: var(--border);
+    color: var(--text);
+}
+.btn-outline-light:hover {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+.modal-content {
+    
+    
+     /* Section 5: primary component */
+    
+}
+.modal-header {
+    border-bottom-
+}
+.modal-footer {
+    border-top-
+}

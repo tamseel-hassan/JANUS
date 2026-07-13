@@ -153,37 +153,7 @@ mysqli_close($con);
 $chartId = 'modalChart' . md5($ip . time());
 ?>
 
-<style>
-.drill-stat-box {
-    background: rgba(59, 130, 246, 0.05);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    margin-bottom: 15px;
-}
-.drill-stat-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #3b82f6;
-}
-.drill-stat-label {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-}
-.connection-row {
-    padding: 12px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9rem;
-}
-.connection-row:hover {
-    background: var(--surface-hover);
-}
-</style>
+<link rel="stylesheet" href="/css/pages/ss_ip_drilldown.css">
 
 <div class="row g-3 mb-3">
     <div class="col-md-3">
@@ -213,13 +183,13 @@ $chartId = 'modalChart' . md5($ip . time());
 </div>
 
 <div class="alert alert-info mb-3">
-    <strong><i class="fas fa-info-circle"></i> IP Address:</strong> <code><?= htmlspecialchars($ip) ?></code><br>
-    <strong><i class="fas fa-clock"></i> Period:</strong> <?= date('M d, H:i', strtotime($start)) ?> → <?= date('M d, H:i', strtotime($end)) ?>
+    <strong><i data-lucide="info" class="icon-lucide"></i> IP Address:</strong> <code><?= htmlspecialchars($ip) ?></code><br>
+    <strong><i data-lucide="clock" class="icon-lucide"></i> Period:</strong> <?= date('M d, H:i', strtotime($start)) ?> → <?= date('M d, H:i', strtotime($end)) ?>
 </div>
 
 <?php if (!empty($timeline)): ?>
 <div class="mb-4">
-    <h6><i class="fas fa-chart-line"></i> Activity Timeline</h6>
+    <h6><i data-lucide="line-chart" class="icon-lucide"></i> Activity Timeline</h6>
     <div style="height: 200px;">
         <canvas id="<?= $chartId ?>"></canvas>
     </div>
@@ -257,7 +227,7 @@ $chartId = 'modalChart' . md5($ip . time());
                 <div><small><?= date('M d, H:i:s', strtotime($evt['time'])) ?></small></div>
                 <div>
                     <code><?= htmlspecialchars($evt['src']) ?>:<?= $evt['srcport'] ?></code>
-                    <i class="fas fa-arrow-right mx-1"></i>
+                    <i data-lucide="arrow-right" class="icon-lucide mx-1"></i>
                     <code><?= htmlspecialchars($evt['dst']) ?>:<?= $evt['dstport'] ?></code>
                 </div>
                 <div><small><strong><?= htmlspecialchars($evt['service']) ?></strong></small></div>

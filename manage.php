@@ -243,57 +243,7 @@ while($row = mysqli_fetch_assoc($type_result)) {
     <!-- Local Font Awesome CSS -->
     <link href="css/font-awesome/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/theme.css">
-<style>
-        /* ==== NO FLICKER ==== */
-        .modal, .modal *, .modal-backdrop { transition: none !important; }
-        .modal.show { display: block !important; }
-        .form-label { color: var(--text) !important; }
-        #main-content { transition: margin-left .3s ease; }
-        .custom-model { display: none; }
-        .table code {
-            background: rgba(0,0,0,0.1);
-            padding: 2px 6px;
-            border-radius: 3px;
-            color: var(--text) !important;
-        }
-        [data-theme="light"] .table code {
-            background: rgba(0,0,0,0.05);
-        }
-        /* Type badges */
-        .type-badge {            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .type-badge.firewall { background: #ef4444; color: white; }
-        .type-badge.router { background: #3b82f6; color: white; }
-        .type-badge.switch { background: #10b981; color: white; }
-        .type-badge.server { background: #8b5cf6; color: white; }
-        .type-badge.iot { background: #f59e0b; color: white; }
-        .type-badge.wireless { background: #06b6d4; color: white; }
-        .type-badge.loadbalancer { background: #ec4899; color: white; }
-        .type-badge.storage { background: #6366f1; color: white; }
-        .type-badge.others { background: #6b7280; color: white; }
-        /* Summary cards */
-        .summary-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        .summary-card h6 {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            margin-bottom: 8px;
-        }
-        .summary-card .count {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
-    </style>
+<link rel="stylesheet" href="/css/pages/manage.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -324,7 +274,7 @@ while($row = mysqli_fetch_assoc($type_result)) {
 <?php endif; ?>
 <div class="row mb-4">
     <div class="col-12">
-        <h2><i class="fas fa-network-wired"></i> Network Infrastructure Management</h2>
+        <h2><i data-lucide="network" class="icon-lucide"></i> Network Infrastructure Management</h2>
         <p class="text-muted">Manage all network devices, appliances, and interconnections</p>
     </div>
 </div>
@@ -355,13 +305,13 @@ while($row = mysqli_fetch_assoc($type_result)) {
         <div class="card">
             <div class="card-body">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
-                    <i class="fas fa-plus"></i> Add New Device
+                    <i data-lucide="plus" class="icon-lucide"></i> Add New Device
                 </button>
                 <button class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#addLinkModal">
-                    <i class="fas fa-link"></i> Add New Link
+                    <i data-lucide="link" class="icon-lucide"></i> Add New Link
                 </button>
                 <button class="btn btn-secondary ms-2" onclick="exportToCSV()">
-                    <i class="fas fa-file-export"></i> Export Inventory
+                    <i data-lucide="file-export" class="icon-lucide"></i> Export Inventory
                 </button>
             </div>
         </div>
@@ -411,10 +361,10 @@ while($row = mysqli_fetch_assoc($type_result)) {
                                 <td><?= htmlspecialchars($d['email']) ?></td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editDevice<?= $d['id'] ?>" title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                        <i data-lucide="edit" class="icon-lucide"></i>
                                     </button>
                                     <a href="?delete_device=<?= $d['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this device? All associated data will be removed.')" title="Delete">
-                                        <i class="fas fa-trash"></i>
+                                        <i data-lucide="trash" class="icon-lucide"></i>
                                     </a>
                                 </td>
                             </tr>
@@ -449,10 +399,10 @@ while($row = mysqli_fetch_assoc($type_result)) {
                                 <td><?= htmlspecialchars($l['to_name']) ?></td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editLink<?= $l['id'] ?>" title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                        <i data-lucide="edit" class="icon-lucide"></i>
                                     </button>
                                     <a href="?delete_link=<?= $l['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this link?')" title="Delete">
-                                        <i class="fas fa-trash"></i>
+                                        <i data-lucide="trash" class="icon-lucide"></i>
                                     </a>
                                 </td>
                             </tr>
@@ -559,7 +509,7 @@ while($row = mysqli_fetch_assoc($type_result)) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Device</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="icon-lucide"></i> Update Device</button>
                 </div>
             </div>
         </form>
@@ -615,7 +565,7 @@ while ($l = mysqli_fetch_assoc($links_result)):
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Link</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="icon-lucide"></i> Update Link</button>
                 </div>
             </div>
         </form>
@@ -706,7 +656,7 @@ while ($l = mysqli_fetch_assoc($links_result)):
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Device</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="plus" class="icon-lucide"></i> Add Device</button>
                 </div>
             </div>
         </form>
@@ -752,7 +702,7 @@ while ($l = mysqli_fetch_assoc($links_result)):
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Link</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="plus" class="icon-lucide"></i> Add Link</button>
                 </div>
             </div>
         </form>
@@ -860,3 +810,4 @@ document.querySelectorAll('.toast').forEach(t => new bootstrap.Toast(t).show());
 <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

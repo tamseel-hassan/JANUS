@@ -1,0 +1,125 @@
+/* ============================================================
+   SS Mitre Drilldown Styles - Midnight Violet Theme
+   ============================================================ */
+
+.mitre-wrap {
+    --m-bg:        var(--card-bg);
+    --m-bg2:       var(--bg-secondary);
+    --m-border:    var(--border);
+    --m-text:      var(--text);
+    --m-muted:     var(--text-muted);
+    --m-hover:     var(--row-hover);
+    --m-divider:   var(--line);
+}
+
+/* ── Header block ── */
+.mitre-wrap .mitre-header {
+    background: linear-gradient(135deg, rgba(248,113,113,.12), rgba(248,113,113,.04));
+    border-left: 4px solid var(--metric-down);
+    padding: 15px;
+    border-radius: 8px; /* Section 5: nested */
+    margin-bottom: 20px;
+    color: var(--m-text);
+}
+
+/* ── Stat boxes ── */
+.mitre-wrap .mitre-stat {
+    background: var(--m-bg);
+    border: 1px solid var(--m-border);
+    border-radius: 8px; /* Section 5: nested */
+    padding: 15px;
+    text-align: center;
+    color: var(--m-text);
+}
+.mitre-wrap .mitre-stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--metric-down);
+}
+
+/* ── Event rows ── */
+.mitre-wrap .event-row {
+    border-bottom: 1px solid var(--m-divider);
+    padding: 10px;
+    color: var(--m-text);
+}
+.mitre-wrap .event-row:hover { background: var(--m-hover); }
+.mitre-wrap .event-row small.text-muted { color: var(--m-muted) !important; }
+
+/* ── Recommendation items ── */
+.mitre-wrap .recommendation-item {
+    padding: 8px 12px;
+    background: rgba(74,222,128,.1);
+    border-left: 3px solid var(--metric-up);
+    margin-bottom: 8px;
+    border-radius: 8px; /* Section 5: nested */
+    color: var(--m-text);
+}
+
+/* ── NAV TABS – the main fix for black blocks ── */
+.mitre-wrap .nav-tabs {
+    border-bottom: 1px solid var(--m-border);
+}
+.mitre-wrap .nav-tabs .nav-link {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px 8px 0 0; /* Section 5: nested */
+    color: var(--m-muted);
+    padding: 8px 14px;
+    font-size: 0.875rem;
+    transition: color .2s, background .2s;
+}
+.mitre-wrap .nav-tabs .nav-link:hover {
+    color: var(--m-text);
+    background: var(--m-hover);
+    border-color: var(--m-border) var(--m-border) transparent;
+}
+.mitre-wrap .nav-tabs .nav-link.active {
+    background: var(--m-bg);
+    color: var(--m-text);
+    border-color: var(--m-border) var(--m-border) var(--m-bg);
+    font-weight: 600;
+}
+
+/* ── Tables ── */
+.mitre-wrap .table {
+    color: var(--m-text);
+    border-color: var(--m-border);
+}
+.mitre-wrap .table th {
+    background: var(--m-bg2);
+    color: var(--m-muted);
+    border-color: var(--m-border);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.mitre-wrap .table td {
+    border-color: var(--m-border);
+    vertical-align: middle;
+}
+.mitre-wrap .table-hover tbody tr:hover {
+    background: var(--m-hover);
+    color: var(--m-text);
+}
+/* kill Bootstrap's built-in dark table overrides inside the modal */
+.mitre-wrap .table > :not(caption) > * > * {
+    background-color: transparent;
+}
+
+/* ── Tab content pane background ── */
+.mitre-wrap .tab-content {
+    background: var(--m-bg);
+    border: 1px solid var(--m-border);
+    border-top: none;
+    border-radius: 0 0 8px 8px; /* Section 5: nested */
+    padding: 12px;
+}
+
+/* ── code tags ── */
+.mitre-wrap code {
+    color: var(--accent);
+    background: rgba(178, 132, 190, 0.1);
+    padding: 2px 6px;
+    border-radius: 8px; /* Section 5: nested */
+}

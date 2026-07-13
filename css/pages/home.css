@@ -1,0 +1,17 @@
+/* ============================================================
+   Home Styles - Midnight Violet Theme
+   ============================================================ */
+
+.chart-container { position: relative; height: 300px; width: 100%; }
+
+.card-header.bg-warning {
+    background: rgba(250, 204, 21, 0.15) !important;
+    color: var(--metric-warning) !important;
+    border-bottom: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.metric { font-size: 2rem; font-weight: bold; }
+.metric-total { color: var(--accent) !important; }
+.metric-up { color: var(--metric-up) !important; }
+.metric-down { color: var(--metric-down) !important; }
+.metric-uptime { color: #60a5fa !important; }

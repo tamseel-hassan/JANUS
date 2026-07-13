@@ -157,38 +157,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        #main-content { transition: margin-left 0.3s ease; }
-        .role-badge { padding:.3em .8em; border-radius:20px; font-size:.78rem; font-weight:600; }
-        .password-strength { margin-top:4px; height:4px; background:var(--border); border-radius:3px; }
-        .password-strength-bar { height:100%; width:0; border-radius:3px; transition:width .3s,background .3s; }
-        .toast-container { position:fixed; top:72px; right:20px; z-index:9999; min-width:300px; }
-
-        /* Permission matrix */
-        .perm-matrix { font-size:.78rem; }
-        .perm-matrix th { font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); padding:8px 12px; }
-        .perm-matrix td { padding:6px 12px; vertical-align:middle; }
-        .perm-matrix .cat-header td { background:rgba(59,130,246,.07); font-weight:700; font-size:.8rem; color:var(--accent); border-top:1px solid var(--border); }
-        .perm-check   { color:#22c55e; font-size:1rem; }
-        .perm-cross   { color:rgba(150,150,150,.3); font-size:.9rem; }
-        .perm-matrix .page-name { font-family:monospace; font-size:.75rem; color:var(--text-muted); }
-
-        /* Role info cards */
-        .role-card { border-radius:10px; padding:16px; border:1px solid var(--border); background:var(--card-bg); height:100%; }
-        .role-card h6 { font-weight:700; margin-bottom:4px; }
-        .role-card small { color:var(--text-muted); }
-
-        /* User table */
-        .user-table td { vertical-align:middle; }
-        .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; }
-        .status-dot.active   { background:#22c55e; box-shadow:0 0 4px #22c55e; }
-        .status-dot.disabled { background:#6b7280; }
-
-        .form-label { color:var(--text) !important; }
-        .nav-tabs .nav-link { color:var(--text-muted); border:none; border-bottom:2px solid transparent; padding:.6rem 1rem; }
-        .nav-tabs .nav-link.active { color:var(--accent); border-bottom-color:var(--accent); background:transparent; font-weight:600; }
-        .nav-tabs { border-bottom:1px solid var(--border); margin-bottom:20px; }
-    </style>
+    <link rel="stylesheet" href="/css/pages/users.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -199,7 +168,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <div class="toast-container">
     <div class="toast show align-items-center text-white bg-<?= $toast['type'] ?> border-0 shadow" role="alert">
         <div class="d-flex">
-            <div class="toast-body"><i class="fas fa-<?= $toast['type']==='success'?'check-circle':($toast['type']==='warning'?'exclamation-triangle':'times-circle') ?> me-2"></i><?= htmlspecialchars($toast['message']) ?></div>
+            <div class="toast-body"><i data-lucide="circle" class="icon-lucide fas fa-<?= $toast['type']==='success'?'check-circle':($toast['type']==='warning'?'exclamation-triangle':'times-circle') ?> me-2"></i><?= htmlspecialchars($toast['message']) ?></div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     </div>
@@ -209,16 +178,16 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <div id="main-content" style="padding:80px 24px 32px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-0"><i class="fas fa-users-cog me-2 text-primary"></i>User Management</h4>
+            <h4 class="mb-0"><i data-lucide="user" class="icon-lucide s-cog me-2 text-primary"></i>User Management</h4>
             <small class="text-muted">Manage accounts and review role permissions</small>
         </div>
     </div>
 
     <!-- Tabs -->
     <ul class="nav nav-tabs" id="userTabs">
-        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-users"><i class="fas fa-users me-1"></i>Users</a></li>
-        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-create"><i class="fas fa-user-plus me-1"></i>Create User</a></li>
-        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-permissions"><i class="fas fa-shield-alt me-1"></i>Role Permissions</a></li>
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-users"><i data-lucide="user" class="icon-lucide s me-1"></i>Users</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-create"><i data-lucide="user-plus" class="icon-lucide me-1"></i>Create User</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-permissions"><i data-lucide="shield" class="icon-lucide me-1"></i>Role Permissions</a></li>
     </ul>
 
     <div class="tab-content">
@@ -273,7 +242,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <!-- Users table -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span><i class="fas fa-list me-1"></i>Accounts (<?= $users_result->num_rows ?>)</span>
+                    <span><i data-lucide="list" class="icon-lucide me-1"></i>Accounts (<?= $users_result->num_rows ?>)</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 user-table">
@@ -324,7 +293,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                             <input type="hidden" name="action" value="reset_password">
                                             <input type="hidden" name="id" value="<?= $u['id'] ?>">
-                                            <button class="btn btn-sm btn-warning" title="Reset password"><i class="fas fa-key"></i></button>
+                                            <button class="btn btn-sm btn-warning" title="Reset password"><i data-lucide="key" class="icon-lucide"></i></button>
                                         </form>
 
                                         <!-- Disable / Enable -->
@@ -333,14 +302,14 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                             <input type="hidden" name="action" value="enable_user">
                                             <input type="hidden" name="id" value="<?= $u['id'] ?>">
-                                            <button class="btn btn-sm btn-success" title="Enable user"><i class="fas fa-user-check"></i></button>
+                                            <button class="btn btn-sm btn-success" title="Enable user"><i data-lucide="user" class="icon-lucide -check"></i></button>
                                         </form>
                                         <?php else: ?>
                                         <form method="POST" class="d-inline" onsubmit="return confirm('Disable <?= htmlspecialchars($u['username']) ?>?')">
                                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                             <input type="hidden" name="action" value="disable_user">
                                             <input type="hidden" name="id" value="<?= $u['id'] ?>">
-                                            <button class="btn btn-sm btn-secondary" title="Disable user"><i class="fas fa-user-slash"></i></button>
+                                            <button class="btn btn-sm btn-secondary" title="Disable user"><i data-lucide="user" class="icon-lucide -slash"></i></button>
                                         </form>
                                         <?php endif; ?>
 
@@ -349,12 +318,12 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?= $u['id'] ?>">
-                                            <button class="btn btn-sm btn-danger" title="Delete user"><i class="fas fa-trash"></i></button>
+                                            <button class="btn btn-sm btn-danger" title="Delete user"><i data-lucide="trash" class="icon-lucide"></i></button>
                                         </form>
 
                                     </div>
                                 <?php else: ?>
-                                    <span class="text-muted"><i class="fas fa-lock me-1"></i>Protected</span>
+                                    <span class="text-muted"><i data-lucide="lock" class="icon-lucide me-1"></i>Protected</span>
                                 <?php endif; ?>
                                 </td>
                             </tr>
@@ -368,7 +337,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
         <!-- ── Tab 2: Create User ────────────────────────────────────────────── -->
         <div class="tab-pane fade" id="tab-create">
             <div class="card" style="max-width:560px;">
-                <div class="card-header"><i class="fas fa-user-plus me-2"></i>Create New Account</div>
+                <div class="card-header"><i data-lucide="user-plus" class="icon-lucide me-2"></i>Create New Account</div>
                 <div class="card-body">
                     <form method="POST">
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
@@ -396,7 +365,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             </select>
                             <small class="text-muted">Role determines which pages the user can access. See the Role Permissions tab.</small>
                         </div>
-                        <button type="submit" class="btn btn-success w-100"><i class="fas fa-plus me-1"></i>Create User</button>
+                        <button type="submit" class="btn btn-success w-100"><i data-lucide="plus" class="icon-lucide me-1"></i>Create User</button>
                     </form>
                 </div>
             </div>
@@ -409,7 +378,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <div><span class="perm-cross me-1">—</span> = No access</div>
                 <div class="ms-auto">
                     <small class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
+                        <i data-lucide="info" class="icon-lucide me-1"></i>
                         Permissions are defined in <code>auth_check.php</code>.
                         To change access, edit that file and redeploy.
                     </small>
@@ -433,7 +402,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <?php foreach ($permission_categories as $cat => $pages): ?>
                             <tr class="cat-header">
                                 <td colspan="<?= 1 + count($roles) ?>">
-                                    <i class="fas fa-folder-open me-1"></i><?= $cat ?>
+                                    <i data-lucide="folder-open" class="icon-lucide me-1"></i><?= $cat ?>
                                 </td>
                             </tr>
                             <?php foreach ($pages as $page => $allowed): ?>
@@ -457,7 +426,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             </div>
 
             <div class="alert mt-3" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;">
-                <h6 class="mb-1"><i class="fas fa-code me-1 text-primary"></i>Adding a new page to the system</h6>
+                <h6 class="mb-1"><i data-lucide="code" class="icon-lucide me-1 text-primary"></i>Adding a new page to the system</h6>
                 <ol class="mb-0 ps-3" style="font-size:.85rem;color:var(--text-muted);">
                     <li>Add one line at the top of the new PHP file:<br><code>require_once '/var/www/janus/auth_check.php';</code></li>
                     <li>Add the filename + allowed roles to <code>$PAGE_PERMISSIONS</code> in <code>auth_check.php</code></li>
