@@ -94,8 +94,8 @@ body {
     
 }
 .modal-header {
-    border-bottom-
+    border-bottom: 1px solid var(--border);
 }
 .modal-footer {
-    border-top-
+    border-top: 1px solid var(--border);
 }

@@ -49,8 +49,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/theme.css">
-<link rel="stylesheet" href="/css/pages/reports.css">
+<link rel="stylesheet" href="/css/theme.css?v=<?= time() ?>">
+<link rel="stylesheet" href="/css/pages/reports.css?v=<?= time() ?>">
 </head>
 <body class="loggedin">
 
@@ -63,20 +63,20 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <!-- HEADER -->
     <div class="page-header">
         <div class="row align-items-center">
-            <div class="col-md-8">
+            <div class="col-lg-6 col-md-12 mb-3 mb-lg-0">
                 <div class="eyebrow"><span class="led"></span> SNOC / SECURITY OPERATIONS &mdash; LIVE FEED</div>
                 <h1 class="page-title"><span class="accent">&gt;</span> Security Analytics Console</h1>
                 <p class="page-subtitle">Network intelligence, threat detection and compliance telemetry across all monitored assets</p>
             </div>
-            <div class="col-md-4 text-end">
+            <div class="col-lg-6 col-md-12 d-flex justify-content-lg-end justify-content-start gap-2 flex-wrap align-items-center">
                 <button class="btn btn-success" onclick="exportReport()">
-                    <i data-lucide="file-export" class="icon-lucide"></i> Export
+                    <i data-lucide="download" class="icon-lucide"></i> Export
                 </button>
                 <button class="btn btn-outline-primary" onclick="scheduledReports()">
                     <i data-lucide="clock" class="icon-lucide"></i> Schedule
                 </button>
                 <button class="btn btn-primary" onclick="refreshReport()">
-                    <i data-lucide="refresh-ccw" class="icon-lucide -alt"></i> Refresh
+                    <i data-lucide="refresh-ccw" class="icon-lucide"></i> Refresh
                 </button>
             </div>
         </div>
@@ -94,7 +94,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <div class="filters-panel">
         <div class="row g-3 align-items-end">
             <div class="col-md-6">
-                <label class="form-label"><i class="far fa-clock"></i> Time Range</label>
+                <label class="form-label"><i data-lucide="clock" class="icon-lucide"></i> Time Range</label>
                 <div class="range-strip">
                     <div class="range-pill-group" id="rangePillGroup">
                         <button type="button" class="range-pill" data-range="15m">15M</button>
@@ -105,7 +105,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <button type="button" class="range-pill" data-range="30d">30D</button>
                     </div>
                     <button type="button" class="refresh-btn" id="refreshBtn" onclick="refreshReport()" title="Refresh now">
-                        <i data-lucide="refresh-ccw" class="icon-lucide -alt"></i>
+                        <i data-lucide="refresh-ccw" class="icon-lucide"></i>
                     </button>
                     <span class="period-readout" style="font-size:0.78rem;">
                         <?= date('M d, H:i', strtotime($start_time)) ?> <span class="arrow">&rarr;</span> <?= date('M d, H:i', strtotime($end_time)) ?>
@@ -114,18 +114,24 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             </div>
             <div class="col-md-4">
                 <label class="form-label"><i data-lucide="server" class="icon-lucide"></i> Device Filter</label>
-                <select name="device" id="deviceFilter" class="form-select" onchange="applyFilters()">
-                    <option value="">All Devices</option>
-                    <?php foreach($devices as $dev): ?>
-                        <option value="<?= htmlspecialchars($dev) ?>" <?= $device_filter==$dev?'selected':'' ?>>
-                            <?= htmlspecialchars($dev) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="dropdown w-100">
+                    <button class="form-select text-start" type="button" id="deviceFilterBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                        <?= $device_filter ? htmlspecialchars($device_filter) : 'All Devices' ?>
+                    </button>
+                    <ul class="dropdown-menu w-100" aria-labelledby="deviceFilterBtn">
+                        <li><a class="dropdown-item <?= empty($device_filter) ? 'active' : '' ?>" href="#" onclick="event.preventDefault(); setDeviceFilter('')">All Devices</a></li>
+                        <?php foreach($devices as $dev): ?>
+                            <li><a class="dropdown-item <?= $device_filter==$dev ? 'active' : '' ?>" href="#" onclick="event.preventDefault(); setDeviceFilter('<?= htmlspecialchars($dev) ?>')">
+                                <?= htmlspecialchars($dev) ?>
+                            </a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <input type="hidden" id="deviceFilter" value="<?= htmlspecialchars($device_filter) ?>">
             </div>
-            <div class="col-md-2 text-end">
-                <span style="font-family:var(--font-mono); font-size:0.7rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.08em;">
-                    <i class="fas fa-circle" style="font-size:6px; color:var(--green); margin-right:5px;"></i>Manual Refresh
+            <div class="col-md-2 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center" style="height: 38px;">
+                <span style="font-family:var(--font-mono); font-size:0.7rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.08em; display:inline-flex; align-items:center; gap:5px;">
+                    <span style="width: 6px; height: 6px; background-color: var(--green); border-radius: 50%; display: inline-block;"></span> Manual Refresh
                 </span>
             </div>
         </div>
@@ -339,6 +345,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 800);
     }, 5 * 60 * 1000);
 });
+
+function setDeviceFilter(val) {
+    document.getElementById('deviceFilter').value = val;
+    applyFilters();
+}
 
 function applyFilters() {
     const device = document.getElementById('deviceFilter').value;
