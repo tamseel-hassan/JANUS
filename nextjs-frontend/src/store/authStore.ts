@@ -69,7 +69,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkSession: async () => {
-        set({ isLoading: true });
+        const wasAuthenticated = get().isAuthenticated;
+        if (!wasAuthenticated) {
+          set({ isLoading: true });
+        }
         try {
           const res = await fetch("/api/auth_check.php", {
             credentials: "include",

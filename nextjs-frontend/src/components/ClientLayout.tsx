@@ -16,6 +16,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [navData, setNavData] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  // Load collapsed sidebar state from localStorage on mount
+  useEffect(() => {
+    const savedCollapsed = localStorage.getItem("sidebar_collapsed");
+    if (savedCollapsed === "true") {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
   // On mount, validate the session with the PHP backend
@@ -66,7 +74,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     <div className="flex h-screen bg-bg-main text-foreground overflow-hidden">
       <Sidebar
         isCollapsed={isSidebarCollapsed}
-        toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        toggleSidebar={() => {
+          const next = !isSidebarCollapsed;
+          setIsSidebarCollapsed(next);
+          localStorage.setItem("sidebar_collapsed", next ? "true" : "false");
+        }}
       />
       <div
         className={`flex-1 flex flex-col transition-all duration-300 ${
@@ -74,7 +86,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         }`}
       >
         <Topbar data={navData} />
-        <main className="flex-1 overflow-y-auto p-6 bg-bg-main">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 bg-bg-main">
+          {/* key=pathname forces React to remount on route change → triggers page-enter animation */}
+          <div key={pathname} className="page-enter">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
