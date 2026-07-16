@@ -37,11 +37,7 @@ mysqli_close($_tb_con);
 
 $theme = $_COOKIE['theme'] ?? 'dark';
 ?>
-<!DOCTYPE html>
-<html lang="en" data-theme="<?= $theme ?>">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <!-- Lato Font -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -49,8 +45,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <script src="https://unpkg.com/lucide@latest"></script>
 <link rel="stylesheet" href="/css/topbar.css">
 <link rel="stylesheet" href="/css/theme.css">
-</head>
-<body>
+
 <nav class="topbar">
     <div class="topbar-left">
         <form action="/search.php" method="GET" class="search-form">
@@ -175,5 +170,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-</body>
-</html>
