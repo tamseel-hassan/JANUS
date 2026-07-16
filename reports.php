@@ -528,8 +528,8 @@ function exportDrillDown() {
     const title = document.getElementById('drillDownModalLabel').textContent;
     const printWindow = window.open('', '', 'height=600,width=800');
     printWindow.document.write('<html><head><title>' + title + '</title>');
-    printWindow.document.write('<link rel="stylesheet" href="/css/theme.css">
-<link rel="stylesheet" href="/css/pages/reports.css">');
+    printWindow.document.write(`<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/pages/reports.css">`);
     printWindow.document.write('</head><body><h2>' + title + '</h2>');
     printWindow.document.write(content.innerHTML);
     printWindow.document.write('</body></html>');
