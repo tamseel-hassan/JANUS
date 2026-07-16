@@ -1,0 +1,81 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Sidebar from "./Sidebar";
+import Topbar from "./Topbar";
+import { useAuthStore } from "@/store/authStore";
+import { Loader2 } from "lucide-react";
+
+const PUBLIC_ROUTES = ["/login"];
+
+export default function ClientLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isAuthenticated, isLoading, checkSession } = useAuthStore();
+  const [navData, setNavData] = useState(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+
+  // On mount, validate the session with the PHP backend
+  useEffect(() => {
+    if (!isPublicRoute) {
+      checkSession().then((authenticated) => {
+        if (!authenticated) {
+          router.replace("/login");
+        }
+      });
+    }
+  }, [pathname]);
+
+  // Fetch nav data once authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isPublicRoute) {
+      fetch("/api/get_nav_data.php", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => setNavData(data))
+        .catch((err) => console.error("Failed to fetch nav data", err));
+    }
+  }, [isAuthenticated, pathname]);
+
+  // Public routes (login page) — render without sidebar/topbar
+  if (isPublicRoute) {
+    return <>{children}</>;
+  }
+
+  // Loading state — verifying session
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-bg-main flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
+          <p className="text-text-muted text-sm">Verifying session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated — render nothing while redirecting
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // Authenticated — render full layout
+  return (
+    <div className="flex h-screen bg-bg-main text-foreground overflow-hidden">
+      <Sidebar
+        isCollapsed={isSidebarCollapsed}
+        toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
+      <div
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          isSidebarCollapsed ? "ml-20" : "ml-64"
+        }`}
+      >
+        <Topbar data={navData} />
+        <main className="flex-1 overflow-y-auto p-6 bg-bg-main">{children}</main>
+      </div>
+    </div>
+  );
+}

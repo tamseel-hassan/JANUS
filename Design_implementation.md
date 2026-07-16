@@ -1,17 +1,5 @@
 # Design System & UI Specification
 
-## 1. Color Theme
-
-| Color | Hex Code | UI Role | Best Practice Usage |
-| :--- | :--- | :--- | :--- |
-| **Midnight Violet** | `#301934` | Primary Background | Use this for the main canvas background. It gives the UI a rich, premium, nocturnal feel instead of a boring flat black or grey. |
-| **Amethyst Smoke** | `#B284BE` | Brand Accent / Highlights | Perfect for interactive elements like buttons, active navigation states, icons, and primary headings. |
-| **Lavender Blush** | `#FFF0F5` | Primary Text / Contrasts | Use this very light tint for body text, titles, and high-contrast labels. It reads beautifully against the deep purple background. |
-
-### Essential Implementation Rules
-
-* **i) Watch Out for Text Contrast (Accessibility):** While Lavender Blush (`#FFF0F5`) against Midnight Violet (`#301934`) provides excellent legibility for body text, do not place Amethyst Smoke (`#B284BE`) text directly on the Midnight Violet background for small copy. It lacks the contrast ratio required for comfortable reading. Keep the violet reserved for large headers, icons, or prominent UI borders.
-* **ii) Elevate Content with Surface Tints:** If you use the exact same Midnight Violet background for your entire page, your layout will look completely flat. To create depth for cards, modals, or dropdowns, blend your background with a tiny hint of white or opacity to lift it closer to the user.
 
 ---
 

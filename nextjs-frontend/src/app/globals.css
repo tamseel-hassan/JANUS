@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-bg-main: var(--bg-main);
+  --color-bg-card: var(--bg-card);
+  --color-bg-raised: var(--bg-raised);
+  --color-border-subtle: var(--border-subtle);
+  --color-bg-darker: var(--bg-darker);
+  --color-bg-darkest: var(--bg-darkest);
+  --color-text-muted: var(--text-muted);
+  --color-text-muted-deep: var(--text-muted-deep);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-hover: var(--accent-hover);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-lato);
+}
+
+:root {
+  /* LIGHT THEME */
+  --bg-main: #f4edf8;
+  --bg-card: #ffffff;
+  --bg-raised: #f0e8f5;
+  --border-subtle: #e4d5eb;
+  --bg-darker: #eae0f0;
+  --bg-darkest: #d8cce2;
+
+  --foreground: #171717;
+  --text-muted: #6b5a75;
+  --text-muted-deep: #4f4257;
+
+  --accent-primary: #c666f4;
+  --accent-hover: #a543d3;
+}
+
+.dark {
+  /* DARK THEME */
+  --bg-main: #1b1022;
+  --bg-card: #2d1b38;
+  --bg-raised: #25152e;
+  --border-subtle: #3d2248;
+  --bg-darker: #150c1b;
+  --bg-darkest: #100713;
+
+  --foreground: #ffffff;
+  --text-muted: #a899b2;
+  --text-muted-deep: #8b7996;
+
+  --accent-primary: #c666f4;
+  --accent-hover: #a543d3;
+}
+
+body {
+  background: var(--bg-main);
+  color: var(--foreground);
+}
+
+/* Custom Thin Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@layer base {
+  a, button, input, select, textarea, .card, [role="button"] {
+    @apply rounded-2xl transition-all duration-300 ease-in-out;
+  }
+}
