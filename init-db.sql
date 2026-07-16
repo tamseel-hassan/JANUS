@@ -264,3 +264,4 @@ FROM janus_ipam;
 CREATE INDEX idx_log_ip     ON janus_ipam_log (ip);
 CREATE INDEX idx_log_acked  ON janus_ipam_log (acknowledged);
 CREATE INDEX idx_log_ts     ON janus_ipam_log (changed_at);
+CREATE TABLE IF NOT EXISTS syslog_entries_archive LIKE syslog_entries;
