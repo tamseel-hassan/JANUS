@@ -4,10 +4,10 @@ require_once __DIR__ . '/../db_config.php';
 // Included (not executed standalone) by each ss/*.php report.
 
 if (!function_exists('formatBytes')) {
-    function formatBytes($bytes) {
+    function formatBytes($bytes, $precision = 2) {
         if ($bytes == 0) return '0 B';
         $i = floor(log($bytes, 1024));
-        return round($bytes / pow(1024, $i), 2) . ' ' . ['B','KB','MB','GB','TB'][$i];
+        return round($bytes / pow(1024, $i), $precision) . ' ' . ['B','KB','MB','GB','TB'][$i];
     }
 }
 
@@ -82,36 +82,4 @@ if (!function_exists('renderNoFirewallNotice')) {
         }
     }
 }
-// Additional helpers required by endpoint reports
-function unionQuery($con, $columns, $where, $order = '', $limit = 0) {
-    $sql = "SELECT $columns FROM syslog_entries WHERE $where";
-    if ($order) $sql .= " ORDER BY $order";
-    if ($limit > 0) $sql .= " LIMIT $limit";
-    return mysqli_query($con, $sql);
-}
-function parseMessage($msg) {
-    $parsed = [];
-    if (preg_match_all('/(\w+)=("([^"]*)"|\'([^\']*)\'|([^ \t]+))/', $msg, $matches, PREG_SET_ORDER)) {
-        foreach ($matches as $m) {
-            $value = $m[3] !== '' ? $m[3] : ($m[4] !== '' ? $m[4] : $m[5]);
-            $parsed[$m[1]] = $value;
-        }
-    }
-    return $parsed;
-}
-function formatBytes($bytes, $precision = 2) {
-    if ($bytes == 0) return '0 B';
-    $i = floor(log($bytes, 1024));
-    return round($bytes / pow(1024, $i), $precision) . ' ' . ['B','KB','MB','GB','TB'][$i];
-}
-function timeAgo($datetime) {
-    $time = strtotime($datetime);
-    $diff = time() - $time;
-    if ($diff < 60) return $diff . 's ago';
-    $diff = round($diff / 60);
-    if ($diff < 60) return $diff . 'm ago';
-    $diff = round($diff / 60);
-    if ($diff < 24) return $diff . 'h ago';
-    $diff = round($diff / 24);
-    return $diff . 'd ago';
-}
+

@@ -758,7 +758,13 @@ if ($action === 'port_bw') {
     );
     $s->bind_param('is', $switch_id, $port_name);
     $s->execute();
-    $rows = $s->get_result()->fetch_all(MYSQLI_ASSOC);
+    $result = $s->get_result();
+    $rows = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+        }
+    }
     $s->close();
     $db->close();
 

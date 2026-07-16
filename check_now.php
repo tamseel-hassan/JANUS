@@ -43,7 +43,15 @@ if ($device_id <= 0) {
 $stmt = $con->prepare("SELECT id, name, ip FROM devices WHERE id = ?");
 $stmt->bind_param('i', $device_id);
 $stmt->execute();
-$device = $stmt->get_result()->fetch_assoc();
+$stmt->bind_result($db_id, $db_name, $db_ip);
+$device = null;
+if ($stmt->fetch()) {
+    $device = [
+        'id'   => $db_id,
+        'name' => $db_name,
+        'ip'   => $db_ip
+    ];
+}
 $stmt->close();
 
 if (!$device) {
@@ -97,7 +105,16 @@ if (shouldLogStatus($con, $status, $device_id, null)) {
 $stmt = $con->prepare("SELECT status, rtt_avg, checked_at, last_status_change FROM device_status_cache WHERE device_id = ?");
 $stmt->bind_param('i', $device_id);
 $stmt->execute();
-$cache_row = $stmt->get_result()->fetch_assoc();
+$stmt->bind_result($c_status, $c_rtt, $c_checked, $c_change);
+$cache_row = [];
+if ($stmt->fetch()) {
+    $cache_row = [
+        'status'             => $c_status,
+        'rtt_avg'            => $c_rtt,
+        'checked_at'         => $c_checked,
+        'last_status_change' => $c_change
+    ];
+}
 $stmt->close();
 
 mysqli_close($con);
@@ -111,7 +128,7 @@ echo json_encode([
     ],
     'result' => [
         'status'             => $cache_row['status'] ?? $status,
-        'rtt_avg'            => $cache_row['rtt_avg'] !== null ? (float)$cache_row['rtt_avg'] : null,
+        'rtt_avg'            => isset($cache_row['rtt_avg']) ? (float)$cache_row['rtt_avg'] : null,
         'checked_at'         => $cache_row['checked_at'] ?? date('Y-m-d H:i:s'),
         'last_status_change' => $cache_row['last_status_change'] ?? null,
         'packets_sent'       => $sent,

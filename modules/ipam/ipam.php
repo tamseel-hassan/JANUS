@@ -618,7 +618,7 @@ const rowCls=d=>{
     if(d.status==='reserved') return 'row-reserved';
     return '';
 };
-const sBadge=s=>({active:'success',inactive:'secondary',reserved:'warning'})[s]||'secondary';
+const sBadge=s=>({active:'success',online:'success',inactive:'secondary',offline:'secondary',reserved:'warning',unknown:'dark'})[s]||'secondary';
 
 /* ─── Render table ─── */
 function renderTable(data) {
@@ -666,7 +666,7 @@ function renderTable(data) {
             <td class="ip-cell">${d.ip}${alertIco}${isClickable?'<br><span class=\"drill-hint\">↗ view history</span>':''}</td>
             <td class="mac-cell">${d.mac||'<span class="text-muted fst-italic">no MAC</span>'}</td>
             <td>${d.assigned_to||'<span class="text-muted">—</span>'}${ackBadge}</td>
-            <td><span class="badge bg-${sBadge(d.status)}">${d.status}</span></td>
+            <td><span class="badge bg-${sBadge(d.status)}">${d.status||'unknown'}</span></td>
             <td onclick="event.stopPropagation()"><span class="ping-btn badge bg-secondary" id="pb_${d.id}"
                       onclick="doPing('${d.ip}',${d.id})" title="Click to ping">?</span></td>
             <td class="small text-muted">${d.vlan||'—'}</td>
