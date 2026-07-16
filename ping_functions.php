@@ -74,7 +74,7 @@ function pingHost(string $ip): array {
  * Log a single ping result to database (ping_logs table).
  */
 function logPing($con, ?int $device_id, ?int $link_id, string $status, ?float $rtt_avg, int $sent, int $received, float $loss_pct): void {
-    $stmt = $con->prepare("INSERT INTO ping_logs (device_id, link_id, status, rtt_avg, packets_sent, packets_received, packet_loss_pct) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $con->prepare("INSERT INTO ping_logs (device_id, link_id, status, rtt_avg, sent, received, loss_pct) VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param('iisdiid', $device_id, $link_id, $status, $rtt_avg, $sent, $received, $loss_pct);
     $stmt->execute();
     $stmt->close();
@@ -85,12 +85,14 @@ function logPing($con, ?int $device_id, ?int $link_id, string $status, ?float $r
  * whether by the cron sweep or by an on-demand Check Now.
  */
 function updateDeviceStatusCache($con, int $device_id, string $status, ?float $rtt_avg): void {
-    // First, get current status from cache
     $stmt = $con->prepare("SELECT status FROM device_status_cache WHERE device_id = ?");
     $stmt->bind_param('i', $device_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $current_row = $result->fetch_assoc();
+    $stmt->bind_result($db_status);
+    $current_row = null;
+    if ($stmt->fetch()) {
+        $current_row = ['status' => $db_status];
+    }
     $stmt->close();
 
     $now = date('Y-m-d H:i:s');
@@ -181,8 +183,11 @@ function getLastDownTime($con, ?int $device_id, ?int $link_id): string {
     }
 
     mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $row = mysqli_fetch_assoc($result);
+    mysqli_stmt_bind_result($stmt, $db_checked_at);
+    $row = null;
+    if (mysqli_stmt_fetch($stmt)) {
+        $row = ['checked_at' => $db_checked_at];
+    }
     mysqli_stmt_close($stmt);
 
     return $row ? $row['checked_at'] : '2000-01-01 00:00:00';

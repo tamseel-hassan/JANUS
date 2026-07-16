@@ -98,6 +98,12 @@
             margin-bottom: 18px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .input-group:focus-within {
+            border-color: #00c6ff !important;
+            box-shadow: 0 0 12px rgba(0, 198, 255, 0.3);
         }
 
         .input-group .icon {
@@ -109,10 +115,10 @@
         }
 
         .form-control {
-            background: transparent;
-            border: none;
-            color: #fff;
-            padding-left: 12px;
+            background: transparent !important;
+            border: none !important;
+            color: #fff !important;
+            padding-left: 12px !important;
         }
 
         .form-control::placeholder {
@@ -120,9 +126,22 @@
         }
 
         .form-control:focus {
-            box-shadow: none;
-            outline: none;
-            color: #fff;
+            background: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+            color: #fff !important;
+        }
+
+        /* Prevent browser autofill from turning input background white/yellow and hiding text */
+        input:autofill,
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-text-fill-color: #fff !important;
+            -webkit-box-shadow: 0 0 0px 1000px #182232 inset !important;
+            box-shadow: 0 0 0px 1000px #182232 inset !important;
+            transition: background-color 5000s ease-in-out 0s !important;
         }
 
         /* --- Button --- */

@@ -218,7 +218,13 @@ function process_discovered(mysqli $db, array $found_ips, int $net_long, int $br
     $all = $db->prepare("SELECT ip, mac FROM janus_ipam WHERE status='active'");
     if ($all) {
         $all->execute();
-        $rows = $all->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = [];
+        $result = $all->get_result();
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+        }
         $all->close();
         foreach ($rows as $row) {
             if (!ip_in_subnet($row['ip'], $net_long, $broadcast)) continue;

@@ -71,7 +71,13 @@ $page_types  = $param_types . 'ii';
 $stmt_d = $db->prepare($data_sql);
 $stmt_d->bind_param($page_types, ...$page_params);
 $stmt_d->execute();
-$logs = $stmt_d->get_result()->fetch_all(MYSQLI_ASSOC);
+$result = $stmt_d->get_result();
+$logs = [];
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $logs[] = $row;
+    }
+}
 $stmt_d->close();
 $db->close();
 

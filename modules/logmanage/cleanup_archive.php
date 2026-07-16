@@ -14,7 +14,7 @@ if (mysqli_connect_errno()) {
 
 // Load retention setting from system_config table
 $retention_hours = 168; // Default fallback
-$result = mysqli_query($con, "SELECT value FROM system_config WHERE key = 'archive_retention_hours' LIMIT 1");
+$result = mysqli_query($con, "SELECT `value` FROM system_config WHERE `key` = 'archive_retention_hours' LIMIT 1");
 if ($result && $row = mysqli_fetch_assoc($result)) {
     $retention_hours = intval($row['value']);
 }

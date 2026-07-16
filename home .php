@@ -8,8 +8,7 @@ if (!$con) die('DB Error');
 
 // === NOC Summary Stats (Network Devices) ===
 $total = intval(mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as c FROM devices"))['c'] ?? 0);
-// Use device_status_cache — written by ping_monitor.php every 2 min, far cheaper than scanning ping_logs
-$up = intval(mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as c FROM device_status_cache WHERE status = 'up'"))['c'] ?? 0);
+$up = intval(mysqli_fetch_assoc(mysqli_query($con, "SELECT COUNT(*) as c FROM devices d LEFT JOIN ( SELECT device_id, status, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY checked_at DESC) rn FROM ping_logs WHERE link_id IS NULL ) pl ON d.id = pl.device_id AND pl.rn = 1 WHERE COALESCE(pl.status, 'down') = 'up'"))['c'] ?? 0);
 $down = max(0, $total - $up);
 $uptime = $total > 0 ? round(($up / $total) * 100, 1) : 0;
 

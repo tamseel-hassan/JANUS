@@ -13,17 +13,10 @@ date_default_timezone_set('Asia/Karachi');
 $scan_dir = '/tmp/janus_scans/';
 if (!file_exists($scan_dir)) { mkdir($scan_dir, 0777, true); }
 
-// Ensure scanner_records table and columns exist
-mysqli_query($con, "CREATE TABLE IF NOT EXISTS scanner_records (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    target_ip VARCHAR(255) NOT NULL,
-    scan_type VARCHAR(50) NOT NULL,
-    scan_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    open_ports INT DEFAULT 0,
-    vuln_count INT DEFAULT 0,
-    duration_secs FLOAT DEFAULT 0,
-    raw_results MEDIUMTEXT
-)");
+// scanner_records table is created by the master schema (janus_fresh_schema.sql).
+// Columns: id, target_ip, scan_type, result (JSON), scanned_by, scanned_at
+// Do NOT recreate here — the inline definition had different columns
+// (open_ports, vuln_count, duration_secs, raw_results) causing every INSERT to fail.
 
 $profiles = [
     'quick'   => ['name' => 'Quick Scan',      'desc' => 'Top 100 ports, fast',                    'args' => '-F -T4 --open'],
@@ -92,14 +85,24 @@ function parse_nmap_xml($xml_content, $con, $target, $profile, $duration) {
             $ports[] = ['port' => (int)$p['portid'], 'protocol' => (string)$p['protocol'], 'service' => (string)$p->service['name'], 'product' => (string)$p->service['product'], 'version' => (string)$p->service['version'], 'state' => (string)$p->state['state'], 'vulns' => $vulns];
         }
     }
-    $t = mysqli_real_escape_string($con, $target); $p = mysqli_real_escape_string($con, $profile);
-    mysqli_query($con, "INSERT INTO scanner_records (target_ip, scan_type, open_ports, vuln_count, duration_secs, raw_results) VALUES ('$t', '$p', ".count($ports).", $vuln_count, $duration, '".mysqli_real_escape_string($con, $xml_content)."')");
-    return ['ports' => $ports, 'os_matches' => $os_matches, 'vuln_count' => $vuln_count, 'duration' => $duration];
+    // Build result JSON matching the master schema's `result` column
+    $result_data = [
+        'ports'      => $ports,
+        'os_matches' => $os_matches,
+        'vuln_count' => $vuln_count,
+        'duration'   => $duration,
+        'open_ports' => count($ports),
+    ];
+    $result_json = mysqli_real_escape_string($con, json_encode($result_data));
+    $t = mysqli_real_escape_string($con, $target);
+    $p = mysqli_real_escape_string($con, $profile);
+    mysqli_query($con, "INSERT INTO scanner_records (target_ip, scan_type, result) VALUES ('$t', '$p', '$result_json')");
+    return $result_data;
 }
 
 $history = [];
-$res = mysqli_query($con, "SELECT * FROM scanner_records ORDER BY scan_date DESC LIMIT 20");
-while ($row = mysqli_fetch_assoc($res)) $history[] = $row;
+$res = mysqli_query($con, "SELECT * FROM scanner_records ORDER BY scanned_at DESC LIMIT 20");
+if ($res) while ($row = mysqli_fetch_assoc($res)) $history[] = $row;
 $theme = $_COOKIE['theme'] ?? 'dark';
 ?>
 <!DOCTYPE html>
@@ -153,7 +156,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             </div>
             <div class="tab-pane fade" id="history"><div class="scan-card p-3"><h5><i class="fas fa-list-alt me-1"></i>Recent Scans</h5>
                 <?php if (empty($history)): ?><div class="text-muted text-center py-4">No history</div><?php else: ?><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Target</th><th>Profile</th><th>Date</th><th>Ports</th><th>Vulns</th><th>Duration</th></tr></thead><tbody>
-                <?php foreach ($history as $h): ?><tr><td><code><?=htmlspecialchars($h['target_ip'])?></code></td><td><span class="badge bg-primary"><?=htmlspecialchars($h['scan_type'])?></span></td><td><?=date('Y-m-d H:i', strtotime($h['scan_date']))?></td><td><?=$h['open_ports']?></td><td><?=$h['vuln_count']?></td><td><?=round($h['duration_secs'],1)?>s</td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?></div></div>
+                <?php foreach ($history as $h): ?><tr><td><code><?=htmlspecialchars($h['target_ip'])?></code></td><td><span class="badge bg-primary"><?=htmlspecialchars($h['scan_type'])?></span></td><td><?=date('Y-m-d H:i', strtotime($h['scanned_at']))?></td><td><?= isset($h['result']) ? (json_decode($h['result'],true)['open_ports'] ?? '—') : '—' ?></td><td><?= isset($h['result']) ? (json_decode($h['result'],true)['vuln_count'] ?? '—') : '—' ?></td><td><?= isset($h['result']) ? round(json_decode($h['result'],true)['duration'] ?? 0, 1).'s' : '—' ?></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?></div></div>
         </div>
     </div>
 </div>
