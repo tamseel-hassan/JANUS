@@ -242,8 +242,8 @@ while($row = mysqli_fetch_assoc($type_result)) {
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <!-- Local Font Awesome CSS -->
     <link href="css/font-awesome/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/theme.css">
-<link rel="stylesheet" href="/css/pages/manage.css">
+    <link rel="stylesheet" href="css/theme.css?v=<?= time() ?>">
+<link rel="stylesheet" href="/css/pages/manage.css?v=<?= time() ?>">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
