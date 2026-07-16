@@ -48,33 +48,33 @@ uasort($per_source, fn($a, $b) => $b['queries'] <=> $a['queries']);
 mysqli_close($con);
 ?>
 
-<div class="alert alert-info"><i class="fas fa-info-circle"></i> "Possible tunneling" flags sources sending an unusual volume of long DNS query names (&gt;50 chars) — a common (but not definitive) exfiltration/tunneling signal. Verify manually before acting.</div>
+<div class="alert alert-info"><i data-lucide="info" class="icon-lucide"></i> "Possible tunneling" flags sources sending an unusual volume of long DNS query names (&gt;50 chars) — a common (but not definitive) exfiltration/tunneling signal. Verify manually before acting.</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-server"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="server" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $total ?>">0</div>
             <span class="stat-chip chip-info">DNS Events</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-ban"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="ban" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $denied ?>">0</div>
             <span class="stat-chip chip-danger">Denied Queries</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-route"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="route" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $long_query_hits ?>">0</div>
             <span class="stat-chip chip-warning">Possible Tunneling Hits</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-users"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="user" class="icon-lucide s"></i></div>
             <div class="stat-value" data-raw="<?= count($per_source) ?>">0</div>
             <span class="stat-chip chip-info">Unique DNS Clients</span>
         </div>
@@ -82,7 +82,7 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-server"></i> Top DNS Clients</h5>
+    <h5><i data-lucide="server" class="icon-lucide"></i> Top DNS Clients</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>Rank</th><th>Source</th><th>Queries</th><th>Denied</th><th>Long-Name Hits</th><th>Flag</th></tr></thead>

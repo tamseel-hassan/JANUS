@@ -53,35 +53,33 @@ mysqli_close($con);
 $high_risk_flows = ($risk_categories['4'] ?? 0) + ($risk_categories['5'] ?? 0) + ($risk_categories['high'] ?? 0) + ($risk_categories['critical'] ?? 0);
 ?>
 
-<style>
-.risk-tag { padding: 3px 9px; border-radius: 2px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
-</style>
+<link rel="stylesheet" href="/css/pages/ss_applications.css">
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="layers" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count($apps) ?>">0</div>
             <span class="stat-chip chip-info">Distinct Applications</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-exchange-alt"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="arrow-right-left" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $total_flows ?>">0</div>
             <span class="stat-chip chip-info">Total Flows</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i class="fas fa-network-wired"></i></div>
+            <div class="stat-icon text-success"><i data-lucide="network" class="icon-lucide"></i></div>
             <div class="stat-value"><?= formatBytes($total_bw) ?></div>
             <span class="stat-chip chip-success">Total Bandwidth</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-radiation"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="radiation" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $high_risk_flows ?>">0</div>
             <span class="stat-chip chip-danger">High-Risk App Flows</span>
         </div>
@@ -91,7 +89,7 @@ $high_risk_flows = ($risk_categories['4'] ?? 0) + ($risk_categories['5'] ?? 0) +
 <div class="row g-3 mb-4">
     <div class="col-lg-7">
         <div class="report-card">
-            <h5><i class="fas fa-chart-bar"></i> Top Applications by Bandwidth</h5>
+            <h5><i data-lucide="chart-bar" class="icon-lucide"></i> Top Applications by Bandwidth</h5>
             <div class="chart-container">
                 <canvas id="appBandwidthChart"></canvas>
             </div>
@@ -99,7 +97,7 @@ $high_risk_flows = ($risk_categories['4'] ?? 0) + ($risk_categories['5'] ?? 0) +
     </div>
     <div class="col-lg-5">
         <div class="report-card">
-            <h5><i class="fas fa-shield-alt"></i> Application Risk Distribution</h5>
+            <h5><i data-lucide="shield" class="icon-lucide"></i> Application Risk Distribution</h5>
             <div class="chart-container">
                 <canvas id="appRiskChart"></canvas>
             </div>
@@ -108,7 +106,7 @@ $high_risk_flows = ($risk_categories['4'] ?? 0) + ($risk_categories['5'] ?? 0) +
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-list"></i> Application Inventory</h5>
+    <h5><i data-lucide="list" class="icon-lucide"></i> Application Inventory</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>Application</th><th>Category</th><th>Flows</th><th>Bandwidth</th><th>Unique Sources</th><th>Risk</th></tr></thead>

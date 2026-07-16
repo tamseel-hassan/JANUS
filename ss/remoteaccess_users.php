@@ -374,89 +374,34 @@ ksort($timeline);
 mysqli_close($con);
 ?>
 
-<style>
-.protocol-card {
-    background: rgba(59, 130, 246, 0.05);
-    border-left: 4px solid #3b82f6;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 8px;
-    transition: all 0.3s;
-}
-.protocol-card:hover {
-    transform: translateX(5px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-}
-.protocol-card.critical {
-    border-left-color: #ef4444;
-    background: rgba(239, 68, 68, 0.05);
-}
-.protocol-card.high {
-    border-left-color: #f59e0b;
-    background: rgba(245, 158, 11, 0.05);
-}
-.protocol-card.medium {
-    border-left-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
-}
-.protocol-card.low {
-    border-left-color: #10b981;
-    background: rgba(16, 185, 129, 0.05);
-}
-.session-timeline {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    padding: 10px;
-    margin-top: 10px;
-}
-.risk-alert {
-    background: rgba(239, 68, 68, 0.1);
-    border-left: 4px solid #ef4444;
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-}
-.connection-flow {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 6px;
-    margin-bottom: 8px;
-}
-.flow-arrow {
-    color: var(--accent);
-    font-size: 1.2rem;
-}
-</style>
+<link rel="stylesheet" href="/css/pages/ss_remoteaccess_users.css">
 
 <!-- HTML Output -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-network-wired"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="network" class="icon-lucide"></i></div>
             <div class="stat-value"><?= number_format($total_connections) ?></div>
             <div class="stat-label">Remote Connections</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="layers" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $total_protocols ?></div>
             <div class="stat-label">Active Protocols</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="triangle-alert" class="icon-lucide"></i></div>
             <div class="stat-value"><?= count($risky_connections) ?></div>
             <div class="stat-label">Risky Connections</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-ban"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="ban" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $unauthorized_count ?></div>
             <div class="stat-label">Unauthorized Attempts</div>
         </div>
@@ -465,14 +410,14 @@ mysqli_close($con);
 
 <?php if ($critical_risk_count > 0): ?>
 <div class="alert alert-danger">
-    <i class="fas fa-exclamation-triangle"></i>
+    <i data-lucide="triangle-alert" class="icon-lucide"></i>
     <strong>Security Warning:</strong> Detected <?= $critical_risk_count ?> critical-risk protocol(s) in use (Telnet, unencrypted connections). Review immediately.
 </div>
 <?php endif; ?>
 
 <!-- Protocol Summary Cards -->
 <div class="report-card">
-    <h5><i class="fas fa-shield-alt"></i> Remote Access Protocols Detected</h5>
+    <h5><i data-lucide="shield" class="icon-lucide"></i> Remote Access Protocols Detected</h5>
     <div class="row g-3 mt-3">
         <?php foreach ($protocol_stats as $proto => $stats): ?>
             <?php if ($stats['count'] > 0): ?>
@@ -496,19 +441,19 @@ mysqli_close($con);
                         
                         <div class="row g-2 small mt-3">
                             <div class="col-6">
-                                <i class="fas fa-arrow-up text-success"></i> Accepted: <strong><?= $stats['accepted'] ?></strong>
+                                <i data-lucide="arrow-up" class="icon-lucide text-success"></i> Accepted: <strong><?= $stats['accepted'] ?></strong>
                             </div>
                             <div class="col-6">
-                                <i class="fas fa-ban text-danger"></i> Denied: <strong><?= $stats['denied'] ?></strong>
+                                <i data-lucide="ban" class="icon-lucide text-danger"></i> Denied: <strong><?= $stats['denied'] ?></strong>
                             </div>
                             <div class="col-6">
-                                <i class="fas fa-users"></i> Sources: <strong><?= $stats['unique_sources'] ?></strong>
+                                <i data-lucide="user" class="icon-lucide s"></i> Sources: <strong><?= $stats['unique_sources'] ?></strong>
                             </div>
                             <div class="col-6">
-                                <i class="fas fa-server"></i> Targets: <strong><?= $stats['unique_targets'] ?></strong>
+                                <i data-lucide="server" class="icon-lucide"></i> Targets: <strong><?= $stats['unique_targets'] ?></strong>
                             </div>
                             <div class="col-12">
-                                <i class="fas fa-database"></i> Data: <strong><?= formatBytes($stats['bandwidth']) ?></strong>
+                                <i data-lucide="database" class="icon-lucide"></i> Data: <strong><?= formatBytes($stats['bandwidth']) ?></strong>
                             </div>
                         </div>
                     </div>
@@ -519,7 +464,7 @@ mysqli_close($con);
         <?php if ($total_protocols === 0): ?>
             <div class="col-12">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> No remote access protocol activity detected in this time period.
+                    <i data-lucide="info" class="icon-lucide"></i> No remote access protocol activity detected in this time period.
                 </div>
             </div>
         <?php endif; ?>
@@ -529,7 +474,7 @@ mysqli_close($con);
 <!-- Risky Connections Alert -->
 <?php if (!empty($risky_connections)): ?>
 <div class="report-card">
-    <h5><i class="fas fa-exclamation-triangle text-danger"></i> High-Risk Connections Detected</h5>
+    <h5><i data-lucide="triangle-alert" class="icon-lucide text-danger"></i> High-Risk Connections Detected</h5>
     <p class="text-muted small">Connections that require immediate attention</p>
     
     <?php foreach (array_slice($risky_connections, 0, 20) as $risk): ?>
@@ -546,7 +491,7 @@ mysqli_close($con);
             
             <div class="connection-flow">
                 <code><?= htmlspecialchars($risk['source']) ?></code>
-                <i class="fas fa-arrow-right flow-arrow"></i>
+                <i data-lucide="arrow-right" class="icon-lucide flow-arrow"></i>
                 <code><?= htmlspecialchars($risk['destination']) ?>:<?= htmlspecialchars($risk['port']) ?></code>
                 <span class="badge bg-<?= $risk['action'] === 'accept' ? 'success' : 'danger' ?> ms-auto">
                     <?= strtoupper($risk['action']) ?>
@@ -554,14 +499,14 @@ mysqli_close($con);
             </div>
             
             <div class="small">
-                <i class="fas fa-exclamation-circle text-danger"></i> 
+                <i data-lucide="alert-circle" class="icon-lucide text-danger"></i> 
                 <strong>Risks:</strong> <?= implode(', ', $risk['risk_reasons']) ?>
             </div>
             
             <?php if ($risk['duration'] > 0): ?>
                 <div class="small mt-1">
-                    <i class="fas fa-clock"></i> Duration: <?= round($risk['duration']/60, 1) ?> minutes
-                    | <i class="fas fa-database"></i> Data: <?= formatBytes($risk['bandwidth']) ?>
+                    <i data-lucide="clock" class="icon-lucide"></i> Duration: <?= round($risk['duration']/60, 1) ?> minutes
+                    | <i data-lucide="database" class="icon-lucide"></i> Data: <?= formatBytes($risk['bandwidth']) ?>
                 </div>
             <?php endif; ?>
         </div>
@@ -573,7 +518,7 @@ mysqli_close($con);
 <div class="row g-3 mt-4">
     <div class="col-lg-8">
         <div class="report-card">
-            <h5><i class="fas fa-chart-line"></i> Remote Access Activity Timeline</h5>
+            <h5><i data-lucide="line-chart" class="icon-lucide"></i> Remote Access Activity Timeline</h5>
             <div class="chart-container">
                 <canvas id="timelineChart"></canvas>
             </div>
@@ -581,7 +526,7 @@ mysqli_close($con);
     </div>
     <div class="col-lg-4">
         <div class="report-card">
-            <h5><i class="fas fa-chart-pie"></i> Protocol Distribution</h5>
+            <h5><i data-lucide="chart-pie" class="icon-lucide"></i> Protocol Distribution</h5>
             <div class="chart-container">
                 <canvas id="protocolChart"></canvas>
             </div>
@@ -593,7 +538,7 @@ mysqli_close($con);
 <div class="row g-3 mt-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-user-secret"></i> Top Remote Access Sources</h5>
+            <h5><i data-lucide="user" class="icon-lucide -secret"></i> Top Remote Access Sources</h5>
             <p class="text-muted small">Systems initiating remote connections</p>
             <div class="table-container">
                 <table class="table table-hover table-sm">
@@ -620,7 +565,7 @@ mysqli_close($con);
                         <td>
                             <strong><?= gmdate('H:i:s', $session['duration']) ?></strong>
                             <?php if ($session['duration'] > 1800): ?>
-                                <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                                <i data-lucide="triangle-alert" class="icon-lucide text-warning ms-1"></i>
                             <?php endif; ?>
                         </td>
                         <td><?= formatBytes($session['bandwidth']) ?></td>
@@ -639,7 +584,7 @@ mysqli_close($con);
 <!-- Unauthorized Access Attempts -->
 <?php if (!empty($unauthorized_attempts)): ?>
 <div class="report-card mt-4">
-    <h5><i class="fas fa-ban text-danger"></i> Unauthorized Access Attempts</h5>
+    <h5><i data-lucide="ban" class="icon-lucide text-danger"></i> Unauthorized Access Attempts</h5>
     <p class="text-muted small">Blocked or failed remote access attempts</p>
     <div class="table-container" style="max-height: 400px; overflow-y: auto;">
         <table class="table table-hover table-sm">
@@ -680,11 +625,11 @@ mysqli_close($con);
 
 <!-- Security Recommendations -->
 <div class="report-card mt-4">
-    <h5><i class="fas fa-lightbulb text-warning"></i> Security Recommendations</h5>
+    <h5><i data-lucide="lightbulb" class="icon-lucide text-warning"></i> Security Recommendations</h5>
     <div class="row g-3">
         <div class="col-md-6">
             <div class="alert alert-warning">
-                <h6><i class="fas fa-shield-alt"></i> Best Practices</h6>
+                <h6><i data-lucide="shield" class="icon-lucide"></i> Best Practices</h6>
                 <ul class="mb-0 small">
                     <li>Disable Telnet and use SSH instead</li>
                     <li>Implement VPN for remote access</li>
@@ -696,7 +641,7 @@ mysqli_close($con);
         </div>
         <div class="col-md-6">
             <div class="alert alert-info">
-                <h6><i class="fas fa-exclamation-circle"></i> Key Metrics to Watch</h6>
+                <h6><i data-lucide="alert-circle" class="icon-lucide"></i> Key Metrics to Watch</h6>
                 <ul class="mb-0 small">
                     <li>Failed authentication attempts</li>
                     <li>Sessions longer than 1 hour</li>
@@ -818,7 +763,7 @@ new Chart(document.getElementById('protocolChart'), {
     
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-server"></i> Top Remote Access Targets</h5>
+            <h5><i data-lucide="server" class="icon-lucide"></i> Top Remote Access Targets</h5>
             <p class="text-muted small">Systems being accessed remotely</p>
             <div class="table-container">
                 <table class="table table-hover table-sm">
@@ -866,7 +811,7 @@ new Chart(document.getElementById('protocolChart'), {
 <!-- Longest Sessions -->
 <?php if (!empty($longest_sessions)): ?>
 <div class="report-card mt-4">
-    <h5><i class="fas fa-hourglass-half"></i> Longest Active Sessions</h5>
+    <h5><i data-lucide="hourglass-half" class="icon-lucide"></i> Longest Active Sessions</h5>
     <p class="text-muted small">Extended remote access sessions that may indicate persistence or data exfiltration</p>
     <div class="table-container">
         <table class="table table-hover table-sm">

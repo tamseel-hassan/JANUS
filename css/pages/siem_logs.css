@@ -1,0 +1,229 @@
+/* ============================================================
+   SIEM Logs Styles - Midnight Violet Theme
+   ============================================================ */
+
+:root {
+    --siem-bg: var(--bg);
+    --siem-card: var(--card-bg);
+    --siem-border: var(--border);
+    --siem-accent: var(--accent);
+    --siem-success: var(--metric-up);
+    --siem-danger: var(--metric-down);
+    --siem-warning: var(--metric-warning);
+    --siem-text: var(--text);
+    --siem-muted: var(--text-muted);
+}
+
+.container-fluid { padding-top: 78px; }
+#main-content {
+    margin-left: 260px;
+    transition: margin-left .25s ease;
+    padding: 20px 24px;
+}
+.sidebar.collapsed ~ #main-content { margin-left: 78px; }
+
+/* SIEM Cards */
+.siem-card {
+    background: var(--siem-card);
+    border: 1px solid var(--siem-border);
+    border-radius: 16px; /* Section 5: primary component */
+    padding: 20px;
+    box-shadow: none;
+    backdrop-filter: blur(10px);
+}
+
+.siem-header {
+    border-bottom: 2px solid var(--siem-accent);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.siem-header h2 {
+    font-weight: 700;
+    color: var(--siem-accent);
+    font-size: 1.8rem;
+    letter-spacing: 0.02em;
+}
+
+/* Statistics Cards */
+.stat-card {
+     /* Midnight violet subtle overlay */
+    
+     /* Section 5: primary component */
+    padding: 18px;
+    text-align: center;
+     /* No transforms */
+}
+
+.stat-card:hover {
+    background: rgba(178, 132, 190, 0.15);
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    
+    
+    display: block;
+}
+
+.stat-card .stat-label {
+    font-size: 0.85rem;
+    color: var(--siem-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Log File Table */
+.log-table {
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px; /* nested */
+    overflow: hidden;
+}
+
+.log-table thead {
+    background: rgba(178, 132, 190, 0.1);
+    border-bottom: 2px solid var(--siem-accent);
+}
+
+.log-table th {
+    color: var(--siem-accent);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px;
+}
+
+.log-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.9rem;
+}
+
+.log-table tbody tr:hover {
+    background: rgba(178, 132, 190, 0.1);
+}
+
+/* Source Status Badges */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 8px; /* nested */
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    display: inline-block;
+}
+
+.status-active { background: rgba(74, 222, 128, 0.15); color: var(--siem-success); border: 1px solid rgba(74, 222, 128, 0.3); }
+.status-inactive { background: rgba(248, 113, 113, 0.15); color: var(--siem-danger); border: 1px solid rgba(248, 113, 113, 0.3); }
+.status-warning { background: rgba(250, 204, 21, 0.15); color: var(--siem-warning); border: 1px solid rgba(250, 204, 21, 0.3); }
+
+/* Live Log Viewer */
+.log-viewer {
+    background: #000;
+    border: 1px solid var(--siem-border);
+    border-radius: 8px;
+    padding: 16px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+}
+
+.log-entry {
+    padding: 8px;
+    border-left: 3px solid transparent;
+    margin-bottom: 4px;
+    transition: all 0.2s;
+}
+
+.log-entry:hover {
+    background: rgba(178, 132, 190, 0.1);
+    border-left-color: var(--siem-accent);
+}
+
+.log-timestamp {
+    color: var(--metric-up);
+    font-weight: 600;
+}
+
+.log-ip {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.log-type {
+    color: var(--siem-warning);
+    font-weight: 600;
+}
+
+.log-message {
+    color: var(--text);
+    word-break: break-word;
+}
+
+/* Filters */
+.filter-panel {
+    background: rgba(178, 132, 190, 0.05);
+    border: 1px solid var(--siem-border);
+    border-radius: 8px; /* nested */
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.filter-badge {
+    background: rgba(178, 132, 190, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(178, 132, 190, 0.3);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    margin-right: 8px;
+    display: inline-block;
+}
+
+/* Action Buttons */
+.btn-siem {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px; /* buttons are nested 8px */
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.btn-siem:hover {
+    background: var(--accent-hover);
+    color: #fff;
+}
+
+.btn-danger-siem {
+    background: rgba(248, 113, 113, 0.15);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    color: var(--metric-down);
+}
+
+.btn-danger-siem:hover {
+    background: rgba(248, 113, 113, 0.25);
+    color: var(--metric-down);
+}
+
+/* Scrollbar */
+.log-viewer::-webkit-scrollbar {
+    width: 8px;
+}
+
+.log-viewer::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.3);
+}
+
+.log-viewer::-webkit-scrollbar-thumb {
+    background: var(--siem-accent);
+    border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    #main-content { margin-left: 78px; }
+}

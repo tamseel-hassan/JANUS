@@ -121,15 +121,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/font-awesome/css/all.min.css">
     <link rel="stylesheet" href="css/theme.css">
-    <style>
-        .progress-circle{--size:80px;--bg-color:rgba(73,80,87,.5);--value:0;--fg-color:#007bff;width:var(--size);height:var(--size);border-radius:50%;background:radial-gradient(closest-side,var(--card-bg) 80%,transparent 0 99.9%,var(--card-bg) 0),conic-gradient(var(--fg-color) calc(var(--value)*1%),var(--bg-color) 0);display:flex;align-items:center;justify-content:center;position:relative;transition:all .3s}
-        .progress-circle::before{content:attr(data-value)'%';font-weight:bold}
-        .cpu-high{--fg-color:#dc3545}.cpu-medium{--fg-color:#ffc107}.cpu-low{--fg-color:#28a745}
-        .traffic-in{color:#28a745;font-weight:600}.traffic-out{color:#dc3545;font-weight:600}
-        .network-stat-value{font-size:1.5rem;font-weight:bold;color:var(--accent)}
-        .bandwidth-bar{height:4px;background:rgba(13,202,240,.2);border-radius:2px;overflow:hidden;margin-top:3px}
-        .bandwidth-fill{height:100%;background:linear-gradient(90deg,#28a745,#0dcaf0);transition:width .3s}
-    </style>
+    <link rel="stylesheet" href="css/pages/resources.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -138,7 +130,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <div class="container-fluid">
         <div class="row mb-4">
             <div class="col-12">
-                <h2><i class="fas fa-network-wired"></i> Resource Utilization</h2>
+                <h2><i data-lucide="network" class="icon-lucide"></i> Resource Utilization</h2>
                 <p class="lead">Real-time monitoring of device performance</p>
             </div>
         </div>
@@ -146,10 +138,10 @@ $theme = $_COOKIE['theme'] ?? 'dark';
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card p-3">
-                    <label class="form-label"><i class="fas fa-filter me-2"></i>Filter by Device</label>
+                    <label class="form-label"><i data-lucide="filter" class="icon-lucide me-2"></i>Filter by Device</label>
                     <div class="dropdown d-inline-block">
                         <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-server me-2"></i>
+                            <i data-lucide="server" class="icon-lucide me-2"></i>
                             <?= $sid && isset($dl[$sid]) ? htmlspecialchars($dl[$sid]['name']) : 'All Devices' ?>
                         </button>
                         <ul class="dropdown-menu">
@@ -165,7 +157,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
         <?php endif; ?>
         <?php if (empty($devs)): ?>
         <div class="card mt-4 p-4 text-center">
-            <i class="fas fa-server fa-3x text-muted mb-3"></i>
+            <i data-lucide="server" class="icon-lucide fa-3x text-muted mb-3"></i>
             <h5>No SNMP Devices Found</h5>
             <p class="text-muted">Add SNMP credentials in Manage Devices.</p>
         </div>
@@ -177,8 +169,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="col-md-3"><div class="card text-center p-3"><div class="progress-circle mx-auto" style="--size:100px;--value:<?=$sr?>;--fg-color:<?=$sr>90?'#28a745':($sr>70?'#ffc107':'#dc3545')?>;" data-value="<?=$sr?>"></div><div class="label mt-2">SNMP Success</div></div></div>
         </div>
         <div class="row g-3 mb-4">
-            <div class="col-md-6"><div class="card p-3"><h6><i class="fas fa-chart-line me-2"></i>Network Bandwidth</h6><div class="row text-center"><div class="col-6"><div class="network-stats"><div class="label">INBOUND</div><div class="network-stat-value traffic-in"><?=formatBits($tin)?></div></div></div><div class="col-6"><div class="network-stats"><div class="label">OUTBOUND</div><div class="network-stat-value traffic-out"><?=formatBits($tout)?></div></div></div></div><?php if(!$tin&&!$tout):?><div class="text-warning small mt-2"><i class="fas fa-info-circle"></i> Bandwidth data will appear after SNMP collection.</div><?php endif;?></div></div>
-            <div class="col-md-6"><div class="card p-3"><h6><i class="fas fa-chart-bar me-2"></i>Infrastructure</h6><div class="row text-center"><div class="col-4"><div class="network-stats"><div class="label">Devices</div><div class="network-stat-value"><?=$td?></div></div></div><div class="col-4"><div class="network-stats"><div class="label">SNMP OK</div><div class="network-stat-value"><?=$sw?></div></div></div><div class="col-4"><div class="network-stats"><div class="label">Interfaces</div><div class="network-stat-value"><?=$tif?></div></div></div></div></div></div>
+            <div class="col-md-6"><div class="card p-3"><h6><i data-lucide="line-chart" class="icon-lucide me-2"></i>Network Bandwidth</h6><div class="row text-center"><div class="col-6"><div class="network-stats"><div class="label">INBOUND</div><div class="network-stat-value traffic-in"><?=formatBits($tin)?></div></div></div><div class="col-6"><div class="network-stats"><div class="label">OUTBOUND</div><div class="network-stat-value traffic-out"><?=formatBits($tout)?></div></div></div></div><?php if(!$tin&&!$tout):?><div class="text-warning small mt-2"><i data-lucide="info" class="icon-lucide"></i> Bandwidth data will appear after SNMP collection.</div><?php endif;?></div></div>
+            <div class="col-md-6"><div class="card p-3"><h6><i data-lucide="chart-bar" class="icon-lucide me-2"></i>Infrastructure</h6><div class="row text-center"><div class="col-4"><div class="network-stats"><div class="label">Devices</div><div class="network-stat-value"><?=$td?></div></div></div><div class="col-4"><div class="network-stats"><div class="label">SNMP OK</div><div class="network-stat-value"><?=$sw?></div></div></div><div class="col-4"><div class="network-stats"><div class="label">Interfaces</div><div class="network-stat-value"><?=$tif?></div></div></div></div></div></div>
         </div>
         <!-- Per-device cards -->
         <div class="row g-3">
@@ -205,10 +197,10 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <div class="col-4"><div class="progress-circle mx-auto" style="--value:<?=$dp?>;--fg-color:<?=$dp>80?'#dc3545':($dp>60?'#ffc107':'#fd7e14')?>;" data-value="<?=$dp?>"></div><small>DISK</small></div>
                     </div>
                     <div class="mt-2">
-                        <div><i class="fas fa-memory"></i> Memory: <?=$mt?formatBytes($mu).'/'.formatBytes($mt)." ($mp%)":'No data'?></div>
-                        <div><i class="fas fa-hdd"></i> Disk: <?=$dt?formatBytes($du).'/'.formatBytes($dt)." ($dp%)":'No data'?></div>
-                        <div><i class="fas fa-network-wired"></i> BW: <span class="traffic-in"><?=formatBits($din)?></span> IN / <span class="traffic-out"><?=formatBits($dout)?></span> OUT</div>
-                        <div><i class="fas fa-clock"></i> Last SNMP: <?=$last?></div>
+                        <div><i data-lucide="memory" class="icon-lucide"></i> Memory: <?=$mt?formatBytes($mu).'/'.formatBytes($mt)." ($mp%)":'No data'?></div>
+                        <div><i data-lucide="hdd" class="icon-lucide"></i> Disk: <?=$dt?formatBytes($du).'/'.formatBytes($dt)." ($dp%)":'No data'?></div>
+                        <div><i data-lucide="network" class="icon-lucide"></i> BW: <span class="traffic-in"><?=formatBits($din)?></span> IN / <span class="traffic-out"><?=formatBits($dout)?></span> OUT</div>
+                        <div><i data-lucide="clock" class="icon-lucide"></i> Last SNMP: <?=$last?></div>
                     </div>
                     <?php if ($ifs): ?>
                     <div class="accordion mt-2" id="acc<?=$did?>">

@@ -16,86 +16,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
 <link href="/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
 <link rel="stylesheet" href="/css/theme.css">
-<style>
-#main-content{margin-left:260px;transition:margin-left .3s;padding-top:70px}
-@media(max-width:768px){#main-content{margin-left:0}}
-
-/* Row states */
-.row-active  {background:rgba(22,163,74,.07) !important}
-.row-inactive{background:rgba(107,114,128,.07)!important}
-.row-reserved{background:rgba(234,179,8,.07) !important}
-.row-spoofing{background:rgba(239,68,68,.2)  !important;animation:blink-row 1.1s infinite}
-.row-changed {background:rgba(249,115,22,.12)!important;animation:pulse-row 2s infinite}
-.row-unacked {border-left:3px solid #f97316 !important}
-@keyframes blink-row{0%,100%{opacity:1}50%{opacity:.38}}
-@keyframes pulse-row{0%,100%{opacity:1}50%{opacity:.6}}
-
-/* Stats */
-.stat-card{transition:transform .18s,box-shadow .18s;cursor:default;border-radius:10px}
-.stat-card:hover{transform:translateY(-3px);box-shadow:0 6px 22px rgba(0,0,0,.22)}
-.stat-num{font-size:2rem;font-weight:800;line-height:1}
-
-/* Subnet pills */
-.sn-pill{cursor:pointer;border-radius:8px;transition:.2s;border:1px solid transparent}
-.sn-pill:hover{border-color:#3b82f6;background:rgba(59,130,246,.08)}
-.sn-pill.active-sn{border-color:#3b82f6 !important;background:rgba(59,130,246,.14)}
-.sn-iface-badge{font-size:.68rem;padding:1px 6px;border-radius:6px}
-
-/* Countdown */
-.cdring{width:36px;height:36px}
-.cdring circle{fill:none;stroke-width:3}
-.cdring .bg  {stroke:#e5e7eb}
-.cdring .fill{stroke:#22c55e;stroke-linecap:round;transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset 1s linear}
-[data-theme=dark] .cdring .bg{stroke:rgba(255,255,255,.12)}
-
-/* Util bars */
-.util-bar{height:6px;border-radius:3px;background:#e5e7eb;overflow:hidden}
-.util-fill{height:100%;transition:width .7s}
-[data-theme=dark] .util-bar{background:rgba(255,255,255,.1)}
-
-/* Table */
-.ip-cell {font-family:'Courier New',monospace;font-weight:700}
-.mac-cell{font-family:'Courier New',monospace;font-size:.82rem}
-.note-cell{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ping-btn{font-size:.7rem;padding:2px 7px;border-radius:7px;cursor:pointer;user-select:none;min-width:40px;text-align:center}
-
-/* Toast */
-#toastStack{position:fixed;bottom:1.4rem;right:1.4rem;z-index:9999;display:flex;flex-direction:column-reverse;gap:.35rem}
-
-/* Subnet panel */
-.subnet-row{border-left:3px solid #3b82f6;transition:.2s}
-.subnet-row:hover{background:rgba(59,130,246,.05)}
-.subnet-scan-badge{font-size:.68rem}
-
-/* Scan progress */
-.scan-bar{height:4px;border-radius:3px;overflow:hidden}
-
-/* Card headers */
-.ch-dark{background:#0f172a;color:#fff}
-
-/* History drilldown */
-.timeline-item{position:relative;padding:0 0 18px 32px;border-left:2px solid rgba(59,130,246,.25)}
-.timeline-item:last-child{padding-bottom:0;border-left:2px solid transparent}
-.timeline-dot{position:absolute;left:-9px;top:3px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;color:#fff}
-.tl-spoof  {background:#ef4444}
-.tl-mac    {background:#f59e0b}
-.tl-offline{background:#6b7280}
-.tl-online {background:#22c55e}
-.tl-new    {background:#3b82f6}
-.tl-info   {background:#8b5cf6}
-.timeline-time{font-size:.72rem;color:#9ca3af}
-.timeline-note{font-size:.82rem}
-.tl-acked{opacity:.55}
-
-/* Clickable alert rows */
-.row-changed td, .row-spoofing td {cursor:pointer}
-.row-changed:hover, .row-spoofing:hover{filter:brightness(1.1)}
-.drill-hint{font-size:.65rem;color:#f97316;font-style:italic}
-
-/* Improved subnet pills */
-.sn-pill .sn-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.1);margin-top:4px;overflow:hidden}
-.sn-pill .sn-bar-fill{height:100%;border-radius:2px;transition:width .5s}
-</style>
+<link rel="stylesheet" href="/css/pages/ipam.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; include __DIR__ . '/../../sidebar.php'; ?>
@@ -106,27 +27,27 @@ $is_admin  = in_array($user_role, ['admin','manager']);
 <!-- ══ HEADER ══ -->
 <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
     <div>
-        <h2 class="mb-1"><i class="fas fa-network-wired me-2 text-primary"></i>IP Address Management</h2>
+        <h2 class="mb-1"><i data-lucide="network" class="icon-lucide me-2 text-primary"></i>IP Address Management</h2>
         <p class="text-muted small mb-0">
-            <i class="fas fa-satellite-dish text-success me-1"></i>ARP + ICMP discovery &nbsp;|&nbsp;
-            <i class="fas fa-skull-crossbones text-danger me-1"></i>MAC spoofing detection &nbsp;|&nbsp;
-            <i class="fas fa-route text-info me-1"></i>Auto NIC selection &nbsp;|&nbsp;
-            <i class="fas fa-clock text-warning me-1"></i>Scheduled auto-scan
+            <i data-lucide="satellite" class="icon-lucide text-success me-1"></i>ARP + ICMP discovery &nbsp;|&nbsp;
+            <i data-lucide="skull-crossbones" class="icon-lucide text-danger me-1"></i>MAC spoofing detection &nbsp;|&nbsp;
+            <i data-lucide="route" class="icon-lucide text-info me-1"></i>Auto NIC selection &nbsp;|&nbsp;
+            <i data-lucide="clock" class="icon-lucide text-warning me-1"></i>Scheduled auto-scan
         </p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
         <button id="btnBulkAck" class="btn btn-sm btn-outline-warning">
-            <i class="fas fa-check-double me-1"></i>Clear All Alerts
+            <i data-lucide="check" class="icon-lucide -double me-1"></i>Clear All Alerts
         </button>
         <button id="btnExport" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-file-csv me-1"></i>Export CSV
+            <i data-lucide="file-csv" class="icon-lucide me-1"></i>Export CSV
         </button>
         <a href="/modules/ipam/ipam_log.php" class="btn btn-sm btn-outline-info">
-            <i class="fas fa-history me-1"></i>Change Log
+            <i data-lucide="history" class="icon-lucide me-1"></i>Change Log
         </a>
         <?php if ($is_admin): ?>
         <button id="btnAddIP" class="btn btn-sm btn-primary">
-            <i class="fas fa-plus me-1"></i>Add IP
+            <i data-lucide="plus" class="icon-lucide me-1"></i>Add IP
         </button>
         <?php endif; ?>
     </div>
@@ -176,23 +97,23 @@ $is_admin  = in_array($user_role, ['admin','manager']);
         <ul class="nav nav-tabs mb-0" id="leftTabs">
             <li class="nav-item">
                 <a class="nav-link active small py-2" data-bs-toggle="tab" href="#tabScanner">
-                    <i class="fas fa-satellite-dish me-1"></i>Scanner
+                    <i data-lucide="satellite" class="icon-lucide me-1"></i>Scanner
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link small py-2" data-bs-toggle="tab" href="#tabSubnets">
-                    <i class="fas fa-project-diagram me-1"></i>Subnets
+                    <i data-lucide="project-diagram" class="icon-lucide me-1"></i>Subnets
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link small py-2" data-bs-toggle="tab" href="#tabUtil">
-                    <i class="fas fa-tachometer-alt me-1"></i>Util
+                    <i data-lucide="tachometer-alt" class="icon-lucide me-1"></i>Util
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link small py-2" data-bs-toggle="tab" href="#tabNat"
                    onclick="loadNatMap()">
-                    <i class="fas fa-random me-1"></i>NAT/VIP
+                    <i data-lucide="random" class="icon-lucide me-1"></i>NAT/VIP
                 </a>
             </li>
         </ul>
@@ -209,17 +130,17 @@ $is_admin  = in_array($user_role, ['admin','manager']);
                 <div id="subnetPills" class="d-flex flex-column gap-1 mb-2">
                     <!-- filled by JS -->
                     <div class="text-muted small text-center py-2">
-                        <i class="fas fa-spinner fa-spin me-1"></i>Loading…
+                        <i data-lucide="loader" class="icon-lucide fa-spin me-1"></i>Loading…
                     </div>
                 </div>
                 <input id="scanCIDR" class="form-control form-control-sm mb-2"
                        placeholder="Or type CIDR: 10.0.0.0/24">
                 <div class="d-grid gap-2 mb-2">
                     <button id="btnScan" class="btn btn-success btn-sm">
-                        <i class="fas fa-search-location me-1"></i>Scan Now
+                        <i data-lucide="search" class="icon-lucide -location me-1"></i>Scan Now
                     </button>
                     <button id="btnScanAll" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-globe me-1"></i>Scan All Enabled
+                        <i data-lucide="globe" class="icon-lucide me-1"></i>Scan All Enabled
                     </button>
                 </div>
                 <div class="progress scan-bar d-none mb-1" id="scanBar">
@@ -278,11 +199,11 @@ $is_admin  = in_array($user_role, ['admin','manager']);
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="small fw-semibold">Registered Subnets</span>
                     <button class="btn btn-sm btn-primary py-0 px-2" id="btnAddSubnet">
-                        <i class="fas fa-plus fa-xs"></i>
+                        <i data-lucide="plus" class="icon-lucide fa-xs"></i>
                     </button>
                 </div>
                 <div id="subnetList" class="d-flex flex-column gap-2">
-                    <p class="text-muted small text-center"><i class="fas fa-spinner fa-spin me-1"></i>Loading…</p>
+                    <p class="text-muted small text-center"><i data-lucide="loader" class="icon-lucide fa-spin me-1"></i>Loading…</p>
                 </div>
             </div>
 
@@ -298,11 +219,11 @@ $is_admin  = in_array($user_role, ['admin','manager']);
             <div class="tab-pane fade p-3" id="tabNat">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div class="small fw-semibold">
-                        <i class="fas fa-random me-1"></i>NAT / VIP Mappings
+                        <i data-lucide="random" class="icon-lucide me-1"></i>NAT / VIP Mappings
                     </div>
                     <?php if ($is_admin): ?>
                     <button class="btn btn-sm btn-primary" onclick="openNatModal(0)">
-                        <i class="fas fa-plus me-1"></i>Add Mapping
+                        <i data-lucide="plus" class="icon-lucide me-1"></i>Add Mapping
                     </button>
                     <?php endif; ?>
                 </div>
@@ -322,7 +243,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
     <div class="col-xl-9 col-lg-8">
         <div class="card shadow-sm">
             <div class="card-header ch-dark d-flex flex-wrap align-items-center gap-2 justify-content-between">
-                <h6 class="mb-0"><i class="fas fa-table me-2"></i>IP Inventory</h6>
+                <h6 class="mb-0"><i data-lucide="table" class="icon-lucide me-2"></i>IP Inventory</h6>
                 <div class="d-flex gap-2 flex-wrap align-items-center">
                     <input id="searchBox" type="text" class="form-control form-control-sm"
                            style="width:155px" placeholder="IP / MAC / host…">
@@ -336,10 +257,10 @@ $is_admin  = in_array($user_role, ['admin','manager']);
                         <option value="">All Subnets</option>
                     </select>
                     <button class="btn btn-sm btn-outline-warning" id="btnShowAlerts" title="Alerts only">
-                        <i class="fas fa-bell"></i>
+                        <i data-lucide="bell" class="icon-lucide"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-secondary" id="btnRefresh">
-                        <i class="fas fa-sync-alt"></i>
+                        <i data-lucide="refresh-ccw" class="icon-lucide -alt"></i>
                     </button>
                 </div>
             </div>
@@ -363,7 +284,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
                         </thead>
                         <tbody id="ipamTbody">
                             <tr><td colspan="11" class="text-center py-4 text-muted">
-                                <i class="fas fa-spinner fa-spin me-2"></i>Loading…
+                                <i data-lucide="loader" class="icon-lucide fa-spin me-2"></i>Loading…
                             </td></tr>
                         </tbody>
                     </table>
@@ -386,7 +307,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
     <div class="modal-dialog modal-lg">
         <form id="ipForm" class="modal-content" novalidate>
             <div class="modal-header ch-dark">
-                <h5 class="modal-title" id="ipModalTitle"><i class="fas fa-edit me-2"></i>Edit IP Record</h5>
+                <h5 class="modal-title" id="ipModalTitle"><i data-lucide="edit" class="icon-lucide me-2"></i>Edit IP Record</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -424,7 +345,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+                <button type="submit" class="btn btn-primary"><i data-lucide="save" class="icon-lucide me-1"></i>Save</button>
             </div>
         </form>
     </div>
@@ -435,7 +356,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
     <div class="modal-dialog">
         <form id="subnetForm" class="modal-content" novalidate>
             <div class="modal-header ch-dark">
-                <h5 class="modal-title" id="snModalTitle"><i class="fas fa-plus me-2"></i>Add Subnet</h5>
+                <h5 class="modal-title" id="snModalTitle"><i data-lucide="plus" class="icon-lucide me-2"></i>Add Subnet</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -475,7 +396,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Subnet</button>
+                <button type="submit" class="btn btn-primary"><i data-lucide="save" class="icon-lucide me-1"></i>Save Subnet</button>
             </div>
         </form>
     </div>
@@ -486,7 +407,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-header bg-warning">
-                <h6 class="modal-title"><i class="fas fa-check-circle me-1"></i>Acknowledge Alert</h6>
+                <h6 class="modal-title"><i data-lucide="check-circle" class="icon-lucide me-1"></i>Acknowledge Alert</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -497,7 +418,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
             <div class="modal-footer py-2">
                 <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button class="btn btn-warning btn-sm" id="btnConfirmAck">
-                    <i class="fas fa-check me-1"></i>Confirm
+                    <i data-lucide="check" class="icon-lucide me-1"></i>Confirm
                 </button>
             </div>
         </div>
@@ -509,12 +430,12 @@ $is_admin  = in_array($user_role, ['admin','manager']);
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-warning">
-                <h6 class="modal-title"><i class="fas fa-check-double me-1"></i>Clear All Alerts</h6>
+                <h6 class="modal-title"><i data-lucide="check" class="icon-lucide -double me-1"></i>Clear All Alerts</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info small mb-3">
-                    <i class="fas fa-info-circle me-1"></i>
+                    <i data-lucide="info" class="icon-lucide me-1"></i>
                     Acknowledges <strong id="bulkCount">all</strong> unacknowledged alerts across every IP.
                 </div>
                 <select id="bulkReason" class="form-select form-select-sm mb-2">
@@ -530,7 +451,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
             <div class="modal-footer py-2">
                 <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button class="btn btn-warning btn-sm" id="btnConfirmBulk">
-                    <i class="fas fa-check-double me-1"></i>Acknowledge All
+                    <i data-lucide="check" class="icon-lucide -double me-1"></i>Acknowledge All
                 </button>
             </div>
         </div>
@@ -544,7 +465,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
             <div class="modal-header ch-dark">
                 <div>
                     <h5 class="modal-title mb-0" id="histTitle">
-                        <i class="fas fa-history me-2 text-info"></i>IP History
+                        <i data-lucide="history" class="icon-lucide me-2 text-info"></i>IP History
                     </h5>
                     <div class="small text-muted mt-1" id="histSubtitle"></div>
                 </div>
@@ -557,17 +478,17 @@ $is_admin  = in_array($user_role, ['admin','manager']);
                     <span id="hd_host"  class="small fw-semibold text-muted">—</span>
                     <span id="hd_status"></span>
                     <span id="hd_vlan"  class="small text-muted"></span>
-                    <span id="hd_first" class="small text-muted ms-auto"><i class="fas fa-calendar-plus me-1"></i>First seen: —</span>
-                    <span id="hd_last"  class="small text-muted"><i class="fas fa-clock me-1"></i>Last seen: —</span>
+                    <span id="hd_first" class="small text-muted ms-auto"><i data-lucide="calendar-plus" class="icon-lucide me-1"></i>First seen: —</span>
+                    <span id="hd_last"  class="small text-muted"><i data-lucide="clock" class="icon-lucide me-1"></i>Last seen: —</span>
                 </div>
                 <div class="p-3">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0"><i class="fas fa-stream me-2 text-primary"></i>Change Timeline</h6>
+                        <h6 class="mb-0"><i data-lucide="stream" class="icon-lucide me-2 text-primary"></i>Change Timeline</h6>
                         <span id="histAlertCount" class="badge bg-danger"></span>
                     </div>
                     <div id="histTimeline" class="position-relative">
                         <div class="text-center py-4 text-muted">
-                            <i class="fas fa-spinner fa-spin me-2"></i>Loading history…
+                            <i data-lucide="loader" class="icon-lucide fa-spin me-2"></i>Loading history…
                         </div>
                     </div>
                 </div>
@@ -575,7 +496,7 @@ $is_admin  = in_array($user_role, ['admin','manager']);
             <div class="modal-footer py-2">
                 <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                 <button class="btn btn-sm btn-warning" id="histBulkAck">
-                    <i class="fas fa-check-double me-1"></i>Ack All for this IP
+                    <i data-lucide="check" class="icon-lucide -double me-1"></i>Ack All for this IP
                 </button>
             </div>
         </div>
@@ -633,8 +554,8 @@ function updateStats(data) {
 
     document.getElementById('bulkCount').textContent = alerts;
     document.getElementById('alertBanner').innerHTML = alerts > 0
-        ? `<span class="badge bg-danger"><i class="fas fa-bell me-1"></i>${alerts} unacked</span>`
-        : `<span class="text-success small"><i class="fas fa-check-circle me-1"></i>All clear</span>`;
+        ? `<span class="badge bg-danger"><i data-lucide="bell" class="icon-lucide me-1"></i>${alerts} unacked</span>`
+        : `<span class="text-success small"><i data-lucide="check-circle" class="icon-lucide me-1"></i>All clear</span>`;
 
     buildUtil(data);
     buildSubnetFilter(data);
@@ -722,7 +643,7 @@ function renderTable(data) {
 
     if(!vis.length){
         tbody.innerHTML=`<tr><td colspan="11" class="text-center py-4 text-muted">
-            <i class="fas fa-inbox me-2"></i>No records match.</td></tr>`;
+            <i data-lucide="inbox" class="icon-lucide me-2"></i>No records match.</td></tr>`;
         return;
     }
 
@@ -734,7 +655,7 @@ function renderTable(data) {
         const isAlert=d.alert_type&&!d.acknowledged;
         const alertIco=d.alert_type==='spoofing'
             ?`<i class="fas fa-skull-crossbones text-danger ms-1" title="MAC Spoofing!"></i>`
-            :d.alert_type?`<i class="fas fa-exclamation-circle text-warning ms-1"></i>`:'';
+            :d.alert_type?`<i data-lucide="alert-circle" class="icon-lucide text-warning ms-1"></i>`:'';
         const ackBadge=d.acknowledged
             ?`<span class="badge bg-success ms-1" style="font-size:.6rem"
                 title="Acked by ${d.ack_by||'?'}${d.ack_note?' – '+d.ack_note:''}">✓</span>`:'';
@@ -757,14 +678,14 @@ function renderTable(data) {
             <td class="note-cell small text-muted" title="${d.notes||''}">${d.notes||'—'}</td>
             <td onclick="event.stopPropagation()"><div class="btn-group btn-group-sm">
                 <button class="btn btn-outline-primary py-0 px-1"
-                    onclick="openEditIP(window._ipamDevMap[${d.id}])" title="Edit"><i class="fas fa-edit fa-xs"></i></button>
+                    onclick="openEditIP(window._ipamDevMap[${d.id}])" title="Edit"><i data-lucide="edit" class="icon-lucide fa-xs"></i></button>
                 <button class="btn btn-outline-danger py-0 px-1"
-                    onclick="delIP(${d.id})" title="Delete"><i class="fas fa-trash fa-xs"></i></button>
+                    onclick="delIP(${d.id})" title="Delete"><i data-lucide="trash" class="icon-lucide fa-xs"></i></button>
                 ${isAlert?`<button class="btn btn-warning py-0 px-1"
                     onclick="openAck(${d.id},'${d.ip}','${d.alert_type}')"
-                    title="Acknowledge"><i class="fas fa-check fa-xs"></i></button>`:''}
+                    title="Acknowledge"><i data-lucide="check" class="icon-lucide fa-xs"></i></button>`:''}
                 <button class="btn btn-outline-info py-0 px-1"
-                    onclick="openHistory('${d.ip}',${d.id})" title="View history"><i class="fas fa-history fa-xs"></i></button>
+                    onclick="openHistory('${d.ip}',${d.id})" title="View history"><i data-lucide="history" class="icon-lucide fa-xs"></i></button>
             </div></td>
         </tr>`;
     }).join('');
@@ -806,7 +727,7 @@ function renderSubnetPills(subnets) {
         return `<div class="sn-pill px-2 py-2 small ${i===0?'active-sn':''}" data-cidr="${s.cidr}">
             <div class="d-flex justify-content-between align-items-center">
                 <span>
-                    <i class="fas fa-network-wired me-1 text-primary"></i>
+                    <i data-lucide="network" class="icon-lucide me-1 text-primary"></i>
                     <strong>${s.cidr}</strong>
                     <span class="sn-iface-badge badge bg-secondary ms-1">${s.interface_auto||'auto'}</span>
                     ${!s.scan_enabled?'<span class="badge bg-dark ms-1" style="font-size:.6rem">manual</span>':''}
@@ -850,26 +771,26 @@ function renderSubnetList(subnets) {
                 <div class="d-flex gap-1">
                     <button class="btn btn-xs btn-outline-success py-0 px-1" style="font-size:.7rem"
                         onclick="quickScan('${s.cidr}')" title="Scan this subnet">
-                        <i class="fas fa-play fa-xs"></i>
+                        <i data-lucide="play" class="icon-lucide fa-xs"></i>
                     </button>
                     <button class="btn btn-xs btn-outline-primary py-0 px-1" style="font-size:.7rem"
                         onclick="openEditSubnet(window._ipamSnMap[${s.id}])" title="Edit">
-                        <i class="fas fa-edit fa-xs"></i>
+                        <i data-lucide="edit" class="icon-lucide fa-xs"></i>
                     </button>
                     <button class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:.7rem"
                         onclick="delSubnet(${s.id})" title="Delete">
-                        <i class="fas fa-trash fa-xs"></i>
+                        <i data-lucide="trash" class="icon-lucide fa-xs"></i>
                     </button>
                 </div>
             </div>
             <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
-                <span class="badge bg-dark" style="font-size:.68rem"><i class="fas fa-desktop me-1"></i>${s.device_count} total</span>
-                <span class="badge bg-success" style="font-size:.68rem"><i class="fas fa-circle me-1"></i>${s.active_count} online</span>
+                <span class="badge bg-dark" style="font-size:.68rem"><i data-lucide="monitor" class="icon-lucide me-1"></i>${s.device_count} total</span>
+                <span class="badge bg-success" style="font-size:.68rem"><i data-lucide="circle" class="icon-lucide me-1"></i>${s.active_count} online</span>
                 <span class="badge bg-secondary" style="font-size:.68rem">${s.device_count-s.active_count} offline</span>
-                <span class="badge bg-info" style="font-size:.68rem"><i class="fas fa-route me-1"></i>${s.interface_auto||'auto'}</span>
+                <span class="badge bg-info" style="font-size:.68rem"><i data-lucide="route" class="icon-lucide me-1"></i>${s.interface_auto||'auto'}</span>
                 <span class="badge ${s.scan_enabled?'bg-primary':'bg-dark'} subnet-scan-badge"
                       style="font-size:.68rem">
-                    ${s.scan_enabled?'<i class="fas fa-sync-alt me-1"></i>auto-scan':'manual'}
+                    ${s.scan_enabled?'<i data-lucide="refresh-ccw" class="icon-lucide -alt me-1"></i>auto-scan':'manual'}
                 </span>
                 ${s.vlan_id?`<span class="badge bg-warning text-dark" style="font-size:.68rem">VLAN ${s.vlan_id}</span>`:''}
             </div>
@@ -898,7 +819,7 @@ function runScan(cidr) {
     const bar=document.getElementById('scanBar'),prg=document.getElementById('scanPrg');
     const btn=document.getElementById('btnScan'),txt=document.getElementById('scanTxt');
     bar.classList.remove('d-none'); prg.style.width='5%';
-    btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin me-1"></i>Scanning…';
+    btn.disabled=true; btn.innerHTML='<i data-lucide="loader" class="icon-lucide fa-spin me-1"></i>Scanning…';
     txt.textContent='Scanning '+cidr+'…';
     let pct=5;
     const tick=setInterval(()=>{pct=Math.min(pct+2.5,88);prg.style.width=pct+'%';},400);
@@ -942,7 +863,7 @@ function runScan(cidr) {
         })
         .finally(()=>{
             btn.disabled=false;
-            btn.innerHTML='<i class="fas fa-search-location me-1"></i>Scan Now';
+            btn.innerHTML='<i data-lucide="search" class="icon-lucide -location me-1"></i>Scan Now';
         });
 }
 
@@ -959,14 +880,14 @@ function quickScan(cidr){
 document.getElementById('btnScanAll').addEventListener('click', async function(){
     const enabled=allSubnets.filter(s=>s.scan_enabled);
     if(!enabled.length){toast('warning','No subnets with auto-scan enabled');return;}
-    this.disabled=true; this.innerHTML='<i class="fas fa-spinner fa-spin me-1"></i>Scanning…';
+    this.disabled=true; this.innerHTML='<i data-lucide="loader" class="icon-lucide fa-spin me-1"></i>Scanning…';
     for(const s of enabled){
         document.getElementById('scanCIDR').value=s.cidr;
         toast('info',`Starting scan: ${s.cidr}`,2000);
         await runScan(s.cidr);
         await new Promise(r=>setTimeout(r,500));
     }
-    this.disabled=false; this.innerHTML='<i class="fas fa-globe me-1"></i>Scan All Enabled';
+    this.disabled=false; this.innerHTML='<i data-lucide="globe" class="icon-lucide me-1"></i>Scan All Enabled';
     toast('success','All subnets scanned');
 });
 
@@ -1023,8 +944,8 @@ document.getElementById('selAll').addEventListener('change',function(){
 /* ─── IP Edit ─── */
 function openEditIP(d={}) {
     document.getElementById('ipModalTitle').innerHTML=d.id
-        ?'<i class="fas fa-edit me-2"></i>Edit IP Record'
-        :'<i class="fas fa-plus me-2"></i>Add IP Record';
+        ?'<i data-lucide="edit" class="icon-lucide me-2"></i>Edit IP Record'
+        :'<i data-lucide="plus" class="icon-lucide me-2"></i>Add IP Record';
     document.getElementById('fId').value=d.id||'';
     document.getElementById('fIp').value=d.ip||'';
     document.getElementById('fMac').value=d.mac||'';
@@ -1056,8 +977,8 @@ function delIP(id){
 /* ─── Subnet Edit ─── */
 function openEditSubnet(s={}) {
     document.getElementById('snModalTitle').innerHTML=s.id
-        ?'<i class="fas fa-edit me-2"></i>Edit Subnet'
-        :'<i class="fas fa-plus me-2"></i>Add Subnet';
+        ?'<i data-lucide="edit" class="icon-lucide me-2"></i>Edit Subnet'
+        :'<i data-lucide="plus" class="icon-lucide me-2"></i>Add Subnet';
     document.getElementById('snId').value=s.id||'';
     document.getElementById('snCidr').value=s.cidr||'';
     document.getElementById('snLabel').value=s.label||'';
@@ -1141,7 +1062,7 @@ function openHistory(ip, id) {
     histCurrentIP = ip;
     const dev = window._ipamDevMap ? window._ipamDevMap[id] : null;
     document.getElementById('histTitle').innerHTML =
-        `<i class="fas fa-history me-2 text-info"></i>History: <span class="font-monospace text-warning">${ip}</span>`;
+        `<i data-lucide="history" class="icon-lucide me-2 text-info"></i>History: <span class="font-monospace text-warning">${ip}</span>`;
     document.getElementById('histSubtitle').textContent =
         dev ? (dev.assigned_to || 'Unknown device') + (dev.notes ? ' — ' + dev.notes.slice(0,60) : '') : '';
 
@@ -1152,12 +1073,12 @@ function openHistory(ip, id) {
         document.getElementById('hd_status').innerHTML  =
             `<span class="badge bg-${{active:'success',inactive:'secondary',reserved:'warning'}[dev.status]||'secondary'}">${dev.status}</span>`;
         document.getElementById('hd_vlan').textContent  = dev.vlan ? 'VLAN: '+dev.vlan : '';
-        document.getElementById('hd_first').innerHTML   = `<i class="fas fa-calendar-plus me-1"></i>First: ${fmtD(dev.first_seen)}`;
-        document.getElementById('hd_last').innerHTML    = `<i class="fas fa-clock me-1"></i>Last: ${fmtD(dev.last_seen)}`;
+        document.getElementById('hd_first').innerHTML   = `<i data-lucide="calendar-plus" class="icon-lucide me-1"></i>First: ${fmtD(dev.first_seen)}`;
+        document.getElementById('hd_last').innerHTML    = `<i data-lucide="clock" class="icon-lucide me-1"></i>Last: ${fmtD(dev.last_seen)}`;
     }
 
     document.getElementById('histTimeline').innerHTML =
-        '<div class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading…</div>';
+        '<div class="text-center py-4 text-muted"><i data-lucide="loader" class="icon-lucide fa-spin me-2"></i>Loading…</div>';
     document.getElementById('histAlertCount').textContent = '';
 
     historyModal.show();
@@ -1192,7 +1113,7 @@ function renderTimeline(logs) {
 
     if (!logs.length) {
         el.innerHTML = `<div class="text-center py-4 text-muted">
-            <i class="fas fa-check-circle text-success fa-2x mb-2"></i><br>
+            <i data-lucide="check-circle" class="icon-lucide text-success fa-2x mb-2"></i><br>
             No change events recorded for this IP.
         </div>`;
         return;
@@ -1225,12 +1146,12 @@ function renderTimeline(logs) {
         const macChange = (log.old_mac && log.new_mac && log.old_mac !== log.new_mac)
             ? `<div class="mt-1 font-monospace" style="font-size:.78rem">
                 <span class="text-muted">${log.old_mac||'—'}</span>
-                <i class="fas fa-arrow-right mx-1 text-warning"></i>
+                <i data-lucide="arrow-right" class="icon-lucide mx-1 text-warning"></i>
                 <span class="text-light">${log.new_mac||'—'}</span>
                </div>` : '';
         const ackInfo = acked
             ? `<div class="mt-1 text-success" style="font-size:.72rem">
-                <i class="fas fa-check-circle me-1"></i>Acked by
+                <i data-lucide="check-circle" class="icon-lucide me-1"></i>Acked by
                 <strong>${log.acknowledged_by||'?'}</strong>
                 ${log.ack_note ? '— ' + log.ack_note.slice(0,50) : ''}
                </div>` : '';
@@ -1238,7 +1159,7 @@ function renderTimeline(logs) {
             ? `<button class="btn btn-warning btn-sm py-0 px-2 mt-1 tl-ack-btn"
                 style="font-size:.72rem"
                 data-log-id="${log.id}" data-ip="${log.ip}">
-                <i class="fas fa-check me-1"></i>Ack
+                <i data-lucide="check" class="icon-lucide me-1"></i>Ack
                </button>` : '';
 
         return `<div class="timeline-item ${acked?'tl-acked':''}">
@@ -1355,7 +1276,7 @@ function openNatModal(id) {
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title"><i class="fas fa-random me-2"></i>${id ? 'Edit' : 'Add'} NAT / VIP Mapping</h5>
+            <h5 class="modal-title"><i data-lucide="random" class="icon-lucide me-2"></i>${id ? 'Edit' : 'Add'} NAT / VIP Mapping</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
@@ -1386,7 +1307,7 @@ function openNatModal(id) {
           <div class="modal-footer">
             <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
             <button class="btn btn-primary btn-sm" onclick="saveNat()">
-              <i class="fas fa-save me-1"></i>Save
+              <i data-lucide="save" class="icon-lucide me-1"></i>Save
             </button>
           </div>
         </div>

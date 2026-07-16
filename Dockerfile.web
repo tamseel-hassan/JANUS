@@ -1,0 +1,10 @@
+FROM php:8.1-apache
+
+# Install MySQL extensions for PHP
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+
+# Enable Apache rewrite rules
+RUN a2enmod rewrite
+
+# Copy local code directory inside web root
+WORKDIR /var/www/html

@@ -126,66 +126,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/font-awesome/css/all.min.css">
     <link rel="stylesheet" href="css/theme.css">
-    <style>
-        .risk-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        .risk-critical { background: #dc3545; color: white; }
-        .risk-high { background: #fd7e14; color: white; }
-        .risk-medium { background: #ffc107; color: #000; }
-        .risk-low { background: #28a745; color: white; }
-        .risk-clean { background: #20c997; color: white; }
-        .risk-unknown { background: #6c757d; color: white; }
-        
-        .result-card {
-            border-left: 4px solid var(--border);
-            transition: all 0.3s;
-        }
-        .result-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .result-card.malicious { border-left-color: #dc3545; }
-        .result-card.suspicious { border-left-color: #ffc107; }
-        .result-card.clean { border-left-color: #28a745; }
-        
-        .source-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-right: 15px;
-        }
-        
-        .metric-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            line-height: 1;
-        }
-        
-        .search-hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            padding: 40px;
-            color: white;
-            margin-bottom: 30px;
-        }
-        
-        .quick-action {
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .quick-action:hover {
-            transform: scale(1.05);
-            background: rgba(0,198,255,0.1);
-        }
-    </style>
+    <link rel="stylesheet" href="css/pages/threat_intel.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -196,7 +137,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
-            <h2><i class="fas fa-shield-virus"></i> Threat Intelligence Center</h2>
+            <h2><i data-lucide="shield-virus" class="icon-lucide"></i> Threat Intelligence Center</h2>
             <p class="text-muted">Analyze IPs, domains, URLs, file hashes, and investigate threats using multiple intelligence sources</p>
         </div>
     </div>
@@ -210,7 +151,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 
     <!-- Search Hero Section -->
     <div class="search-hero">
-        <h3 class="mb-4"><i class="fas fa-search"></i> Investigate Threat Indicators</h3>
+        <h3 class="mb-4"><i data-lucide="search" class="icon-lucide"></i> Investigate Threat Indicators</h3>
         <form method="POST" class="row g-3">
             <input type="hidden" name="analyze" value="1">
             <div class="col-md-3">
@@ -235,7 +176,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             </div>
             <div class="col-12">
                 <button type="submit" class="btn btn-light btn-lg px-5">
-                    <i class="fas fa-search"></i> Analyze Threat
+                    <i data-lucide="search" class="icon-lucide"></i> Analyze Threat
                 </button>
             </div>
         </form>
@@ -245,7 +186,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="col-md-3">
                 <div class="card quick-action" onclick="quickFill('ip', '8.8.8.8')">
                     <div class="card-body text-center">
-                        <i class="fas fa-network-wired fa-2x mb-2"></i>
+                        <i data-lucide="network" class="icon-lucide fa-2x mb-2"></i>
                         <p class="mb-0">Test IP</p>
                     </div>
                 </div>
@@ -253,7 +194,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="col-md-3">
                 <div class="card quick-action" onclick="quickFill('domain', 'example.com')">
                     <div class="card-body text-center">
-                        <i class="fas fa-globe fa-2x mb-2"></i>
+                        <i data-lucide="globe" class="icon-lucide fa-2x mb-2"></i>
                         <p class="mb-0">Test Domain</p>
                     </div>
                 </div>
@@ -261,7 +202,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="col-md-3">
                 <div class="card quick-action" onclick="quickFill('hash', '44d88612fea8a8f36de82e1278abb02f')">
                     <div class="card-body text-center">
-                        <i class="fas fa-fingerprint fa-2x mb-2"></i>
+                        <i data-lucide="fingerprint" class="icon-lucide fa-2x mb-2"></i>
                         <p class="mb-0">Test Hash</p>
                     </div>
                 </div>
@@ -269,7 +210,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="col-md-3">
                 <a href="malware_analysis.php" class="card quick-action text-decoration-none">
                     <div class="card-body text-center">
-                        <i class="fas fa-virus fa-2x mb-2"></i>
+                        <i data-lucide="virus" class="icon-lucide fa-2x mb-2"></i>
                         <p class="mb-0">Malware Analysis</p>
                     </div>
                 </a>
@@ -347,7 +288,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
                         <div class="source-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                            <i class="fas fa-shield-alt"></i>
+                            <i data-lucide="shield" class="icon-lucide"></i>
                         </div>
                         <div>
                             <h5 class="mb-0"><?= htmlspecialchars(ucfirst($source)) ?></h5>
@@ -377,7 +318,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                     
                     <?php if (isset($data['message'])): ?>
                     <div class="alert alert-info mt-3 mb-0">
-                        <i class="fas fa-info-circle"></i> <?= htmlspecialchars($data['message']) ?>
+                        <i data-lucide="info" class="icon-lucide"></i> <?= htmlspecialchars($data['message']) ?>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -392,7 +333,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Analysis History</h5>
+                    <h5 class="mb-0"><i data-lucide="history" class="icon-lucide"></i> Recent Analysis History</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -425,7 +366,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     </td>
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary" onclick='viewDetails(<?= json_encode($row['result_summary']) ?>)'>
-                                            <i class="fas fa-eye"></i> View
+                                            <i data-lucide="eye" class="icon-lucide"></i> View
                                         </button>
                                     </td>
                                 </tr>

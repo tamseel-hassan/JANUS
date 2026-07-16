@@ -101,130 +101,25 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="css/fontawesome.min.css" rel="stylesheet">
     <!-- Local Theme CSS -->
     <link href="css/theme.css" rel="stylesheet">
-    <style>
-        .password-strength {
-            height: 5px;
-            margin-top: 5px;
-            background-color: #eee;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        .password-strength-bar {
-            height: 100%;
-            width: 0;
-            transition: width 0.3s, background-color 0.3s;
-        }
-        .visually-hidden {
-            position: absolute !important;
-            width: 1px !important;
-            height: 1px !important;
-            padding: 0 !important;
-            margin: -1px !important;
-            overflow: hidden !important;
-            clip: rect(0, 0, 0, 0) !important;
-            white-space: nowrap !important;
-            border: 0 !important;
-        }
-        .password-requirements {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 5px;
-        }
-        .requirement {
-            display: flex;
-            align-items: center;
-            margin-bottom: 3px;
-        }
-        .requirement i {
-            margin-right: 5px;
-            width: 16px;
-            text-align: center;
-        }
-        .requirement.valid {
-            color: #198754;
-        }
-        .requirement.invalid {
-            color: #dc3545;
-        }
-        .card {
-            border: 1px solid rgba(0,0,0,.125);
-            border-radius: 10px;
-        }
-        .card-header {
-            border-radius: 10px 10px 0 0 !important;
-        }
-        .toast {
-            z-index: 9999;
-        }
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-        }
-        .navbar {
-            background-color: var(--card-bg) !important;
-            border-bottom: 1px solid var(--border);
-        }
-        .card {
-            background-color: var(--card-bg);
-            border-color: var(--border);
-        }
-        .table {
-            color: var(--text);
-        }
-        .table th {
-            background-color: var(--bg);
-            border-color: var(--border);
-        }
-        .table td {
-            border-color: var(--border);
-        }
-        .form-control {
-            background-color: var(--card-bg);
-            color: var(--text);
-            border-color: var(--border);
-        }
-        .form-control:focus {
-            background-color: var(--card-bg);
-            color: var(--text);
-            border-color: var(--accent);
-        }
-        .btn-outline-light {
-            border-color: var(--border);
-            color: var(--text);
-        }
-        .btn-outline-light:hover {
-            background-color: var(--accent);
-            border-color: var(--accent);
-        }
-        .modal-content {
-            background-color: var(--card-bg);
-            color: var(--text);
-        }
-        .modal-header {
-            border-bottom-color: var(--border);
-        }
-        .modal-footer {
-            border-top-color: var(--border);
-        }
-    </style>
+    <link rel="stylesheet" href="css/pages/profile.css">
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
         <div class="container">
             <a class="navbar-brand" href="home.php">
-                <i class="fas fa-home me-2"></i>JanusNMS
+                <i data-lucide="home" class="icon-lucide me-2"></i>JanusNMS
             </a>
             <div class="d-flex">
                 <span class="badge bg-light text-dark me-3 d-flex align-items-center">
-                    <i class="fas fa-user-tag me-2"></i>
+                    <i data-lucide="user" class="icon-lucide -tag me-2"></i>
                     <?= htmlspecialchars(ucfirst($user_role)) ?>
                 </span>
                 <a href="home.php" class="btn btn-outline-light me-2">
-                    <i class="fas fa-arrow-left me-1"></i>Back to Home
+                    <i data-lucide="arrow-left" class="icon-lucide me-1"></i>Back to Home
                 </a>
                 <a href="logout.php" class="btn btn-danger">
-                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    <i data-lucide="sign-out-alt" class="icon-lucide me-1"></i>Logout
                 </a>
             </div>
         </div>
@@ -236,7 +131,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="col-lg-8">
                 <div class="card shadow-sm">
                     <div class="card-header bg-primary text-white">
-                        <h2 class="mb-0"><i class="fas fa-user-circle me-2"></i>User Profile</h2>
+                        <h2 class="mb-0"><i data-lucide="circle-user" class="icon-lucide me-2"></i>User Profile</h2>
                     </div>
                     <div class="card-body">
                         <!-- Toast Container -->
@@ -245,7 +140,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                 <div class="toast show align-items-center text-white border-0 <?php echo strpos($message, 'success') ? 'bg-success' : 'bg-danger'; ?>" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
                                     <div class="d-flex">
                                         <div class="toast-body">
-                                            <?php echo strpos($message, 'success') ? '<i class="fas fa-check-circle me-2"></i>' : '<i class="fas fa-exclamation-circle me-2"></i>'; ?>
+                                            <?php echo strpos($message, 'success') ? '<i data-lucide="check-circle" class="icon-lucide me-2"></i>' : '<i data-lucide="alert-circle" class="icon-lucide me-2"></i>'; ?>
                                             <?php echo strip_tags($message); ?>
                                         </div>
                                         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
@@ -256,7 +151,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         
                         <!-- Account Details -->
                         <div class="mb-4">
-                            <h5><i class="fas fa-id-card me-2"></i>Account Details</h5>
+                            <h5><i data-lucide="id-card" class="icon-lucide me-2"></i>Account Details</h5>
                             <table class="table table-bordered">
                                 <tr>
                                     <th style="width: 30%;">Username:</th>
@@ -283,7 +178,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         
                         <!-- Change Password Form -->
                         <div class="mb-4">
-                            <h5><i class="fas fa-key me-2"></i>Change Password</h5>
+                            <h5><i data-lucide="key" class="icon-lucide me-2"></i>Change Password</h5>
                             <form method="post" id="passwordChangeForm" onsubmit="event.preventDefault(); confirmPasswordChange();">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                 <input type="hidden" name="change_password" value="1">
@@ -293,7 +188,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     <div class="input-group">
                                         <input type="password" class="form-control" id="current_password" name="current_password" required>
                                         <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('current_password', this)">
-                                            <i class="fas fa-eye"></i>
+                                            <i data-lucide="eye" class="icon-lucide"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -304,7 +199,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                         <input type="password" class="form-control" id="new_password" name="new_password" required 
                                                oninput="checkPasswordStrength(this.value); validatePasswordRequirements();">
                                         <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('new_password', this)">
-                                            <i class="fas fa-eye"></i>
+                                            <i data-lucide="eye" class="icon-lucide"></i>
                                         </button>
                                     </div>
                                     <div class="password-strength mt-2">
@@ -314,23 +209,23 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     
                                     <div class="password-requirements mt-2">
                                         <div class="requirement invalid" id="req-length">
-                                            <i class="fas fa-times-circle"></i>
+                                            <i data-lucide="x" class="icon-lucide -circle"></i>
                                             <span>At least 8 characters</span>
                                         </div>
                                         <div class="requirement invalid" id="req-uppercase">
-                                            <i class="fas fa-times-circle"></i>
+                                            <i data-lucide="x" class="icon-lucide -circle"></i>
                                             <span>At least one uppercase letter</span>
                                         </div>
                                         <div class="requirement invalid" id="req-lowercase">
-                                            <i class="fas fa-times-circle"></i>
+                                            <i data-lucide="x" class="icon-lucide -circle"></i>
                                             <span>At least one lowercase letter</span>
                                         </div>
                                         <div class="requirement invalid" id="req-number">
-                                            <i class="fas fa-times-circle"></i>
+                                            <i data-lucide="x" class="icon-lucide -circle"></i>
                                             <span>At least one number</span>
                                         </div>
                                         <div class="requirement invalid" id="req-special">
-                                            <i class="fas fa-times-circle"></i>
+                                            <i data-lucide="x" class="icon-lucide -circle"></i>
                                             <span>At least one special character</span>
                                         </div>
                                     </div>
@@ -341,7 +236,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     <div class="input-group">
                                         <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                                         <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('confirm_password', this)">
-                                            <i class="fas fa-eye"></i>
+                                            <i data-lucide="eye" class="icon-lucide"></i>
                                         </button>
                                     </div>
                                     <div class="mt-1">
@@ -350,7 +245,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                 </div>
                                 
                                 <button type="submit" class="btn btn-primary" id="passwordChangeButton">
-                                    <span id="passwordChangeText"><i class="fas fa-key me-1"></i>Change Password</span>
+                                    <span id="passwordChangeText"><i data-lucide="key" class="icon-lucide me-1"></i>Change Password</span>
                                     <span id="passwordChangeSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                                 </button>
                             </form>
@@ -358,7 +253,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         
                         <!-- Change Email Form -->
                         <div>
-                            <h5><i class="fas fa-envelope me-2"></i>Change Email</h5>
+                            <h5><i data-lucide="envelope" class="icon-lucide me-2"></i>Change Email</h5>
                             <form method="post" id="emailChangeForm" onsubmit="event.preventDefault(); confirmEmailChange();">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                 <input type="hidden" name="change_email" value="1">
@@ -370,7 +265,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                 </div>
                                 
                                 <button type="submit" class="btn btn-primary" id="emailChangeButton">
-                                    <span id="emailChangeText"><i class="fas fa-envelope me-1"></i>Update Email</span>
+                                    <span id="emailChangeText"><i data-lucide="envelope" class="icon-lucide me-1"></i>Update Email</span>
                                     <span id="emailChangeSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                                 </button>
                             </form>
@@ -392,7 +287,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <div class="modal-body">
                     Are you sure you want to change your password?
                     <div class="alert alert-warning mt-2">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <i data-lucide="triangle-alert" class="icon-lucide me-2"></i>
                         You will need to log in again with your new password.
                     </div>
                 </div>
@@ -650,9 +545,9 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <div id="${toastId}" class="toast show align-items-center text-white border-0 bg-${type}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
                     <div class="d-flex">
                         <div class="toast-body">
-                            ${type === 'success' ? '<i class="fas fa-check-circle me-2"></i>' : 
-                              type === 'danger' ? '<i class="fas fa-exclamation-circle me-2"></i>' : 
-                              '<i class="fas fa-info-circle me-2"></i>'}
+                            ${type === 'success' ? '<i data-lucide="check-circle" class="icon-lucide me-2"></i>' : 
+                              type === 'danger' ? '<i data-lucide="alert-circle" class="icon-lucide me-2"></i>' : 
+                              '<i data-lucide="info" class="icon-lucide me-2"></i>'}
                             ${message}
                         </div>
                         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>

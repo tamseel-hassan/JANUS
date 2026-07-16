@@ -1,0 +1,71 @@
+/* ============================================================
+   Threat Intel Hub Styles - Midnight Violet Theme
+   ============================================================ */
+
+.risk-badge {
+    padding: 6px 12px;
+    border-radius: 8px; /* Section 5: nested element */
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.risk-critical { background: rgba(248, 113, 113, 0.2); color: var(--metric-down); border: 1px solid rgba(248, 113, 113, 0.3); }
+.risk-high { background: rgba(243, 156, 18, 0.2); color: var(--metric-warning); border: 1px solid rgba(243, 156, 18, 0.3); }
+.risk-medium { background: rgba(250, 204, 21, 0.2); color: var(--metric-warning); border: 1px solid rgba(250, 204, 21, 0.3); }
+.risk-low { background: rgba(74, 222, 128, 0.2); color: var(--metric-up); border: 1px solid rgba(74, 222, 128, 0.3); }
+.risk-clean { background: rgba(74, 222, 128, 0.2); color: var(--metric-up); border: 1px solid rgba(74, 222, 128, 0.3); }
+.risk-unknown { background: rgba(138, 148, 173, 0.2); color: var(--text-muted); border: 1px solid rgba(138, 148, 173, 0.3); }
+
+.result-card {
+    border-left: 4px solid var(--border);
+    transition: background-color 0.2s ease, border-color 0.2s ease; /* No transforms allowed */
+}
+
+.result-card:hover {
+    background: rgba(178, 132, 190, 0.05);
+}
+
+.result-card.malicious { border-left-color: var(--metric-down); }
+.result-card.suspicious { border-left-color: var(--metric-warning); }
+.result-card.clean { border-left-color: var(--metric-up); }
+
+.source-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px; /* Changed from 50% pill rule */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 15px;
+    background: rgba(178, 132, 190, 0.1);
+    border: 1px solid var(--border);
+    color: var(--accent);
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text);
+}
+
+.search-hero {
+    background: linear-gradient(160deg, #1a0b22 0%, #28112f 40%, #3d2248 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px; /* Section 5: primary component */
+    padding: 40px;
+    color: var(--text);
+    margin-bottom: 30px;
+}
+
+.quick-action {
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    transition: background-color 0.2s ease;
+}
+
+.quick-action:hover {
+    background: rgba(178, 132, 190, 0.15);
+}

@@ -1,0 +1,28 @@
+/* ============================================================
+   Report Incident Styles - Midnight Violet Theme
+   ============================================================ */
+
+.wizard-step { display: none; opacity: 0; transition: opacity 0.4s; }
+.wizard-step.active { display: block; opacity: 1; }
+.type-card { 
+    cursor: pointer; 
+    transition: all 0.3s; 
+    border: 2px solid transparent; 
+    border-radius: 16px; /* Section 5: Primary */
+    background: var(--card-bg);
+}
+.type-card:hover { transform: none; box-shadow: none; }
+.type-card.selected { border-color: var(--accent); background: rgba(178, 132, 190, 0.1); }
+.priority-btn { transition: all 0.3s; border-radius: 8px; /* Section 5: nested */ }
+.priority-btn.selected { transform: none; box-shadow: none; }
+.preview-box { 
+    background: rgba(178, 132, 190, 0.05); 
+    border-left: 4px solid var(--accent); 
+    border-radius: 8px; /* Section 5: nested */
+}
+.observable-field { 
+    margin-bottom: 1rem; 
+    border: 1px dashed var(--border); 
+    padding: 1rem; 
+    border-radius: 8px; /* Section 5: nested */
+}

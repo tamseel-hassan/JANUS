@@ -36,28 +36,28 @@ if (!is_array($data) || isset($data['error'])) {
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-server"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="server" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $data['stats']['total_devices'] ?? 0 ?></div>
             <div class="stat-label">Total Devices</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i class="fas fa-arrow-up"></i></div>
+            <div class="stat-icon text-success"><i data-lucide="arrow-up" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $data['stats']['up_devices'] ?? 0 ?></div>
             <div class="stat-label">Up</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-arrow-down"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="arrow-down" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $data['stats']['down_devices'] ?? 0 ?></div>
             <div class="stat-label">Down</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-percentage"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="percentage" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $data['stats']['avg_availability'] ?? 0 ?>%</div>
             <div class="stat-label">Avg Availability</div>
         </div>
@@ -65,7 +65,7 @@ if (!is_array($data) || isset($data['error'])) {
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-list"></i> Device Availability</h5>
+    <h5><i data-lucide="list" class="icon-lucide"></i> Device Availability</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead>

@@ -168,137 +168,7 @@ mysqli_close($con);
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/font-awesome/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/theme.css">
-    <style>
-        body.loggedin { font-family:'Segoe UI',sans-serif; margin:0; background:var(--bg); color:var(--text); overflow-x:hidden; }
-        #main-content { margin-left:260px; padding:80px 25px 25px; min-height:100vh; transition:margin-left .3s; overflow:visible; }
-        .sidebar.collapsed ~ #main-content { margin-left:80px; }
-        body.fullscreen #sidebar, body.fullscreen .topbar { display:none !important; }
-        body.fullscreen #main-content { margin-left:0 !important; padding:0 !important; overflow:hidden; }
-        #map-container.fullscreen { position:fixed; top:0; left:0; width:100vw !important; height:100vh !important; min-height:100vh !important; padding:0; margin:0; border:none; border-radius:0; z-index:9999; }
-        body.fullscreen #header-row, body.fullscreen #lastUpdate, body.fullscreen #map-selector, body.fullscreen #device-filter { display:none !important; }
-
-        /* Map selector */
-        #map-selector { background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:15px; margin-bottom:20px; }
-        #map-selector .map-tabs { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-        #map-selector .map-tab { padding:8px 16px; background:var(--card-bg); border:2px solid var(--border); border-radius:6px; cursor:pointer; transition:.2s; display:flex; align-items:center; gap:8px; }
-        #map-selector .map-tab:hover, #map-selector .map-tab.active { background:var(--accent); color:white; border-color:var(--accent); }
-        #map-selector .map-tab.active { font-weight:600; }
-        #map-selector .map-tab .delete-map { color:#ef4444; margin-left:5px; font-size:.9rem; }
-        #map-selector .map-tab .delete-map:hover { color:white; }
-
-        /* Device filter */
-        #device-filter { background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:15px; margin-bottom:20px; }
-        #device-filter .filter-checkboxes { display:flex; flex-wrap:wrap; gap:15px; }
-        #device-filter .filter-checkboxes label { display:flex; align-items:center; gap:5px; cursor:pointer; }
-
-        /* Map container */
-        #map-container { position:relative; width:100%; height:70vh; min-height:600px; border:1px solid var(--border); border-radius:8px; background:var(--card-bg); overflow:auto; touch-action:none; transition:all .3s; cursor:grab; }
-        #map-container.panning { cursor:grabbing; }
-        body.fullscreen #map-container { overflow:hidden; height:100vh; }
-        #map-viewport { position:relative; width:3000px; height:3000px; transform-origin:0 0; min-width:3000px; min-height:3000px; }
-
-        /* Nodes */
-        .node { position:absolute; width:80px; height:auto; padding:5px; display:flex; flex-direction:column; justify-content:center; align-items:center; border-radius:0; background:transparent !important; border:none !important; color:var(--text); font-size:12px; cursor:move; text-align:center; box-shadow:none; transition:transform .1s ease-out,box-shadow .2s; z-index:10; user-select:none; }
-        .node img { width:36px; height:36px; margin-bottom:2px; pointer-events:none; transition:width .2s, height .2s; }
-        .node.up   img { filter:drop-shadow(0 0 5px #00ff7f); }
-        .node.down img { filter:drop-shadow(0 0 5px #ff4c4c); }
-        .node:hover { transform:scale(1.05); }
-        .node-name { font-weight:bold; white-space:nowrap; overflow:visible; width:auto; padding:2px 5px; background:rgba(0,0,0,.5); border-radius:3px; color:var(--text); pointer-events:none; }
-        [data-theme="light"] .node-name { background:rgba(255,255,255,.8); }
-
-        /* Links */
-        .link-line { position:absolute; height:2px; background:gray; transform-origin:0 0; z-index:5; transition:background .5s; pointer-events:none; }
-        .link-line.up { background:#00ff7f; }
-        .link-line.down { background:#ff4c4c; }
-        .curved-link { transition:stroke .5s; pointer-events:none; }
-        .curved-link.up { stroke:#00ff7f !important; }
-        .curved-link.down { stroke:#ff4c4c !important; }
-        .link-label { position:absolute; background:rgba(0,0,0,.7); color:white; padding:2px 5px; border-radius:3px; font-size:10px; z-index:15; pointer-events:none; }
-        [data-theme="light"] .link-label { background:rgba(0,0,0,.6); }
-
-        .card { background:var(--card-bg); border:1px solid var(--border); color:var(--text); }
-        .btn-primary { background:var(--accent); border-color:var(--accent); color:white; }
-        .btn-primary:hover { background:var(--menu-hover); border-color:var(--menu-hover); }
-
-        /* Device selector items */
-        .device-selector-item { padding:8px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
-        .device-selector-item:hover { background:var(--sb-hover-dark); }
-        [data-theme="light"] .device-selector-item:hover { background:var(--sb-hover-light); }
-        .device-info { flex:1; }
-        .device-name { font-weight:600; }
-        .device-details { font-size:.85rem; color:var(--text-muted); }
-
-        /* Tooltip */
-        .node-tooltip { position:fixed; background:rgba(0,0,0,.95); color:white; padding:12px 15px; border-radius:8px; font-size:12px; z-index:10000; pointer-events:none; max-width:300px; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2); box-shadow:0 4px 12px rgba(0,0,0,.3); }
-        .node-tooltip strong { color:#00c6ff; }
-        .node-tooltip .tooltip-section { margin-bottom:6px; line-height:1.3; }
-        .node-tooltip .tooltip-section:last-child { margin-bottom:0; }
-        .node-tooltip .status-up { color:#00ff7f; font-weight:bold; }
-        .node-tooltip .status-down { color:#ff4c4c; font-weight:bold; }
-
-        /* ── Right-click context menu ─────────────────────────────────────── */
-        #ctx-menu {
-            display: none;
-            position: fixed;
-            z-index: 20000;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0,0,0,.4);
-            min-width: 180px;
-            padding: 4px 0;
-            font-size: 14px;
-        }
-        #ctx-menu .ctx-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 9px 16px;
-            cursor: pointer;
-            color: var(--text);
-            transition: background .15s;
-        }
-        #ctx-menu .ctx-item:hover { background: rgba(0,198,255,.15); color: var(--accent); }
-        #ctx-menu .ctx-divider { border-top: 1px solid var(--border); margin: 4px 0; }
-
-        /* ── Icon picker modal ───────────────────────────────────────────── */
-        .icon-set-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 12px;
-            padding: 8px 0;
-        }
-        .icon-set-card {
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 8px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all .2s;
-            background: var(--card-bg);
-        }
-        .icon-set-card:hover { border-color: var(--accent); background: rgba(0,198,255,.08); }
-        .icon-set-card.selected { border-color: var(--accent); background: rgba(0,198,255,.18); }
-        .icon-set-card img { width: 36px; height: 36px; margin-bottom: 6px; display: block; margin-left: auto; margin-right: auto; }
-        .icon-set-card .isc-label { font-size: 12px; font-weight: 600; }
-        .icon-set-card .isc-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-
-        /* ── Size slider modal ───────────────────────────────────────────── */
-        .size-preview-wrap {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 12px; padding: 20px 0 8px;
-        }
-        .size-preview-wrap img {
-            object-fit: contain;
-            transition: width .15s, height .15s;
-            filter: drop-shadow(0 0 6px #00ff7f);
-        }
-        .size-labels { display:flex; justify-content:space-between; font-size:.78rem; color:var(--text-muted); margin-top:2px; }
-        .form-range::-webkit-slider-thumb { background: var(--accent); }
-
-        /* debug panel */
-        #debug-panel { position:fixed; bottom:10px; right:10px; background:rgba(0,0,0,.8); color:white; padding:10px; border-radius:5px; font-size:12px; z-index:1000; display:none; }
-    </style>
+    <link rel="stylesheet" href="/css/pages/maps.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -332,22 +202,22 @@ mysqli_close($con);
 
     <div id="header-row" class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h2><i class="fas fa-map-marked-alt"></i> Network Topology Maps</h2>
+            <h2><i data-lucide="map-marked-alt" class="icon-lucide"></i> Network Topology Maps</h2>
             <p class="text-muted mb-0">Visualize your network — right-click a device to change its icon set</p>
         </div>
         <div class="d-flex gap-2">
             <?php if ($current_map): ?>
             <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#deviceSelectorModal">
-                <i class="fas fa-eye"></i> Manage Devices
+                <i data-lucide="eye" class="icon-lucide"></i> Manage Devices
             </button>
             <?php endif; ?>
             <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
             <a href="icon_manager.php" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-icons"></i> Icon Manager
+                <i data-lucide="icons" class="icon-lucide"></i> Icon Manager
             </a>
             <?php endif; ?>
-            <button id="toggle-fullscreen-btn" class="btn btn-primary btn-sm"><i class="fas fa-expand"></i> Maximize Map</button>
-            <button class="btn btn-warning btn-sm" onclick="toggleDebugPanel()"><i class="fas fa-bug"></i> Debug</button>
+            <button id="toggle-fullscreen-btn" class="btn btn-primary btn-sm"><i data-lucide="expand" class="icon-lucide"></i> Maximize Map</button>
+            <button class="btn btn-warning btn-sm" onclick="toggleDebugPanel()"><i data-lucide="bug" class="icon-lucide"></i> Debug</button>
         </div>
     </div>
 
@@ -360,21 +230,21 @@ mysqli_close($con);
     <!-- Map selector -->
     <div id="map-selector">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong><i class="fas fa-layer-group"></i> Select Map:</strong>
+            <strong><i data-lucide="layers" class="icon-lucide"></i> Select Map:</strong>
             <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#createMapModal">
-                <i class="fas fa-plus"></i> New Map
+                <i data-lucide="plus" class="icon-lucide"></i> New Map
             </button>
         </div>
         <div class="map-tabs">
             <?php foreach ($all_maps as $map): ?>
             <div class="map-tab <?= $map['id'] == $current_map_id ? 'active' : '' ?>"
                  onclick="window.location.href='maps.php?map_id=<?= $map['id'] ?>'">
-                <i class="fas fa-map"></i>
+                <i data-lucide="map" class="icon-lucide"></i>
                 <span><?= htmlspecialchars($map['name']) ?></span>
                 <?php if (count($all_maps) > 1): ?>
                 <a href="?delete_map=<?= $map['id'] ?>" class="delete-map"
                    onclick="event.stopPropagation();return confirm('Delete this map?')">
-                    <i class="fas fa-times"></i>
+                    <i data-lucide="x" class="icon-lucide"></i>
                 </a>
                 <?php endif; ?>
             </div>
@@ -391,7 +261,7 @@ mysqli_close($con);
     <!-- Device type filter -->
     <div id="device-filter">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong><i class="fas fa-filter"></i> Filter Devices:</strong>
+            <strong><i data-lucide="filter" class="icon-lucide"></i> Filter Devices:</strong>
         </div>
         <div class="filter-checkboxes">
             <?php foreach (['firewall','switch','router','server','iot','wireless','loadbalancer','storage'] as $t): ?>
@@ -455,14 +325,14 @@ mysqli_close($con);
 ═══════════════════════════════════════════════════════════════════════════════ -->
 <div id="ctx-menu">
     <div class="ctx-item" id="ctx-change-icon">
-        <i class="fas fa-palette"></i> Change Icon Set
+        <i data-lucide="palette" class="icon-lucide"></i> Change Icon Set
     </div>
     <div class="ctx-item" id="ctx-resize-icon">
-        <i class="fas fa-expand-arrows-alt"></i> Resize Icon
+        <i data-lucide="expand-arrows-alt" class="icon-lucide"></i> Resize Icon
     </div>
     <div class="ctx-divider"></div>
     <div class="ctx-item" id="ctx-hide-device">
-        <i class="fas fa-eye-slash"></i> Hide Device
+        <i data-lucide="eye-off" class="icon-lucide"></i> Hide Device
     </div>
 </div>
 
@@ -473,7 +343,7 @@ mysqli_close($con);
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-palette"></i> Choose Icon Set — <span id="icon-picker-device-name"></span></h5>
+                <h5 class="modal-title"><i data-lucide="palette" class="icon-lucide"></i> Choose Icon Set — <span id="icon-picker-device-name"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -488,7 +358,7 @@ mysqli_close($con);
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="apply-icon-set-btn">
-                    <i class="fas fa-check"></i> Apply Icon Set
+                    <i data-lucide="check" class="icon-lucide"></i> Apply Icon Set
                 </button>
             </div>
         </div>
@@ -510,7 +380,7 @@ mysqli_close($con);
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" name="create_map" class="btn btn-primary"><i class="fas fa-plus"></i> Create Map</button>
+                    <button type="submit" name="create_map" class="btn btn-primary"><i data-lucide="plus" class="icon-lucide"></i> Create Map</button>
                 </div>
             </div>
         </form>
@@ -530,8 +400,8 @@ mysqli_close($con);
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span>Total: <?= count($all_devices) ?> devices</span>
                     <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-outline-success" onclick="bulkSetVisibility(true)"><i class="fas fa-eye"></i> Show All</button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="bulkSetVisibility(false)"><i class="fas fa-eye-slash"></i> Hide All</button>
+                        <button type="button" class="btn btn-outline-success" onclick="bulkSetVisibility(true)"><i data-lucide="eye" class="icon-lucide"></i> Show All</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="bulkSetVisibility(false)"><i data-lucide="eye-off" class="icon-lucide"></i> Hide All</button>
                     </div>
                 </div>
                 <div class="row">
@@ -554,7 +424,7 @@ mysqli_close($con);
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="location.reload()"><i class="fas fa-sync"></i> Refresh Map</button>
+                <button type="button" class="btn btn-primary" onclick="location.reload()"><i data-lucide="refresh-ccw" class="icon-lucide"></i> Refresh Map</button>
             </div>
         </div>
     </div>
@@ -568,7 +438,7 @@ mysqli_close($con);
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-expand-arrows-alt"></i> Resize — <span id="resize-device-name"></span></h5>
+                <h5 class="modal-title"><i data-lucide="expand-arrows-alt" class="icon-lucide"></i> Resize — <span id="resize-device-name"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -592,7 +462,7 @@ mysqli_close($con);
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="apply-resize-btn">
-                    <i class="fas fa-check"></i> Apply
+                    <i data-lucide="check" class="icon-lucide"></i> Apply
                 </button>
             </div>
         </div>
@@ -1087,7 +957,7 @@ const fsBtn = document.getElementById('toggle-fullscreen-btn');
 fsBtn.addEventListener('click', () => {
     const on = document.body.classList.toggle('fullscreen');
     document.getElementById('map-container').classList.toggle('fullscreen', on);
-    fsBtn.innerHTML = on ? '<i class="fas fa-compress"></i> Minimize (ESC)' : '<i class="fas fa-expand"></i> Maximize Map';
+    fsBtn.innerHTML = on ? '<i data-lucide="compress" class="icon-lucide"></i> Minimize (ESC)' : '<i data-lucide="expand" class="icon-lucide"></i> Maximize Map';
     if (!on) { panX=0; panY=0; } updateTransform(); drawLinks();
 });
 document.addEventListener('keydown', e => { if (e.key==='Escape' && document.body.classList.contains('fullscreen')) fsBtn.click(); });
@@ -1134,3 +1004,4 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

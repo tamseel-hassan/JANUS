@@ -1,0 +1,28 @@
+/* ============================================================
+   My Tasks Styles - Midnight Violet Theme
+   ============================================================ */
+
+.modal-content {
+    
+    
+     /* Section 5: Primary */
+    
+}
+
+.nav-tabs .nav-link { 
+    color: var(--text); 
+    border-radius: 8px; /* Section 5: nested */
+}
+.nav-tabs .nav-link.active { 
+    background: var(--accent); 
+    color: #fff; 
+    border-color: var(--accent);
+}
+
+.unread-row { 
+    font-weight: bold; 
+    background: rgba(178, 132, 190, 0.1) !important; 
+}
+[data-theme="light"] .unread-row { 
+    background: rgba(59, 130, 246, 0.1) !important; 
+}

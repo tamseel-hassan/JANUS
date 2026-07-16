@@ -1,0 +1,44 @@
+/* ============================================================
+   Access Denied Styles - Midnight Violet Theme
+   ============================================================ */
+
+.denied-card {
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  padding: 48px 40px;
+  border-radius: 16px; /* Section 5: Primary */
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.denied-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+.denied-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.denied-reason {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  padding: 12px 16px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 16px;
+} /* Section 5: nested */
+.role-badge {
+  display: inline-block;
+  padding: 0.3em 0.8em;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(178, 132, 190, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(178, 132, 190, 0.25);
+  margin-bottom: 20px;
+}

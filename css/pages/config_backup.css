@@ -1,0 +1,6 @@
+/* ============================================================
+   Config Backup Styles - Midnight Violet Theme
+   ============================================================ */
+
+#main-content { margin-left: 260px; transition: margin-left 0.3s; padding: 80px 20px 20px; }
+.sidebar.collapsed ~ #main-content { margin-left: 78px; }

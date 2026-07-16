@@ -109,17 +109,14 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        #main-content { margin-left: 260px; transition: margin-left 0.3s; padding: 80px 20px 20px; }
-        .sidebar.collapsed ~ #main-content { margin-left: 78px; }
-    </style>
+    <link rel="stylesheet" href="/css/pages/config_backup.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; ?>
 <?php include __DIR__ . '/../../sidebar.php'; ?>
 <div id="main-content">
     <div class="container-fluid">
-        <h2 class="mb-4"><i class="fas fa-upload me-2"></i>Configuration Backup Manager</h2>
+        <h2 class="mb-4"><i data-lucide="upload" class="icon-lucide me-2"></i>Configuration Backup Manager</h2>
 
         <?php if (isset($error)): ?>
             <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
@@ -131,7 +128,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
         <div class="row">
             <div class="col-lg-5">
                 <div class="card mb-4">
-                    <div class="card-header"><h5 class="mb-0"><i class="fas fa-cloud-upload-alt me-1"></i>Upload Backup</h5></div>
+                    <div class="card-header"><h5 class="mb-0"><i data-lucide="cloud-upload-alt" class="icon-lucide me-1"></i>Upload Backup</h5></div>
                     <div class="card-body">
                         <form method="post" enctype="multipart/form-data">
                             <div class="mb-3">
@@ -151,14 +148,14 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                 <label class="form-label">File (max 50 MB)</label>
                                 <input type="file" name="backup_file" class="form-control" required>
                             </div>
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i>Upload</button>
+                            <button type="submit" class="btn btn-primary"><i data-lucide="upload" class="icon-lucide me-1"></i>Upload</button>
                         </form>
                     </div>
                 </div>
             </div>
             <div class="col-lg-7">
                 <div class="card">
-                    <div class="card-header"><h5 class="mb-0"><i class="fas fa-history me-1"></i>Backup Archives</h5></div>
+                    <div class="card-header"><h5 class="mb-0"><i data-lucide="history" class="icon-lucide me-1"></i>Backup Archives</h5></div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
@@ -189,7 +186,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                         </td>
                                         <td><?= $b['modified'] ?></td>
                                         <td>
-                                            <a href="/modules/config_backup/download.php?file=<?= urlencode(basename($b['path'])) ?>&dir=<?= urlencode(dirname($b['path'])) ?>" class="btn btn-sm btn-primary"><i class="fas fa-download"></i></a>
+                                            <a href="/modules/config_backup/download.php?file=<?= urlencode(basename($b['path'])) ?>&dir=<?= urlencode(dirname($b['path'])) ?>" class="btn btn-sm btn-primary"><i data-lucide="download" class="icon-lucide"></i></a>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>

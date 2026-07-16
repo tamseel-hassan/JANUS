@@ -81,22 +81,17 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        #main-content{margin-left:250px;transition:margin-left 0.3s;padding-top:70px}.sidebar.collapsed ~ #main-content{margin-left:78px}
-        .modal-content{background:var(--card-bg);color:var(--text)}.modal-header{border-bottom:1px solid var(--border)}.modal-footer{border-top:1px solid var(--border)}
-        .badge-severity{padding:4px 8px;border-radius:4px}.severity-low{background:#6c757d;color:#fff}.severity-medium{background:#ffc107;color:#000}.severity-high{background:#fd7e14;color:#fff}.severity-critical{background:#dc3545;color:#fff}
-        .badge-status{padding:4px 8px;border-radius:4px}.status-open{background:#0d6efd}.status-in_progress{background:#fd7e14}.status-resolved{background:#198754}.status-closed{background:#6c757d}
-    </style>
+    <link rel="stylesheet" href="/css/pages/active_incidents.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../topbar.php'; ?>
 <?php include __DIR__ . '/../sidebar.php'; ?>
 <div id="main-content"><div class="container-fluid">
-    <h2 class="mb-4"><i class="fas fa-exclamation-triangle me-2"></i> Active/Open Incidents</h2>
+    <h2 class="mb-4"><i data-lucide="triangle-alert" class="icon-lucide me-2"></i> Active/Open Incidents</h2>
     <form method="GET" class="mb-4">
         <div class="input-group">
             <input type="text" name="filter" class="form-control" placeholder="Filter by title or description..." value="<?= htmlspecialchars($filter) ?>">
-            <button class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+            <button class="btn btn-primary"><i data-lucide="search" class="icon-lucide"></i> Filter</button>
         </div>
     </form>
     <?php if (mysqli_num_rows($incidents) == 0): ?>
@@ -121,10 +116,10 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <td><?= htmlspecialchars($inc['assignee'] ?? 'Unassigned') ?></td>
             <td>
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#viewModal<?= $inc['id'] ?>"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#viewModal<?= $inc['id'] ?>"><i data-lucide="eye" class="icon-lucide"></i></button>
                     <!-- Assign dropdown -->
                     <div class="btn-group">
-                        <button class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-user-plus"></i></button>
+                        <button class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown"><i data-lucide="user-plus" class="icon-lucide"></i></button>
                         <ul class="dropdown-menu">
                             <?php mysqli_data_seek($users,0); while ($u = mysqli_fetch_assoc($users)): ?>
                             <li><form method="POST"><input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>"><input type="hidden" name="id" value="<?= $inc['id'] ?>"><input type="hidden" name="action" value="assign"><input type="hidden" name="assigned_to" value="<?= $u['id'] ?>"><button class="dropdown-item"><?= htmlspecialchars($u['username']) ?></button></form></li>
@@ -133,7 +128,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                     </div>
                     <!-- Status dropdown -->
                     <div class="btn-group">
-                        <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"><i data-lucide="edit" class="icon-lucide"></i></button>
                         <ul class="dropdown-menu">
                             <?php foreach (['open','in_progress','resolved','closed'] as $st): ?>
                             <li><form method="POST"><input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>"><input type="hidden" name="id" value="<?= $inc['id'] ?>"><input type="hidden" name="action" value="change_status"><input type="hidden" name="new_status" value="<?= $st ?>"><button class="dropdown-item"><?= ucfirst(str_replace('_',' ',$st)) ?></button></form></li>

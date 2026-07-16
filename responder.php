@@ -251,54 +251,8 @@ function createDenyPolicy($fw_config, $address_name, $reason) {
 <title>Incident Responder - JanusSIEM</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-<style>
-:root {
-    --card-bg: rgba(10,12,20,0.7);
-    --accent: #00c6ff;
-    --text-primary: #e8eef7;
-    --text-muted: #9aa6b2;
-}
-[data-theme="light"] {
-    --card-bg: #ffffff;
-    --accent: #2563eb;
-    --text-primary: #1f2937;
-    --text-muted: #6b7280;
-}
-body.loggedin {
-    background: linear-gradient(180deg, #041025 0%, #071028 60%);
-    color: var(--text-primary);
-    min-height: 100vh;
-}
-[data-theme="light"] body { background: #f5f8fb; }
-.container-fluid { padding-top: 78px; }
-#main-content {
-    margin-left: 260px;
-    padding: 20px 24px;
-}
-.sidebar.collapsed ~ #main-content { margin-left: 78px; }
-.response-card {
-    background: var(--card-bg);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-.action-box {
-    background: linear-gradient(135deg, rgba(0,198,255,0.1), rgba(59,130,246,0.1));
-    border: 2px solid var(--accent);
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 20px;
-}
-.fw-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-}
-@media (max-width: 992px) {
-    #main-content { margin-left: 78px; }
-}
-</style>
+<link rel="stylesheet" href="css/pages/responder.css">
+<link rel="stylesheet" href="/css/theme.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -308,12 +262,12 @@ body.loggedin {
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h2><i class="fas fa-shield-alt"></i> Incident Response System</h2>
+            <h2><i data-lucide="shield" class="icon-lucide"></i> Incident Response System</h2>
             <p class="text-muted">Automated response actions via FortiGate REST API</p>
         </div>
         <div class="col-md-4 text-end">
             <a href="reports.php" class="btn btn-outline-primary">
-                <i class="fas fa-arrow-left"></i> Back to Reports
+                <i data-lucide="arrow-left" class="icon-lucide"></i> Back to Reports
             </a>
         </div>
     </div>
@@ -324,7 +278,7 @@ body.loggedin {
     <div class="row g-3 mb-4">
         <div class="col-lg-6">
             <div class="response-card">
-                <h5><i class="fas fa-cog"></i> Configure FortiGate API</h5>
+                <h5><i data-lucide="settings" class="icon-lucide"></i> Configure FortiGate API</h5>
                 <form method="POST" class="mt-3">
                     <div class="mb-3">
                         <label class="form-label">Firewall IP Address</label>
@@ -340,7 +294,7 @@ body.loggedin {
                         <input type="text" name="username" class="form-control" placeholder="admin" value="admin">
                     </div>
                     <button type="submit" name="add_firewall" class="btn btn-primary">
-                        <i class="fas fa-plus-circle"></i> Add Firewall
+                        <i data-lucide="plus-circle" class="icon-lucide"></i> Add Firewall
                     </button>
                 </form>
 
@@ -369,7 +323,7 @@ body.loggedin {
 
         <div class="col-lg-6">
             <div class="action-box">
-                <h5><i class="fas fa-ban"></i> Quick Block IP</h5>
+                <h5><i data-lucide="ban" class="icon-lucide"></i> Quick Block IP</h5>
                 <p class="text-muted small">Block malicious IP address on firewall</p>
                 <form method="POST">
                     <div class="mb-3">
@@ -392,13 +346,13 @@ body.loggedin {
                         <input type="text" name="reason" class="form-control" placeholder="e.g., Brute force attack detected" value="Blocked via JanusSIEM">
                     </div>
                     <button type="submit" name="block_ip" class="btn btn-danger w-100">
-                        <i class="fas fa-ban"></i> Block IP Now
+                        <i data-lucide="ban" class="icon-lucide"></i> Block IP Now
                     </button>
                 </form>
             </div>
 
             <div class="response-card">
-                <h6><i class="fas fa-info-circle"></i> How It Works</h6>
+                <h6><i data-lucide="info" class="icon-lucide"></i> How It Works</h6>
                 <ol class="small">
                     <li>Creates firewall address object for the IP</li>
                     <li>Creates deny policy at top of firewall rules</li>
@@ -411,7 +365,7 @@ body.loggedin {
 
     <!-- Recent Actions -->
     <div class="response-card">
-        <h5><i class="fas fa-history"></i> Recent Response Actions</h5>
+        <h5><i data-lucide="history" class="icon-lucide"></i> Recent Response Actions</h5>
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>

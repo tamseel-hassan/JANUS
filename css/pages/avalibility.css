@@ -1,0 +1,115 @@
+/* ============================================================
+   Availability Page Styles - Midnight Violet Theme
+   ============================================================ */
+
+.status-up {
+  color: var(--metric-up);
+}
+.status-down {
+  color: var(--metric-down);
+}
+
+.badge-up {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--metric-up);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 16px; /* Section 5: nested interactive element */
+  padding: 4px 8px;
+  font-weight: 500;
+}
+
+.badge-down {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--metric-down);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 16px; /* Section 5: nested interactive element */
+  padding: 4px 8px;
+  font-weight: 500;
+}
+
+.chart-container {
+  position: relative;
+  height: 300px;
+  margin: 20px 0;
+}
+
+/* For date pickers */
+input[type="date"],
+input[type="datetime-local"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="datetime-local"] {
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"]
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.comment-badge {
+  cursor: pointer;
+  color: var(--accent); /* Amethyst Smoke */
+  transition: color 0.2s ease;
+}
+
+.comment-badge:hover {
+  color: var(--accent-hover);
+}
+
+.comment-badge.has-comment {
+  color: var(--metric-up);
+}
+
+.comment-modal .modal-dialog {
+  max-width: 600px;
+}
+
+.timeline-comment {
+  font-size: 0.85rem;
+  background: rgba(178, 132, 190, 0.1); /* Subtle violet tint */
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 16px;
+  margin-top: 5px;
+  color: var(--text);
+}
+
+.escalation-badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-weight: 500;
+}
+
+.escalation-1 {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--metric-up);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.escalation-2 {
+  background: rgba(250, 204, 21, 0.15);
+  color: var(--metric-warning);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.escalation-3 {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--metric-down);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
+}

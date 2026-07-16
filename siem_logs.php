@@ -182,245 +182,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <title>SIEM Log Management · Janus</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-<style>
-:root {
-    --siem-bg: #0a0e1a;
-    --siem-card: rgba(15,20,35,0.9);
-    --siem-border: rgba(0,198,255,0.2);
-    --siem-accent: #00c6ff;
-    --siem-success: #10b981;
-    --siem-danger: #ef4444;
-    --siem-warning: #f59e0b;
-    --siem-text: #e6eef7;
-    --siem-muted: #9aa6b2;
-}
-
-[data-theme="light"] {
-    --siem-bg: #f5f8fb;
-    --siem-card: #ffffff;
-    --siem-border: rgba(37,99,235,0.2);
-    --siem-accent: #2563eb;
-    --siem-text: #1f2937;
-    --siem-muted: #6b7280;
-}
-
-body.loggedin {
-    background: linear-gradient(180deg, var(--siem-bg) 0%, #071028 100%);
-    color: var(--siem-text);
-    min-height: 100vh;
-    font-family: 'Inter', -apple-system, sans-serif;
-}
-
-.container-fluid { padding-top: 78px; }
-#main-content {
-    margin-left: 260px;
-    transition: margin-left .25s ease;
-    padding: 20px 24px;
-}
-.sidebar.collapsed ~ #main-content { margin-left: 78px; }
-
-/* SIEM Cards */
-.siem-card {
-    background: var(--siem-card);
-    border: 1px solid var(--siem-border);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    backdrop-filter: blur(10px);
-}
-
-.siem-header {
-    border-bottom: 2px solid var(--siem-accent);
-    padding-bottom: 12px;
-    margin-bottom: 20px;
-}
-
-.siem-header h2 {
-    font-weight: 700;
-    color: var(--siem-accent);
-    font-size: 1.8rem;
-    letter-spacing: 0.02em;
-}
-
-/* Statistics Cards */
-.stat-card {
-    background: linear-gradient(135deg, rgba(0,198,255,0.1), rgba(0,198,255,0.05));
-    border: 1px solid var(--siem-border);
-    border-radius: 10px;
-    padding: 18px;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,198,255,0.2);
-}
-
-.stat-card .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--siem-accent);
-    display: block;
-}
-
-.stat-card .stat-label {
-    font-size: 0.85rem;
-    color: var(--siem-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-/* Log File Table */
-.log-table {
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.log-table thead {
-    background: rgba(0,198,255,0.15);
-    border-bottom: 2px solid var(--siem-accent);
-}
-
-.log-table th {
-    color: var(--siem-accent);
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 12px;
-}
-
-.log-table td {
-    padding: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    font-size: 0.9rem;
-}
-
-.log-table tbody tr:hover {
-    background: rgba(0,198,255,0.08);
-}
-
-/* Source Status Badges */
-.status-badge {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    display: inline-block;
-}
-
-.status-active { background: var(--siem-success); color: #fff; }
-.status-inactive { background: var(--siem-danger); color: #fff; }
-.status-warning { background: var(--siem-warning); color: #000; }
-
-/* Live Log Viewer */
-.log-viewer {
-    background: #000;
-    border: 1px solid var(--siem-border);
-    border-radius: 8px;
-    padding: 16px;
-    max-height: 500px;
-    overflow-y: auto;
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
-}
-
-.log-entry {
-    padding: 8px;
-    border-left: 3px solid transparent;
-    margin-bottom: 4px;
-    transition: all 0.2s;
-}
-
-.log-entry:hover {
-    background: rgba(0,198,255,0.1);
-    border-left-color: var(--siem-accent);
-}
-
-.log-timestamp {
-    color: #10b981;
-    font-weight: 600;
-}
-
-.log-ip {
-    color: #3b82f6;
-    font-weight: 600;
-}
-
-.log-type {
-    color: #f59e0b;
-    font-weight: 600;
-}
-
-.log-message {
-    color: #e6eef7;
-    word-break: break-word;
-}
-
-/* Filters */
-.filter-panel {
-    background: rgba(0,198,255,0.05);
-    border: 1px solid var(--siem-border);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 20px;
-}
-
-.filter-badge {
-    background: var(--siem-accent);
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    margin-right: 8px;
-    display: inline-block;
-}
-
-/* Action Buttons */
-.btn-siem {
-    background: linear-gradient(135deg, var(--siem-accent), #0891b2);
-    border: none;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    transition: all 0.3s;
-}
-
-.btn-siem:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,198,255,0.4);
-    color: #fff;
-}
-
-.btn-danger-siem {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    border: none;
-    color: #fff;
-}
-
-/* Scrollbar */
-.log-viewer::-webkit-scrollbar {
-    width: 8px;
-}
-
-.log-viewer::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.3);
-}
-
-.log-viewer::-webkit-scrollbar-thumb {
-    background: var(--siem-accent);
-    border-radius: 4px;
-}
-
-/* Responsive */
-@media (max-width: 992px) {
-    #main-content { margin-left: 78px; }
-}
-</style>
+<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/pages/siem_logs.css">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -445,12 +208,12 @@ body.loggedin {
         <div class="siem-header mb-4">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h2><i class="fas fa-shield-alt"></i> SIEM Log Management</h2>
+                    <h2><i data-lucide="shield" class="icon-lucide"></i> SIEM Log Management</h2>
                     <p class="text-muted mb-0">Centralized security information and event monitoring</p>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="logmanage.php" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-cog"></i> Source Management
+                        <i data-lucide="settings" class="icon-lucide"></i> Source Management
                     </a>
                 </div>
             </div>
@@ -520,10 +283,10 @@ body.loggedin {
                 </div>
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-siem btn-sm w-100">
-                        <i class="fas fa-search"></i> Apply Filters
+                        <i data-lucide="search" class="icon-lucide"></i> Apply Filters
                     </button>
                     <a href="siem_logs.php" class="btn btn-outline-secondary btn-sm w-100 mt-1">
-                        <i class="fas fa-times"></i> Clear
+                        <i data-lucide="x" class="icon-lucide"></i> Clear
                     </a>
                 </div>
             </form>
@@ -535,7 +298,7 @@ body.loggedin {
             <div class="col-lg-6">
                 <div class="siem-card">
                     <h5 class="mb-3">
-                        <i class="fas fa-archive"></i> Archived Log Files
+                        <i data-lucide="archive" class="icon-lucide"></i> Archived Log Files
                         <span class="badge bg-secondary ms-2"><?= count($log_files) ?></span>
                     </h5>
                     
@@ -557,7 +320,7 @@ body.loggedin {
                                     <?php foreach ($log_files as $lf): ?>
                                         <tr>
                                             <td>
-                                                <i class="fas fa-network-wired text-primary"></i>
+                                                <i data-lucide="network" class="icon-lucide text-primary"></i>
                                                 <strong><?= htmlspecialchars($lf['ip']) ?></strong>
                                             </td>
                                             <td><?= htmlspecialchars($lf['date']) ?></td>
@@ -566,16 +329,16 @@ body.loggedin {
                                             <td>
                                                 <a href="view_log.php?file=<?= urlencode($lf['filename']) ?>" 
                                                    class="btn btn-sm btn-outline-info" target="_blank" title="View">
-                                                    <i class="fas fa-eye"></i>
+                                                    <i data-lucide="eye" class="icon-lucide"></i>
                                                 </a>
                                                 <a href="download_log.php?file=<?= urlencode($lf['filename']) ?>" 
                                                    class="btn btn-sm btn-outline-success" title="Download">
-                                                    <i class="fas fa-download"></i>
+                                                    <i data-lucide="download" class="icon-lucide"></i>
                                                 </a>
                                                 <button class="btn btn-sm btn-outline-danger" 
                                                         onclick="deleteLogFile('<?= htmlspecialchars($lf['ip']) ?>', '<?= htmlspecialchars($lf['date']) ?>')"
                                                         title="Delete">
-                                                    <i class="fas fa-trash"></i>
+                                                    <i data-lucide="trash" class="icon-lucide"></i>
                                                 </button>
                                             </td>
                                         </tr>
@@ -588,7 +351,7 @@ body.loggedin {
 
                 <!-- Sources Quick View -->
                 <div class="siem-card mt-3">
-                    <h5 class="mb-3"><i class="fas fa-list"></i> Active Sources</h5>
+                    <h5 class="mb-3"><i data-lucide="list" class="icon-lucide"></i> Active Sources</h5>
                     <div style="max-height: 300px; overflow-y: auto;">
                         <?php foreach ($sources as $src): ?>
                             <div class="d-flex justify-content-between align-items-center p-2 mb-2" 
@@ -606,7 +369,7 @@ body.loggedin {
                                             <input type="hidden" name="source_id" value="<?= $src['id'] ?>">
                                             <button name="disable_source" class="btn btn-sm btn-outline-warning" 
                                                     onclick="return confirm('Disable this source?')" title="Disable">
-                                                <i class="fas fa-ban"></i>
+                                                <i data-lucide="ban" class="icon-lucide"></i>
                                             </button>
                                         </form>
                                     <?php endif; ?>
@@ -614,7 +377,7 @@ body.loggedin {
                                         <input type="hidden" name="ip" value="<?= htmlspecialchars($src['source_ip']) ?>">
                                         <button name="purge_ip_logs" class="btn btn-sm btn-danger-siem" 
                                                 onclick="return confirm('Delete ALL logs for this IP?')" title="Purge All">
-                                            <i class="fas fa-fire"></i>
+                                            <i data-lucide="fire" class="icon-lucide"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -629,15 +392,15 @@ body.loggedin {
                 <div class="siem-card">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">
-                            <i class="fas fa-terminal"></i> Live Log Stream
+                            <i data-lucide="terminal" class="icon-lucide"></i> Live Log Stream
                             <span class="badge bg-success ms-2" id="liveCount"><?= count($live_logs) ?></span>
                         </h5>
                         <div>
                             <button class="btn btn-sm btn-siem" onclick="refreshLogs()">
-                                <i class="fas fa-sync"></i> Refresh
+                                <i data-lucide="refresh-ccw" class="icon-lucide"></i> Refresh
                             </button>
                             <button class="btn btn-sm btn-outline-secondary" onclick="clearLogView()">
-                                <i class="fas fa-eraser"></i> Clear
+                                <i data-lucide="eraser" class="icon-lucide"></i> Clear
                             </button>
                         </div>
                     </div>

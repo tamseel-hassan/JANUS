@@ -57,33 +57,33 @@ if ($tl_result) { while ($row = mysqli_fetch_assoc($tl_result)) { $timeline[$row
 mysqli_close($con);
 ?>
 
-<div class="alert alert-info"><i class="fas fa-info-circle"></i> Flood threshold: <strong>100+ events from one source within a single minute</strong>. Adjust the threshold in <code>ss/ddos.php</code> to match your baseline traffic levels.</div>
+<div class="alert alert-info"><i data-lucide="info" class="icon-lucide"></i> Flood threshold: <strong>100+ events from one source within a single minute</strong>. Adjust the threshold in <code>ss/ddos.php</code> to match your baseline traffic levels.</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i class="fas fa-radiation"></i></div>
+            <div class="stat-icon text-danger"><i data-lucide="radiation" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count($floods) ?>">0</div>
             <span class="stat-chip chip-danger">Flood Windows Detected</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-server"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="server" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $affected_sources ?>">0</div>
             <span class="stat-chip chip-warning">Sources Involved</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-hashtag"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="hashtag" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $total_flood_events ?>">0</div>
             <span class="stat-chip chip-info">Events in Flood Windows</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-<?= empty($floods) ? 'success' : 'danger' ?>"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-icon text-<?= empty($floods) ? 'success' : 'danger' ?>"><i data-lucide="shield" class="icon-lucide"></i></div>
             <div class="stat-value"><?= empty($floods) ? 'CLEAR' : 'ACTIVE' ?></div>
             <span class="stat-chip <?= empty($floods) ? 'chip-success' : 'chip-danger' ?>">DDoS Status</span>
         </div>
@@ -91,14 +91,14 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-chart-line"></i> Total Traffic Volume</h5>
+    <h5><i data-lucide="line-chart" class="icon-lucide"></i> Total Traffic Volume</h5>
     <div class="chart-container">
         <canvas id="ddosTimelineChart"></canvas>
     </div>
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-radiation"></i> Detected Flood Windows</h5>
+    <h5><i data-lucide="radiation" class="icon-lucide"></i> Detected Flood Windows</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>Source</th><th>Minute</th><th>Events/min</th><th>Severity</th><th>Actions</th></tr></thead>
@@ -111,7 +111,7 @@ mysqli_close($con);
                         <td><small><?= htmlspecialchars($f['minute_bucket']) ?></small></td>
                         <td><span class="badge bg-danger"><?= number_format($f['cnt']) ?></span></td>
                         <td><span class="sev-pill sev-<?= $sev ?>"><?= strtoupper($sev) ?></span></td>
-                        <td><a href="../responder.php?ip=<?= urlencode($f['source_ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank"><i class="fas fa-cog"></i></a></td>
+                        <td><a href="../responder.php?ip=<?= urlencode($f['source_ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank"><i data-lucide="settings" class="icon-lucide"></i></a></td>
                     </tr>
                 <?php endforeach; ?>
                 <?php if (empty($floods)): ?>

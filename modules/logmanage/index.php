@@ -232,60 +232,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <title>Log Management · Janus</title>
 <link href="/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
-<style>
-:root {
-    --card-bg: rgba(10,12,20,0.7);
-    --glass: rgba(255,255,255,0.03);
-    --accent: #00c6ff;
-    --text-primary: #e8eef7;
-    --text-muted: #9aa6b2;
-    --border: rgba(255,255,255,0.08);
-    --input-bg: rgba(0,0,0,0.3);
-    --input-border: rgba(255,255,255,0.15);
-}
-[data-theme="light"] {
-    --card-bg: #ffffff;
-    --glass: #f8f9fa;
-    --accent: #2563eb;
-    --text-primary: #1f2937;
-    --text-muted: #6b7280;
-    --border: #e5e7eb;
-    --input-bg: #f9fafb;
-    --input-border: #d1d5db;
-}
-body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); color: var(--text-primary); min-height: 100vh; }
-[data-theme="light"] body { background: #f5f8fb; color: var(--text-primary); }
-.container-fluid { padding-top: 78px; }
-#main-content { margin-left: 260px; transition: margin-left .25s ease; padding: 20px 24px; }
-.sidebar.collapsed ~ #main-content { margin-left: 78px; }
-.panel-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin-bottom: 20px; }
-[data-theme="light"] .panel-card { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.type-badge { padding: 6px 10px; border-radius: 999px; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.03em; display: inline-block; }
-.badge-active { background: #10b981; color: #fff; }
-.badge-block { background: #ef4444; color: #fff; }
-.source-card { padding: 12px; border-radius: 8px; background: var(--glass); border: 1px solid var(--border); margin-bottom: 12px; }
-.log-card { background: var(--input-bg); padding: 10px; border-radius: 6px; margin-bottom: 10px; font-family: monospace; font-size: 0.85rem; color: var(--text-primary); border: 1px solid var(--border); }
-.header-row h2 { font-weight: 700; letter-spacing: 0.02em; color: var(--accent); }
-.text-muted { color: var(--text-muted) !important; }
-.archive-panel { background: var(--card-bg); border: 2px solid var(--accent); border-radius: 12px; padding: 20px; }
-.stat-box { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; text-align: center; }
-.stat-box .stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); }
-.stat-box .stat-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.form-control, .form-select { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); }
-.form-control:focus, .form-select:focus { background: var(--input-bg); border-color: var(--accent); color: var(--text-primary); box-shadow: 0 0 0 0.2rem rgba(0, 198, 255, 0.15); }
-[data-theme="light"] .form-control:focus, [data-theme="light"] .form-select:focus { box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15); }
-.form-label { color: var(--text-primary); }
-.form-text { color: var(--text-muted) !important; }
-.btn { color: var(--text-primary); }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #ffffff !important; }
-.btn-outline-light { border-color: var(--border); color: var(--text-primary); }
-.btn-outline-light:hover { background: var(--input-bg); color: var(--text-primary); }
-.btn-outline-secondary { border-color: var(--border); color: var(--text-muted); }
-.btn-outline-secondary:hover { background: var(--input-bg); color: var(--text-primary); }
-.settings-section { background: var(--glass); border: 1px dashed var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-.settings-section h6 { color: var(--text-primary); margin-bottom: 10px; }
-@media (max-width: 992px) { #main-content { margin-left: 78px; } }
-</style>
+<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/pages/logmanage.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; ?>
@@ -312,7 +260,7 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
 
         <div class="row header-row mb-3">
             <div class="col-8">
-                <h2><i class="fas fa-server"></i> Log Management</h2>
+                <h2><i data-lucide="server" class="icon-lucide"></i> Log Management</h2>
                 <p class="text-muted">Manage syslog sources and configure automatic archive cleanup</p>
             </div>
         </div>
@@ -321,7 +269,7 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
         <div class="panel-card archive-panel">
             <div class="row align-items-center mb-3">
                 <div class="col-md-8">
-                    <h5><i class="fas fa-database"></i> Archive Management</h5>
+                    <h5><i data-lucide="database" class="icon-lucide"></i> Archive Management</h5>
                     <p class="mb-0 small text-muted">Configure retention policy and clean old archived logs</p>
                 </div>
                 <div class="col-md-4">
@@ -334,17 +282,17 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
             <?php if ($archive_count > 0): ?>
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <small class="text-muted"><i class="fas fa-clock"></i> Oldest: <?= $archive_oldest ? date('M d, Y H:i', strtotime($archive_oldest)) : 'N/A' ?></small>
+                    <small class="text-muted"><i data-lucide="clock" class="icon-lucide"></i> Oldest: <?= $archive_oldest ? date('M d, Y H:i', strtotime($archive_oldest)) : 'N/A' ?></small>
                 </div>
                 <div class="col-md-6 text-end">
-                    <small class="text-muted"><i class="fas fa-clock"></i> Newest: <?= $archive_newest ? date('M d, Y H:i', strtotime($archive_newest)) : 'N/A' ?></small>
+                    <small class="text-muted"><i data-lucide="clock" class="icon-lucide"></i> Newest: <?= $archive_newest ? date('M d, Y H:i', strtotime($archive_newest)) : 'N/A' ?></small>
                 </div>
             </div>
             <?php endif; ?>
 
             <!-- Settings Section -->
             <div class="settings-section">
-                <h6><i class="fas fa-cog"></i> Default Retention Policy</h6>
+                <h6><i data-lucide="settings" class="icon-lucide"></i> Default Retention Policy</h6>
                 <form method="post">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-6">
@@ -353,8 +301,8 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
                             <small class="form-text">Current setting: <?= $retention_hours ?> hours (<?= round($retention_hours/24, 1) ?> days)</small>
                         </div>
                         <div class="col-md-6">
-                            <button type="submit" name="save_retention" class="btn btn-success"><i class="fas fa-save"></i> Save Settings</button>
-                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="showCleanupInfo()"><i class="fas fa-info-circle"></i> Info</button>
+                            <button type="submit" name="save_retention" class="btn btn-success"><i data-lucide="save" class="icon-lucide"></i> Save Settings</button>
+                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="showCleanupInfo()"><i data-lucide="info" class="icon-lucide"></i> Info</button>
                         </div>
                     </div>
                 </form>
@@ -362,7 +310,7 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
 
             <!-- Cleanup Section -->
             <div class="settings-section">
-                <h6><i class="fas fa-trash-alt"></i> Manual Cleanup</h6>
+                <h6><i data-lucide="trash" class="icon-lucide -alt"></i> Manual Cleanup</h6>
                 <form method="post" onsubmit="return confirm('Delete all archive records older than the specified hours? This action cannot be undone.');">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-6">
@@ -371,7 +319,7 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
                             <small class="form-text">Records older than this will be permanently deleted</small>
                         </div>
                         <div class="col-md-6">
-                            <button type="submit" name="cleanup_archive" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Clean Archive Now</button>
+                            <button type="submit" name="cleanup_archive" class="btn btn-danger"><i data-lucide="trash" class="icon-lucide -alt"></i> Clean Archive Now</button>
                         </div>
                     </div>
                 </form>
@@ -405,7 +353,7 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
                             <div class="form-text small">Only IPv4/IPv6 addresses allowed.</div>
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary" name="add_source" type="submit"><i class="fas fa-plus-circle"></i> Allow Source</button>
+                            <button class="btn btn-primary" name="add_source" type="submit"><i data-lucide="plus-circle" class="icon-lucide"></i> Allow Source</button>
                             <button class="btn btn-outline-secondary" type="reset">Reset</button>
                         </div>
                     </form>
@@ -435,13 +383,13 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
                                     </div>
                                     <div class="d-flex gap-1">
                                         <a href="?toggle_source=<?= $s['id'] ?>" class="btn btn-sm btn-outline-light" title="<?= $s['is_active'] ? 'Block' : 'Unblock' ?>">
-                                            <?= $s['is_active'] ? '<i class="fas fa-ban"></i>' : '<i class="fas fa-check"></i>' ?>
+                                            <?= $s['is_active'] ? '<i data-lucide="ban" class="icon-lucide"></i>' : '<i data-lucide="check" class="icon-lucide"></i>' ?>
                                         </a>
                                         <a href="?purge_logs=<?= $s['id'] ?>" class="btn btn-sm btn-warning" onclick="return confirm('Purge ALL logs for <?= htmlspecialchars($s['source_ip']) ?>?')" title="Purge Logs">
-                                            <i class="fas fa-trash-alt"></i>
+                                            <i data-lucide="trash" class="icon-lucide -alt"></i>
                                         </a>
                                         <a href="?delete_source=<?= $s['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete source and purge logs? This cannot be undone.')" title="Delete Source">
-                                            <i class="fas fa-times"></i>
+                                            <i data-lucide="x" class="icon-lucide"></i>
                                         </a>
                                     </div>
                                 </div>
@@ -455,9 +403,9 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
             <div class="col-lg-7">
                 <div class="panel-card">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0"><i class="fas fa-terminal"></i> Recent Logs</h5>
+                        <h5 class="mb-0"><i data-lucide="terminal" class="icon-lucide"></i> Recent Logs</h5>
                         <div>
-                            <button id="refreshBtn" class="btn btn-sm btn-outline-light"><i class="fas fa-sync"></i> Refresh</button>
+                            <button id="refreshBtn" class="btn btn-sm btn-outline-light"><i data-lucide="refresh-ccw" class="icon-lucide"></i> Refresh</button>
                             <button id="clearView" class="btn btn-sm btn-outline-secondary">Clear View</button>
                         </div>
                     </div>
@@ -504,7 +452,7 @@ body.loggedin { background: linear-gradient(180deg, #041025 0%, #071028 60%); co
     <div class="modal-dialog">
         <div class="modal-content" style="background:var(--card-bg);color:var(--text-primary);border:1px solid var(--border);">
             <div class="modal-header" style="border-bottom:1px solid var(--border);">
-                <h5 class="modal-title"><i class="fas fa-info-circle"></i> Archive Cleanup Information</h5>
+                <h5 class="modal-title"><i data-lucide="info" class="icon-lucide"></i> Archive Cleanup Information</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">

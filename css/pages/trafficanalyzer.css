@@ -1,0 +1,75 @@
+/* ============================================================
+   Traffic Analyzer Page Styles - Midnight Violet Theme
+   ============================================================ */
+
+/* Additional table styles */
+table.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.9rem;
+}
+th {
+    background: var(--card-bg);
+    color: var(--text);
+    font-weight: 600;
+    text-transform: none;
+    padding: 0.75rem;
+    border-bottom: 2px solid var(--border);
+}
+td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-top: 1px solid var(--border);
+}
+tr:nth-child(even) {
+    background: rgba(178, 132, 190, 0.05); /* Soft violet alternating row */
+}
+tr:hover {
+    background: rgba(178, 132, 190, 0.1); /* Midnight Violet hover accent */
+}
+
+/* Action badges */
+.action-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px; /* Section 5: nested element */
+    font-weight: 500;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.action-accept {
+    background: rgba(74, 222, 128, 0.15);
+    color: var(--metric-up);
+}
+
+.action-deny {
+    background: rgba(248, 113, 113, 0.15);
+    color: var(--metric-down);
+}
+
+.action-close, .action-timeout {
+    background: rgba(250, 204, 21, 0.15);
+    color: var(--metric-warning);
+}
+
+.action-unknown {
+    background: rgba(255, 240, 245, 0.15);
+    color: var(--text-muted);
+}
+
+#main-content { transition: margin-left 0.3s ease; }
+
+.stat-card { text-align: center; padding: 1rem; }
+.stat-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+.stat-value { font-size: 2rem; font-weight: bold; }
+.stat-label { font-size: 0.85rem; color: var(--text-muted); }
+.bandwidth { display: flex; gap: 1rem; justify-content: center; font-size: 0.85rem; }
+.up { color: var(--metric-up); }
+.down { color: var(--metric-down); }
+.details-link { cursor: pointer; color: var(--accent); }
+.details-link:hover { color: var(--accent-hover); }
+.archive-indicator { font-size: 0.7rem; color: var(--metric-warning); margin-left: 0.5rem; }
+#refreshTimer { font-weight: bold; color: var(--accent); }

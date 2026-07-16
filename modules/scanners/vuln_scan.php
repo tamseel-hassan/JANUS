@@ -114,23 +114,17 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/font-awesome/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        .scan-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; }
-        .cve-badge { background: #dc3545; color: white; font-size: 0.75rem; }
-        .os-badge { background: var(--accent); color: white; }
-        @keyframes pulse { 0%{opacity:0.5;} 50%{opacity:1;} 100%{opacity:0.5;} }
-        .scanning-pulse { animation: pulse 1.5s infinite; }
-    </style>
+<link rel="stylesheet" href="/css/pages/vuln_scan.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; ?>
 <?php include __DIR__ . '/../../sidebar.php'; ?>
 <div id="main-content" style="padding:80px 24px 32px; margin-left:260px;">
     <div class="container-fluid" style="max-width:1200px;">
-        <h2 class="mb-4"><i class="fas fa-shield-alt me-2"></i>Vulnerability Scanner</h2>
+        <h2 class="mb-4"><i data-lucide="shield" class="icon-lucide me-2"></i>Vulnerability Scanner</h2>
         <ul class="nav nav-pills mb-4">
-            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#newScan"><i class="fas fa-play me-1"></i>New Scan</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"><i class="fas fa-history me-1"></i>Scan History</a></li>
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#newScan"><i data-lucide="play" class="icon-lucide me-1"></i>New Scan</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history"><i data-lucide="history" class="icon-lucide me-1"></i>Scan History</a></li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane fade show active" id="newScan">
@@ -140,21 +134,21 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <div class="row"><div class="col-lg-8">
                     <div class="scan-card p-4 mb-4">
                         <form method="post" id="scanForm">
-                            <div class="mb-3"><label class="form-label fw-bold"><i class="fas fa-crosshairs me-1"></i>Target(s)</label><input type="text" name="target" class="form-control form-control-lg" placeholder="192.168.1.1, example.com" required></div>
-                            <div class="mb-3"><label class="form-label fw-bold"><i class="fas fa-tachometer-alt me-1"></i>Profile</label><div class="row g-2">
+                            <div class="mb-3"><label class="form-label fw-bold"><i data-lucide="crosshair" class="icon-lucide me-1"></i>Target(s)</label><input type="text" name="target" class="form-control form-control-lg" placeholder="192.168.1.1, example.com" required></div>
+                            <div class="mb-3"><label class="form-label fw-bold"><i data-lucide="tachometer-alt" class="icon-lucide me-1"></i>Profile</label><div class="row g-2">
                                 <?php $i = 0; foreach ($profiles as $key => $p): ?>
                                     <div class="col-md-4"><input type="radio" class="btn-check" name="profile" id="profile_<?=$key?>" value="<?=$key?>" <?= $i==0 ? 'checked' : '' ?>><label class="btn btn-outline-primary w-100 h-100 p-3" for="profile_<?=$key?>"><strong><?=$p['name']?></strong><br><small class="text-muted"><?=$p['desc']?></small></label></div>
                                 <?php $i++; endforeach; ?>
                             </div></div>
-                            <div class="mb-3" id="customArgsBox" style="display:none;"><label class="form-label"><i class="fas fa-terminal me-1"></i>Custom Arguments</label><input type="text" name="custom_args" class="form-control font-monospace" placeholder="-sS -sV -p 1-1000"></div>
-                            <button type="submit" class="btn btn-success btn-lg w-100"><i class="fas fa-bolt me-2"></i>Start Scan</button>
+                            <div class="mb-3" id="customArgsBox" style="display:none;"><label class="form-label"><i data-lucide="terminal" class="icon-lucide me-1"></i>Custom Arguments</label><input type="text" name="custom_args" class="form-control font-monospace" placeholder="-sS -sV -p 1-1000"></div>
+                            <button type="submit" class="btn btn-success btn-lg w-100"><i data-lucide="zap" class="icon-lucide me-2"></i>Start Scan</button>
                         </form>
                     </div>
                 </div></div>
                 <div id="scanStatus" class="scan-card p-5 text-center d-none"><div class="spinner-border spinner-border-lg mb-3"></div><h4 class="scanning-pulse">Scanning...</h4><p class="text-muted" id="statusTarget"></p></div>
                 <div id="scanResults" class="mt-4 d-none"></div>
             </div>
-            <div class="tab-pane fade" id="history"><div class="scan-card p-3"><h5><i class="fas fa-list-alt me-1"></i>Recent Scans</h5>
+            <div class="tab-pane fade" id="history"><div class="scan-card p-3"><h5><i data-lucide="list" class="icon-lucide -alt me-1"></i>Recent Scans</h5>
                 <?php if (empty($history)): ?><div class="text-muted text-center py-4">No history</div><?php else: ?><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Target</th><th>Profile</th><th>Date</th><th>Ports</th><th>Vulns</th><th>Duration</th></tr></thead><tbody>
                 <?php foreach ($history as $h): ?><tr><td><code><?=htmlspecialchars($h['target_ip'])?></code></td><td><span class="badge bg-primary"><?=htmlspecialchars($h['scan_type'])?></span></td><td><?=date('Y-m-d H:i', strtotime($h['scanned_at']))?></td><td><?= isset($h['result']) ? (json_decode($h['result'],true)['open_ports'] ?? '—') : '—' ?></td><td><?= isset($h['result']) ? (json_decode($h['result'],true)['vuln_count'] ?? '—') : '—' ?></td><td><?= isset($h['result']) ? round(json_decode($h['result'],true)['duration'] ?? 0, 1).'s' : '—' ?></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?></div></div>
         </div>
@@ -175,7 +169,7 @@ if(scanId) {
 }
 function displayResults(r) {
     const c = document.getElementById('scanResults'); c.classList.remove('d-none');
-    let h = '<div class="scan-card p-4"><h4 class="mb-3"><i class="fas fa-check-circle text-success me-2"></i>Scan Complete</h4>';
+    let h = '<div class="scan-card p-4"><h4 class="mb-3"><i data-lucide="check-circle" class="icon-lucide text-success me-2"></i>Scan Complete</h4>';
     if(r.os_matches.length) { h += '<div class="mb-3"><strong>OS:</strong> '; r.os_matches.forEach(os=>h+=`<span class="badge os-badge me-1">${os.name} (${os.accuracy}%)</span>`); h+='</div>'; }
     h += `<p><strong>Duration:</strong> ${r.duration}s | <strong>Ports:</strong> ${r.ports.length} | <strong>Vulns:</strong> ${r.vuln_count}</p>`;
     h += '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Port</th><th>Service</th><th>Version</th><th>State</th><th>Vulns</th></tr></thead><tbody>';

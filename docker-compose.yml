@@ -1,0 +1,58 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: janus-mysql-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: alogin
+      MYSQL_ROOT_PASSWORD: Janus@DB@Root@Password@2026
+      MYSQL_USER: janus_user
+      MYSQL_PASSWORD: Janus@DB@2026
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      timeout: 20s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: janus-web-frontend
+    restart: always
+    environment:
+      DB_HOST: db
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+
+  syslog-receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile.syslog
+    container_name: janus-syslog-receiver
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_USER: janus_user
+      DB_PASS: Janus@DB@2026
+      DB_NAME: alogin
+    ports:
+      - "514:514/udp"
+    volumes:
+      - syslog-logs:/var/log/janus_siem
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+  syslog-logs:

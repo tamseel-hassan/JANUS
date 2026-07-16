@@ -1,0 +1,45 @@
+/* ============================================================
+   IPAM Log Styles - Midnight Violet Theme
+   ============================================================ */
+
+#main-content {
+  margin-left: 260px;
+  transition: margin-left 0.3s;
+  padding-top: 70px;
+}
+@media (max-width: 768px) {
+  #main-content {
+    margin-left: 0;
+  }
+}
+
+.row-unacked {
+  border-left: 4px solid var(--metric-down) !important;
+}
+.row-spoof {
+  background: rgba(248, 113, 113, 0.15) !important;
+} /* var(--metric-down) at 15% opacity */
+.row-change {
+  background: rgba(178, 132, 190, 0.1) !important;
+} /* var(--accent) at 10% opacity */
+.row-offline {
+  background: rgba(156, 163, 175, 0.08) !important;
+} /* var(--text-muted) at 8% opacity */
+.row-online {
+  background: rgba(74, 222, 128, 0.08) !important;
+} /* var(--metric-up) at 8% opacity */
+
+.mac-cell {
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+.filter-tab.active {
+  font-weight: 700;
+  color: var(--accent);
+}
+#toast-area {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+}

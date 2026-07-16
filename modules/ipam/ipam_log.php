@@ -104,20 +104,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/font-aweso/css/all.min.css">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        #main-content { margin-left: 260px; transition: margin-left .3s; padding-top: 70px; }
-        @media(max-width:768px){ #main-content{ margin-left:0; } }
-
-        .row-unacked { border-left: 4px solid #f97316 !important; }
-        .row-spoof   { background: rgba(239,68,68,.15)  !important; }
-        .row-change  { background: rgba(249,115,22,.10) !important; }
-        .row-offline { background: rgba(107,114,128,.08)!important; }
-        .row-online  { background: rgba(22,163,74,.08)  !important; }
-
-        .mac-cell { font-family: monospace; font-size:.85rem; }
-        .filter-tab.active { font-weight:700; }
-        #toast-area { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; }
-    </style>
+    <link rel="stylesheet" href="/css/pages/ipam_log.css">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; include __DIR__ . '/../../sidebar.php'; ?>
@@ -128,11 +115,11 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
-            <h2 class="mb-1"><i class="fas fa-history me-2"></i>IPAM Change Log</h2>
+            <h2 class="mb-1"><i data-lucide="history" class="icon-lucide me-2"></i>IPAM Change Log</h2>
             <p class="text-muted small mb-0">All MAC address changes, spoofing alerts, and device state events</p>
         </div>
         <a href="/modules/ipam/ipam.php" class="btn btn-sm btn-outline-primary">
-            <i class="fas fa-arrow-left me-1"></i>Back to IPAM
+            <i data-lucide="arrow-left" class="icon-lucide me-1"></i>Back to IPAM
         </a>
     </div>
 
@@ -167,11 +154,11 @@ $theme = $_COOKIE['theme'] ?? 'dark';
         <input type="text" name="ip" class="form-control form-control-sm" style="max-width:200px"
                placeholder="Filter by IP…" value="<?= htmlspecialchars($ip_filter) ?>">
         <button type="submit" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-filter"></i>
+            <i data-lucide="filter" class="icon-lucide"></i>
         </button>
         <?php if ($ip_filter): ?>
         <a href="?type=<?= urlencode($type_filter) ?>" class="btn btn-sm btn-outline-danger">
-            <i class="fas fa-times"></i>
+            <i data-lucide="x" class="icon-lucide"></i>
         </a>
         <?php endif; ?>
     </form>
@@ -195,7 +182,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                     <tbody>
                     <?php if (empty($logs)): ?>
                         <tr><td colspan="7" class="text-center py-4 text-muted">
-                            <i class="fas fa-inbox me-2"></i>No log entries found.
+                            <i data-lucide="inbox" class="icon-lucide me-2"></i>No log entries found.
                         </td></tr>
                     <?php else: ?>
                         <?php foreach ($logs as $log):
@@ -212,7 +199,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             if (!$unacked) $row_cls = ltrim(str_replace('row-unacked','',$row_cls));
 
                             $type_badge = $is_spoof
-                                ? '<span class="badge bg-danger"><i class="fas fa-skull-crossbones me-1"></i>SPOOFING</span>'
+                                ? '<span class="badge bg-danger"><i data-lucide="skull-crossbones" class="icon-lucide me-1"></i>SPOOFING</span>'
                                 : ($is_change
                                     ? '<span class="badge bg-warning text-dark">MAC Change</span>'
                                     : ($is_off
@@ -233,7 +220,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             <td>
                                 <?php if ($log['acknowledged']): ?>
                                     <span class="badge bg-success">
-                                        <i class="fas fa-check me-1"></i>ACK'd
+                                        <i data-lucide="check" class="icon-lucide me-1"></i>ACK'd
                                     </span>
                                     <div class="small text-muted mt-1">
                                         by <?= htmlspecialchars($log['acknowledged_by']??'?') ?>
@@ -243,7 +230,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     </div>
                                 <?php else: ?>
                                     <span class="badge bg-warning text-dark">
-                                        <i class="fas fa-exclamation me-1"></i>Pending
+                                        <i data-lucide="exclamation" class="icon-lucide me-1"></i>Pending
                                     </span>
                                 <?php endif; ?>
                             </td>
@@ -253,11 +240,11 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     data-log-id="<?= intval($log['id']) ?>"
                                     data-ip="<?= htmlspecialchars($log['ip']) ?>"
                                     title="Acknowledge">
-                                    <i class="fas fa-check fa-xs"></i> Ack
+                                    <i data-lucide="check" class="icon-lucide fa-xs"></i> Ack
                                 </button>
                                 <?php else: ?>
                                 <button class="btn btn-outline-secondary btn-sm py-0 px-2" disabled>
-                                    <i class="fas fa-check fa-xs"></i>
+                                    <i data-lucide="check" class="icon-lucide fa-xs"></i>
                                 </button>
                                 <?php endif; ?>
                             </td>
@@ -298,7 +285,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-header bg-warning">
-                <h6 class="modal-title"><i class="fas fa-check-circle me-1"></i>Acknowledge</h6>
+                <h6 class="modal-title"><i data-lucide="check-circle" class="icon-lucide me-1"></i>Acknowledge</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -310,7 +297,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="modal-footer py-2">
                 <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button class="btn btn-warning btn-sm" id="confirmAckBtn">
-                    <i class="fas fa-check me-1"></i>Confirm
+                    <i data-lucide="check" class="icon-lucide me-1"></i>Confirm
                 </button>
             </div>
         </div>

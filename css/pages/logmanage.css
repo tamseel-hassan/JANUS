@@ -1,0 +1,183 @@
+/* ============================================================
+   Log Manage Styles - Midnight Violet Theme
+   ============================================================ */
+
+:root {
+  --card-bg: rgba(10, 12, 20, 0.7);
+  --glass: rgba(255, 255, 255, 0.03);
+  --accent: var(--accent);
+  --text-primary: var(--text);
+  --text-muted: var(--text-muted);
+  --border: var(--border);
+  --input-bg: rgba(0, 0, 0, 0.3);
+  --input-border: rgba(255, 255, 255, 0.15);
+}
+[data-theme="light"] {
+  --card-bg: #ffffff;
+  --glass: var(--border);
+  --accent: #2563eb;
+  --text-primary: var(--card-bg);
+  --text-muted: var(--border);
+  --border: var(--border);
+  --input-bg: var(--border);
+  --input-border: var(--border);
+}
+body.loggedin {
+  background: linear-gradient(180deg, var(--card-bg) 0%, var(--card-bg) 60%);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+[data-theme="light"] body {
+  background: var(--border);
+  color: var(--text-primary);
+}
+.container-fluid {
+  padding-top: 78px;
+}
+#main-content {
+  margin-left: 260px;
+  transition: margin-left 0.25s ease;
+  padding: 20px 24px;
+}
+.sidebar.collapsed ~ #main-content {
+  margin-left: 78px;
+}
+.panel-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: none;
+  margin-bottom: 20px;
+}
+[data-theme="light"] .panel-card {
+  box-shadow: none;
+}
+.type-badge {
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  display: inline-block;
+}
+.badge-active {
+  background: var(--metric-up);
+  color: #fff;
+}
+.badge-block {
+  background: var(--metric-down);
+  color: #fff;
+}
+.source-card {
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.log-card {
+  background: var(--input-bg);
+  padding: 10px;
+  border-radius: 16px;
+  margin-bottom: 10px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.header-row h2 {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+.text-muted {
+  color: var(--text-muted) !important;
+}
+.archive-panel {
+  background: var(--card-bg);
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  padding: 20px;
+}
+.stat-box {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 15px;
+  text-align: center;
+}
+.stat-box .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.stat-box .stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.form-control,
+.form-select {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+}
+.form-control:focus,
+.form-select:focus {
+  background: var(--input-bg);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+[data-theme="light"] .form-control:focus,
+[data-theme="light"] .form-select:focus {
+  box-shadow: none;
+}
+.form-label {
+  color: var(--text-primary);
+}
+.form-text {
+  color: var(--text-muted) !important;
+}
+.btn {
+  color: var(--text-primary);
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff !important;
+}
+.btn-outline-light {
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+.btn-outline-light:hover {
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+.btn-outline-secondary {
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+.btn-outline-secondary:hover {
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+.settings-section {
+  background: var(--glass);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+.settings-section h6 {
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+@media (max-width: 992px) {
+  #main-content {
+    margin-left: 78px;
+  }
+}

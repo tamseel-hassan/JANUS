@@ -1,0 +1,58 @@
+/* ============================================================
+   SS Remote Access Users Styles - Midnight Violet Theme
+   ============================================================ */
+
+.protocol-card {
+    background: rgba(178, 132, 190, 0.05);
+    border-left: 4px solid var(--accent);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px; /* Section 5: nested */
+    transition: all 0.3s;
+}
+.protocol-card:hover {
+    transform: none;
+    box-shadow: none;
+}
+.protocol-card.critical {
+    border-left-color: var(--metric-down);
+    background: rgba(248, 113, 113, 0.05);
+}
+.protocol-card.high {
+    border-left-color: var(--metric-warning);
+    background: rgba(245, 158, 11, 0.05);
+}
+.protocol-card.medium {
+    border-left-color: var(--accent);
+    background: rgba(178, 132, 190, 0.05);
+}
+.protocol-card.low {
+    border-left-color: var(--metric-up);
+    background: rgba(74, 222, 128, 0.05);
+}
+.session-timeline {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px; /* Section 5: nested */
+    padding: 10px;
+    margin-top: 10px;
+}
+.risk-alert {
+    background: rgba(248, 113, 113, 0.1);
+    border-left: 4px solid var(--metric-down);
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px; /* Section 5: nested */
+}
+.connection-flow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px; /* Section 5: nested */
+    margin-bottom: 8px;
+}
+.flow-arrow {
+    color: var(--accent);
+    font-size: 1.2rem;
+}

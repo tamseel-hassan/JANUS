@@ -40,7 +40,18 @@ $device = $_GET['device'] ?? '';
 
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-// Query both tables
+$check_archive = mysqli_query($con, "SHOW TABLES LIKE 'syslog_entries_archive'");
+$has_archive = mysqli_num_rows($check_archive) > 0;
+
+$archive_query = $has_archive ? "
+        UNION ALL
+        SELECT message, received_at, source_ip
+        FROM syslog_entries_archive
+        WHERE received_at BETWEEN '$start' AND '$end'
+          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%')
+          $device_where
+" : "";
+
 $query = "
     SELECT message, received_at, source_ip
     FROM (
@@ -49,12 +60,7 @@ $query = "
         WHERE received_at BETWEEN '$start' AND '$end'
           AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%')
           $device_where
-        UNION ALL
-        SELECT message, received_at, source_ip
-        FROM syslog_entries_archive
-        WHERE received_at BETWEEN '$start' AND '$end'
-          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%')
-          $device_where
+        $archive_query
     ) AS combined
     ORDER BY received_at DESC
     LIMIT 100000
@@ -170,79 +176,35 @@ $accept_pct = $total_flows > 0 ? round(($traffic_dist['accepted'] / $total_flows
 mysqli_close($con);
 ?>
 
-<style>
-/* Module-local additions on top of the shared HUD theme in reports.php */
-.mix-bar {
-    display: flex;
-    height: 8px;
-    border-radius: 2px;
-    overflow: hidden;
-    background: var(--inset);
-    margin-top: 14px;
-    border: 1px solid var(--line);
-}
-.mix-bar span { height: 100%; }
-.mix-legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--text-mid);
-}
-.mix-legend .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
-
-.mini-bar-track {
-    background: var(--inset);
-    border-radius: 2px;
-    height: 5px;
-    width: 80px;
-    overflow: hidden;
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 8px;
-    border: 1px solid var(--line);
-}
-.mini-bar-fill { height: 100%; background: var(--cyan); }
-
-.flow-split {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-}
-.flow-split .up { color: var(--green); }
-.flow-split .down { color: var(--cyan); }
-</style>
+<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/pages/ss_traffic.css">
 
 <!-- Summary Statistics -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-exchange-alt"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="arrow-right-left" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= (int)$total_flows ?>">0</div>
             <span class="stat-chip chip-info">Total Traffic Flows</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i class="fas fa-arrow-up"></i></div>
+            <div class="stat-icon text-success"><i data-lucide="arrow-up" class="icon-lucide"></i></div>
             <div class="stat-value"><?= formatBytes($total_sent) ?></div>
             <span class="stat-chip chip-success">Data Sent</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-arrow-down"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="arrow-down" class="icon-lucide"></i></div>
             <div class="stat-value"><?= formatBytes($total_received) ?></div>
             <span class="stat-chip chip-info">Data Received</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-network-wired"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="network" class="icon-lucide"></i></div>
             <div class="stat-value"><?= formatBytes($total_bw_all) ?></div>
             <span class="stat-chip chip-warning">Bandwidth &middot; <?= $accept_pct ?>% Accepted</span>
         </div>
@@ -253,7 +215,7 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-lg-8">
         <div class="report-card">
-            <h5><i class="fas fa-chart-line"></i> Bandwidth Timeline</h5>
+            <h5><i data-lucide="line-chart" class="icon-lucide"></i> Bandwidth Timeline</h5>
             <div class="chart-container">
                 <canvas id="bandwidthChart"></canvas>
             </div>
@@ -261,7 +223,7 @@ mysqli_close($con);
     </div>
     <div class="col-lg-4">
         <div class="report-card">
-            <h5><i class="fas fa-chart-pie"></i> Traffic Distribution</h5>
+            <h5><i data-lucide="chart-pie" class="icon-lucide"></i> Traffic Distribution</h5>
             <div class="chart-container">
                 <canvas id="trafficDistChart"></canvas>
             </div>
@@ -279,7 +241,7 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-arrow-up"></i> Top Source IPs</h5>
+            <h5><i data-lucide="arrow-up" class="icon-lucide"></i> Top Source IPs</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead>
@@ -297,7 +259,7 @@ mysqli_close($con);
                                 <td><?= $rank + 1 ?></td>
                                 <td>
                                     <a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($s['ip']) ?>')" class="clickable-ip">
-                                        <i class="fas fa-search-plus"></i><?= htmlspecialchars($s['ip']) ?>
+                                        <i data-lucide="zoom-in" class="icon-lucide"></i><?= htmlspecialchars($s['ip']) ?>
                                     </a>
                                 </td>
                                 <td><?= number_format($s['count']) ?></td>
@@ -319,7 +281,7 @@ mysqli_close($con);
 
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-arrow-down"></i> Top Destination IPs</h5>
+            <h5><i data-lucide="arrow-down" class="icon-lucide"></i> Top Destination IPs</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead>
@@ -337,7 +299,7 @@ mysqli_close($con);
                                 <td><?= $rank + 1 ?></td>
                                 <td>
                                     <a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($d['ip']) ?>')" class="clickable-ip">
-                                        <i class="fas fa-search-plus"></i><?= htmlspecialchars($d['ip']) ?>
+                                        <i data-lucide="zoom-in" class="icon-lucide"></i><?= htmlspecialchars($d['ip']) ?>
                                     </a>
                                 </td>
                                 <td><?= number_format($d['count']) ?></td>
@@ -362,7 +324,7 @@ mysqli_close($con);
 <div class="row g-3 mt-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-layer-group"></i> Top Applications</h5>
+            <h5><i data-lucide="layers" class="icon-lucide"></i> Top Applications</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead><tr><th>Application</th><th>Flows</th><th>Bandwidth</th><th>% of Total</th></tr></thead>
@@ -386,7 +348,7 @@ mysqli_close($con);
 
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i class="fas fa-network-wired"></i> Protocol Distribution</h5>
+            <h5><i data-lucide="network" class="icon-lucide"></i> Protocol Distribution</h5>
             <div class="chart-container">
                 <canvas id="protocolChart"></canvas>
             </div>
@@ -399,7 +361,7 @@ mysqli_close($con);
 <div class="row g-3 mt-4">
     <div class="col-lg-12">
         <div class="report-card">
-            <h5><i class="fas fa-globe"></i> Geographic Distribution</h5>
+            <h5><i data-lucide="globe" class="icon-lucide"></i> Geographic Distribution</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead><tr><th>Country</th><th>Connections</th><th>Share</th></tr></thead>

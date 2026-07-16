@@ -56,33 +56,33 @@ $passed = count(array_filter($checks, fn($c) => $c['pass']));
 $score = round(($passed / count($checks)) * 100);
 ?>
 
-<div class="alert alert-info"><i class="fas fa-info-circle"></i> This is a lightweight posture scorecard built from what this SIEM already observes — not a certified PCI-DSS / ISO 27001 / SOC 2 mapping. Treat the score as directional.</div>
+<div class="alert alert-info"><i data-lucide="info" class="icon-lucide"></i> This is a lightweight posture scorecard built from what this SIEM already observes — not a certified PCI-DSS / ISO 27001 / SOC 2 mapping. Treat the score as directional.</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon <?= $score >= 80 ? 'text-success' : ($score >= 50 ? 'text-warning' : 'text-danger') ?>"><i class="fas fa-clipboard-check"></i></div>
+            <div class="stat-icon <?= $score >= 80 ? 'text-success' : ($score >= 50 ? 'text-warning' : 'text-danger') ?>"><i data-lucide="clipboard-check" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $score ?>%</div>
             <span class="stat-chip <?= $score >= 80 ? 'chip-success' : ($score >= 50 ? 'chip-warning' : 'chip-danger') ?>">Posture Score</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-server"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="server" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $devices_reporting ?>">0</div>
             <span class="stat-chip chip-info">Devices Reporting</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-lock"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="lock" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $auth_fail_ratio ?>%</div>
             <span class="stat-chip chip-warning">Auth Failure Ratio</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-ban"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="ban" class="icon-lucide"></i></div>
             <div class="stat-value"><?= $deny_ratio ?>%</div>
             <span class="stat-chip chip-info">Traffic Denied</span>
         </div>
@@ -90,7 +90,7 @@ $score = round(($passed / count($checks)) * 100);
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-tasks"></i> Posture Checklist</h5>
+    <h5><i data-lucide="tasks" class="icon-lucide"></i> Posture Checklist</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>Check</th><th>Status</th><th>Detail</th></tr></thead>

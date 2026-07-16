@@ -95,37 +95,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <!-- Local Font Awesome -->
     <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        #main-content {
-            margin-left: 250px;
-            transition: margin-left 0.3s ease;
-            padding-top: 70px;
-            padding-bottom: 20px;
-        }
-        .sidebar.collapsed ~ #main-content {
-            margin-left: 78px;
-        }
-        .modal-content {
-            background: var(--card-bg);
-            color: var(--text);
-        }
-        .modal-header {
-            border-bottom: 1px solid var(--border);
-        }
-        .modal-footer {
-            border-top: 1px solid var(--border);
-        }
-        .severity-btn {
-            min-width: 90px;
-        }
-        .table th {
-            background-color: var(--bg-tertiary);
-            color: var(--text);
-        }
-        .alert {
-            margin-bottom: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/pages/manage_tickets.css">
 </head>
 <body class="loggedin">
     <?php include __DIR__ . '/../topbar.php'; ?>
@@ -134,7 +104,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <div id="main-content">
         <div class="container-fluid">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0"><i class="fas fa-ticket-alt me-2"></i> Manage All Tickets</h2>
+                <h2 class="mb-0"><i data-lucide="ticket-alt" class="icon-lucide me-2"></i> Manage All Tickets</h2>
                 <span class="badge bg-primary">Admin Only</span>
             </div>
             
@@ -142,7 +112,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 
             <?php if ($incidents->num_rows == 0): ?>
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i> No tickets found.
+                    <i data-lucide="info" class="icon-lucide me-2"></i> No tickets found.
                 </div>
             <?php else: ?>
                 <div class="table-responsive">
@@ -204,12 +174,12 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
                                         <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modal<?= $incident['id'] ?>" title="View Details">
-                                            <i class="fas fa-eye"></i>
+                                            <i data-lucide="eye" class="icon-lucide"></i>
                                         </button>
 
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" title="Assign">
-                                                <i class="fas fa-user-plus"></i>
+                                                <i data-lucide="user-plus" class="icon-lucide"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <?php $users->data_seek(0); while ($u = $users->fetch_assoc()): ?>
@@ -228,7 +198,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" title="Change Status">
-                                                <i class="fas fa-edit"></i>
+                                                <i data-lucide="edit" class="icon-lucide"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <?php foreach (['new','assigned','in_progress','resolved','closed','escalated'] as $s): ?>
@@ -250,7 +220,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                             <input type="hidden" name="id" value="<?= $incident['id'] ?>">
                                             <input type="hidden" name="action" value="delete">
                                             <button type="submit" class="btn btn-danger" title="Delete">
-                                                <i class="fas fa-trash"></i>
+                                                <i data-lucide="trash" class="icon-lucide"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -263,7 +233,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                     <div class="modal-content">
                                         <div class="modal-header">
                                             <h5 class="modal-title">
-                                                <i class="fas fa-ticket-alt me-2"></i>
+                                                <i data-lucide="ticket-alt" class="icon-lucide me-2"></i>
                                                 #<?= $incident['id'] ?> - <?= htmlspecialchars($incident['title']) ?>
                                             </h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -317,7 +287,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                                             <td>
                                                                 <?php if ($incident['attachment'] && $incident['attachment'] != 'NULL'): ?>
                                                                     <a href="<?= htmlspecialchars($incident['attachment']) ?>" class="btn btn-sm btn-primary" download>
-                                                                        <i class="fas fa-download"></i> Download
+                                                                        <i data-lucide="download" class="icon-lucide"></i> Download
                                                                     </a>
                                                                 <?php else: ?>
                                                                     None

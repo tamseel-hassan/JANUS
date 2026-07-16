@@ -1,0 +1,33 @@
+/* ============================================================
+   SS IP Drilldown Styles - Midnight Violet Theme
+   ============================================================ */
+
+.drill-stat-box {
+    background: rgba(178, 132, 190, 0.05); /* var(--accent) at 5% opacity */
+    border: 1px solid rgba(178, 132, 190, 0.2);
+    border-radius: 8px; /* Section 5: nested */
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+}
+.drill-stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+.drill-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+.connection-row {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+.connection-row:hover {
+    background: var(--row-hover);
+}

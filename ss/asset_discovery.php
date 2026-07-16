@@ -62,33 +62,33 @@ mysqli_close($con);
 $new_last_24h = count(array_filter($assets, fn($a) => strtotime($a['first_seen']) > strtotime('-24 hours')));
 ?>
 
-<div class="alert alert-info"><i class="fas fa-info-circle"></i> Assets here are inferred from observed <code>source_ip</code> values in your syslog stream, not a dedicated asset/CMDB scan. Device role is a rough heuristic from sampled log content.</div>
+<div class="alert alert-info"><i data-lucide="info" class="icon-lucide"></i> Assets here are inferred from observed <code>source_ip</code> values in your syslog stream, not a dedicated asset/CMDB scan. Device role is a rough heuristic from sampled log content.</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i class="fas fa-sitemap"></i></div>
+            <div class="stat-icon text-info"><i data-lucide="sitemap" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count($assets) ?>">0</div>
             <span class="stat-chip chip-info">Assets Observed</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i class="fas fa-plus-circle"></i></div>
+            <div class="stat-icon text-success"><i data-lucide="plus-circle" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= $new_last_24h ?>">0</div>
             <span class="stat-chip chip-success">First Seen (24h)</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i class="fas fa-question-circle"></i></div>
+            <div class="stat-icon text-warning"><i data-lucide="question-circle" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count(array_filter($roles, fn($r) => $r === 'Unclassified')) ?>">0</div>
             <span class="stat-chip chip-warning">Unclassified</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-icon text-primary"><i data-lucide="shield" class="icon-lucide"></i></div>
             <div class="stat-value" data-raw="<?= count(array_filter($roles, fn($r) => $r === 'Firewall/Gateway')) ?>">0</div>
             <span class="stat-chip chip-info">Firewalls/Gateways</span>
         </div>
@@ -96,7 +96,7 @@ $new_last_24h = count(array_filter($assets, fn($a) => strtotime($a['first_seen']
 </div>
 
 <div class="report-card">
-    <h5><i class="fas fa-list"></i> Asset Inventory</h5>
+    <h5><i data-lucide="list" class="icon-lucide"></i> Asset Inventory</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>IP Address</th><th>Inferred Role</th><th>Events</th><th>First Seen</th><th>Last Seen</th></tr></thead>

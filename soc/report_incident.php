@@ -110,19 +110,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/font-awesome/css/all.min.css">
     <link rel="stylesheet" href="/css/theme.css">
-    <style>
-        .wizard-step { display: none; opacity: 0; transition: opacity 0.4s; }
-        .wizard-step.active { display: block; opacity: 1; }
-        .type-card { cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
-        .type-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,198,255,0.2); }
-        .type-card.selected { border-color: var(--accent); background: rgba(0,198,255,0.1); }
-        .priority-btn { transition: all 0.3s; }
-        .priority-btn.selected { transform: scale(1.1); box-shadow: 0 0 15px rgba(0,198,255,0.5); }
-        .preview-box { background: rgba(0,198,255,0.05); border-left: 4px solid var(--accent); }
-        .observable-field { margin-bottom: 1rem; border: 1px dashed var(--border); padding: 1rem; border-radius: 8px; }
-        #main-content { margin-left: 250px; transition: margin-left 0.3s; padding-top: 70px; }
-        .sidebar.collapsed ~ #main-content { margin-left: 78px; }
-    </style>
+    <link rel="stylesheet" href="/css/pages/report_incident.css">
 </head>
 <body class="loggedin">
     <?php include __DIR__ . '/../topbar.php'; ?>
@@ -134,7 +122,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <div class="col-lg-10">
                     <div class="card shadow-lg border-0">
                         <div class="card-header text-white text-center" style="background: linear-gradient(135deg, #007bff, #00c6ff);">
-                            <h3 class="mb-0"><i class="fas fa-siren fa-beat me-2"></i> Report New Incident</h3>
+                            <h3 class="mb-0"><i data-lucide="siren" class="icon-lucide fa-beat me-2"></i> Report New Incident</h3>
                         </div>
                         <div class="card-body p-5">
                             <div class="progress mb-5" style="height: 8px;">
@@ -144,32 +132,32 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             <form id="incidentForm" method="POST" enctype="multipart/form-data" novalidate>
                                 <!-- Step 1: Type -->
                                 <div class="wizard-step active" data-step="1">
-                                    <h4 class="text-center mb-4"><i class="fas fa-question-circle"></i> What type of incident?</h4>
+                                    <h4 class="text-center mb-4"><i data-lucide="question-circle" class="icon-lucide"></i> What type of incident?</h4>
                                     <div class="row g-4">
                                         <div class="col-md-3">
                                             <div class="type-card card h-100 text-center p-4 selected" data-type="link_down">
-                                                <i class="fas fa-link-slash fa-3x text-danger mb-3"></i>
+                                                <i data-lucide="link-slash" class="icon-lucide fa-3x text-danger mb-3"></i>
                                                 <h5>Link Down</h5>
                                                 <input type="radio" name="type" value="link_down" checked hidden>
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="type-card card h-100 text-center p-4" data-type="malware">
-                                                <i class="fas fa-bug fa-3x text-warning mb-3"></i>
+                                                <i data-lucide="bug" class="icon-lucide fa-3x text-warning mb-3"></i>
                                                 <h5>Malware/Threat</h5>
                                                 <input type="radio" name="type" value="malware" hidden>
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="type-card card h-100 text-center p-4" data-type="security_breach">
-                                                <i class="fas fa-shield-halved fa-3x text-info mb-3"></i>
+                                                <i data-lucide="shield-halved" class="icon-lucide fa-3x text-info mb-3"></i>
                                                 <h5>Security Breach</h5>
                                                 <input type="radio" name="type" value="security_breach" hidden>
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="type-card card h-100 text-center p-4" data-type="other">
-                                                <i class="fas fa-ellipsis-h fa-3x text-secondary mb-3"></i>
+                                                <i data-lucide="ellipsis-h" class="icon-lucide fa-3x text-secondary mb-3"></i>
                                                 <h5>Other</h5>
                                                 <input type="radio" name="type" value="other" hidden>
                                             </div>
@@ -180,7 +168,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                                 <!-- Steps 2-5 remain the same but remove the "escalated_to" field -->
                                 <!-- Step 2: Details -->
                                 <div class="wizard-step" data-step="2">
-                                    <h4 class="text-center mb-4"><i class="fas fa-pencil-alt"></i> Describe the Incident</h4>
+                                    <h4 class="text-center mb-4"><i data-lucide="pencil" class="icon-lucide"></i> Describe the Incident</h4>
                                     <div class="mb-3">
                                         <label for="title" class="form-label">Title</label>
                                         <input type="text" class="form-control" name="title" id="title" required minlength="5" maxlength="100">
@@ -210,7 +198,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 
                                 <!-- Step 3: Priority & Assignment (without escalation) -->
                                 <div class="wizard-step" data-step="3">
-                                    <h4 class="text-center mb-4"><i class="fas fa-exclamation-triangle"></i> Set Priority & Assignment</h4>
+                                    <h4 class="text-center mb-4"><i data-lucide="triangle-alert" class="icon-lucide"></i> Set Priority & Assignment</h4>
                                     <div class="d-flex justify-content-around mb-4">
                                         <button type="button" class="btn btn-outline-secondary priority-btn" data-priority="low">Low</button>
                                         <button type="button" class="btn btn-outline-primary priority-btn" data-priority="medium">Medium</button>
@@ -232,7 +220,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 
                                 <!-- Step 4: Observables -->
                                 <div class="wizard-step" data-step="4">
-                                    <h4 class="text-center mb-4"><i class="fas fa-eye"></i> Add Observables</h4>
+                                    <h4 class="text-center mb-4"><i data-lucide="eye" class="icon-lucide"></i> Add Observables</h4>
                                     <div id="observablesContainer">
                                         <div class="observable-field">
                                             <div class="row">
@@ -274,7 +262,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 
                                 <!-- Step 5: Preview & Confirm -->
                                 <div class="wizard-step" data-step="5">
-                                    <h4 class="text-center mb-4"><i class="fas fa-check-circle"></i> Preview & Confirm</h4>
+                                    <h4 class="text-center mb-4"><i data-lucide="check-circle" class="icon-lucide"></i> Preview & Confirm</h4>
                                     <div class="preview-box p-4 mb-4">
                                         <p><strong>Title:</strong> <span id="prevTitle">-</span></p>
                                         <p><strong>Type:</strong> <span id="prevType">-</span> / <span id="prevSub">-</span></p>
