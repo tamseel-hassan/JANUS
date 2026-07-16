@@ -82,7 +82,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       />
       <div
         className={`flex-1 flex flex-col transition-all duration-300 ${
-          isSidebarCollapsed ? "ml-20" : "ml-64"
+          isSidebarCollapsed ? "ml-[72px]" : "ml-64"
         }`}
       >
         <Topbar data={navData} />
