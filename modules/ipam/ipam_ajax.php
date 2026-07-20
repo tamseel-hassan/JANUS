@@ -217,10 +217,15 @@ if ($action === 'ping') {
    SUBNETS_LOAD
 ══════════════════════════════════════════════════════ */
 if ($action === 'subnets_load') {
-    // Fetch all subnets first
+    // Fetch all subnets first - compat loop (no fetch_all requirement)
     $res  = $db->query("SELECT * FROM ipam_subnets ORDER BY id");
-    $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-    $res && $res->free();
+    $rows = [];
+    if ($res) {
+        while ($r = $res->fetch_assoc()) {
+            $rows[] = $r;
+        }
+        $res->free();
+    }
 
     // Fetch ALL devices once (not per-subnet to avoid DB sync issues)
     $all_devices = [];
@@ -332,7 +337,13 @@ if ($action === 'ip_history') {
     );
     $s->bind_param('s', $ip);
     $s->execute();
-    $rows = $s->get_result()->fetch_all(MYSQLI_ASSOC);
+    $result = $s->get_result();
+    $rows = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+        }
+    }
     $s->close();
     $db->close();
     exit(json_encode($rows));

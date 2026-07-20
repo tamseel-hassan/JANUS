@@ -13,20 +13,20 @@ if (!isset($_POST['username'], $_POST['password'])) {
 }
 
 // Fetch id, password, AND role
-if ($stmt = $con->prepare('SELECT id, password, role FROM accounts WHERE username = ?')) {
+if ($stmt = $con->prepare('SELECT id, password, role, name FROM accounts WHERE username = ?')) {
     $stmt->bind_param('s', $_POST['username']);
     $stmt->execute();
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id, $password, $role);
+        $stmt->bind_result($id, $password, $role, $name);
         $stmt->fetch();
 
         if (password_verify($_POST['password'], $password)) {
             // Success!
             session_regenerate_id();
             $_SESSION['loggedin'] = TRUE;
-            $_SESSION['name'] = $_POST['username'];
+            $_SESSION['name'] = $name;
             $_SESSION['id'] = $id;
             $_SESSION['role'] = $role ?? 'analyst';
 

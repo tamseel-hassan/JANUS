@@ -73,8 +73,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">Threat Detection</a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/vuln_scan.php">Vulnerability scanner</a></li>
-                    <li><a class="dropdown-item" href="/home.php#">Malware Analysis</a></li>
+                    <li><a class="dropdown-item" href="/modules/scanners/vuln_scan.php">Vulnerability scanner</a></li>
+                    <li><a class="dropdown-item" href="/malware_analysis.php">Malware Analysis</a></li>
                     <li><a class="dropdown-item" href="/home.php#">Check Ip Reputation</a></li>
                 </ul>
             </li>
@@ -82,8 +82,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">Remediation & Automation</a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/home.php#">Playbooks</a></li>
-                    <li><a class="dropdown-item" href="/home.php#">Response Automation</a></li>
+                    <li><a class="dropdown-item" href="/modules/responder/index.php">Playbooks</a></li>
+                    <li><a class="dropdown-item" href="/modules/responder/automation.php">Response Automation</a></li>
                 </ul>
             </li>
         </ul>

@@ -19,15 +19,28 @@ $report_type = $_GET['type'] ?? 'traffic';
 $time_range = $_GET['range'] ?? '24h';
 $device_filter = $_GET['device'] ?? '';
 
-$end_time = date('Y-m-d H:i:s');
-switch ($time_range) {
-    case '15m': $start_time = date('Y-m-d H:i:s', strtotime('-15 minutes')); break;
-    case '1h':  $start_time = date('Y-m-d H:i:s', strtotime('-1 hour')); break;
-    case '6h':  $start_time = date('Y-m-d H:i:s', strtotime('-6 hours')); break;
-    case '24h': $start_time = date('Y-m-d H:i:s', strtotime('-24 hours')); break;
-    case '7d':  $start_time = date('Y-m-d H:i:s', strtotime('-7 days')); break;
-    case '30d': $start_time = date('Y-m-d H:i:s', strtotime('-30 days')); break;
-    default:    $start_time = date('Y-m-d H:i:s', strtotime('-24 hours'));
+// Timezone-safe calculations computed by MySQL to align queries with DB server time
+$res = mysqli_query($con, "
+    SELECT 
+        NOW() as end_time,
+        DATE_SUB(NOW(), INTERVAL 15 MINUTE) as start_15m,
+        DATE_SUB(NOW(), INTERVAL 1 HOUR) as start_1h,
+        DATE_SUB(NOW(), INTERVAL 6 HOUR) as start_6h,
+        DATE_SUB(NOW(), INTERVAL 24 HOUR) as start_24h,
+        DATE_SUB(NOW(), INTERVAL 7 DAY) as start_7d,
+        DATE_SUB(NOW(), INTERVAL 30 DAY) as start_30d
+");
+$row = mysqli_fetch_assoc($res);
+$end_time = $row['end_time'];
+
+switch (strtolower($time_range)) {
+    case '15m': $start_time = $row['start_15m']; break;
+    case '1h':  $start_time = $row['start_1h']; break;
+    case '6h':  $start_time = $row['start_6h']; break;
+    case '24h': $start_time = $row['start_24h']; break;
+    case '7d':  $start_time = $row['start_7d']; break;
+    case '30d': $start_time = $row['start_30d']; break;
+    default:    $start_time = $row['start_24h'];
 }
 
 $devices = [];

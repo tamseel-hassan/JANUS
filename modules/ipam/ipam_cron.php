@@ -44,7 +44,7 @@ if (empty($subnets)) {
                 SUBSTRING_INDEX(SUBSTRING_INDEX(ip,'.',2),'.',-1),'.',
                 SUBSTRING_INDEX(SUBSTRING_INDEX(ip,'.',3),'.',-1),'.0/24'
             ) AS cidr
-         FROM shikra_ipam
+         FROM janus_ipam
          ORDER BY cidr"
     );
     if ($res) {

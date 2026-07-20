@@ -8,36 +8,15 @@ if (!$con) {
     die('Database connection failed: ' . htmlspecialchars(mysqli_connect_error()));
 }
 
-// Create tables if needed
-mysqli_query($con, "
-CREATE TABLE IF NOT EXISTS syslog_sources (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    appliance_type VARCHAR(100) NOT NULL,
-    source_ip VARCHAR(45) NOT NULL UNIQUE,
-    is_active TINYINT(1) DEFAULT 1,
-    added_by INT NOT NULL,
-    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-");
-
-mysqli_query($con, "
-CREATE TABLE IF NOT EXISTS syslog_entries (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    source_id INT NULL,
-    appliance_type VARCHAR(100) NOT NULL,
-    source_ip VARCHAR(45) NOT NULL,
-    message TEXT NOT NULL,
-    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX (source_ip),
-    INDEX (received_at),
-    FOREIGN KEY (source_id) REFERENCES syslog_sources(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-");
+// Tables are created by the master schema (janus_fresh_schema.sql).
+// Do NOT recreate them here — inline CREATE TABLE definitions were
+// missing columns (appliance_type, facility, severity, raw) that
+// syslog_receiver.py writes, causing all log inserts to fail.
 
 // Get current retention setting
 $retention_hours = 168;
 $res = mysqli_query($con, "SELECT `value` FROM system_config WHERE `key` = 'archive_retention_hours'");
-if ($row = mysqli_fetch_assoc($res)) {
+if ($res && $row = mysqli_fetch_assoc($res)) {
     $retention_hours = intval($row['value']);
 }
 
@@ -220,14 +199,14 @@ $res = mysqli_query($con, "
 ");
 while ($r = mysqli_fetch_assoc($res)) $logs[] = $r;
 
-// Stats
+// Stats — group by appliance_type stored directly on syslog_entries
 $stats = [];
 $res = mysqli_query($con, "
     SELECT appliance_type, COUNT(*) as cnt, MAX(received_at) as last_received
     FROM syslog_entries
     GROUP BY appliance_type
 ");
-while ($r = mysqli_fetch_assoc($res)) $stats[$r['appliance_type']] = $r;
+if ($res) while ($r = mysqli_fetch_assoc($res)) $stats[$r['appliance_type']] = $r;
 
 // Archive stats
 $archive_count = 0;

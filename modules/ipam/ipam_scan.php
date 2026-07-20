@@ -57,8 +57,13 @@ $ping_checked = 0;
 /* ── Phase 2: Ping fallback for no-MAC devices in this subnet ── */
 $nm = $db->prepare("SELECT ip FROM janus_ipam WHERE (mac IS NULL OR mac = '') AND status != 'reserved'");
 if ($nm) {
-    $nm->execute();
-    $no_mac_rows = $nm->get_result()->fetch_all(MYSQLI_ASSOC);
+    $result = $nm->get_result();
+    $no_mac_rows = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $no_mac_rows[] = $row;
+        }
+    }
     $nm->close();
     foreach ($no_mac_rows as $row) {
         if (!ip_in_subnet($row['ip'], $net_long, $broadcast)) continue;
