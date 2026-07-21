@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -32,7 +32,9 @@ export default function CustomSelect({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
-  const displayLabel = selectedOption ? selectedOption.label : placeholder || "";
+  const displayLabel = selectedOption
+    ? selectedOption.label
+    : placeholder || "";
 
   // Compute dropdown position relative to viewport
   const openDropdown = useCallback(() => {
@@ -61,7 +63,8 @@ export default function CustomSelect({
       if (
         triggerRef.current?.contains(e.target as Node) ||
         dropdownRef.current?.contains(e.target as Node)
-      ) return;
+      )
+        return;
       setIsOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
@@ -80,7 +83,7 @@ export default function CustomSelect({
     <div
       ref={dropdownRef}
       style={dropdownStyle}
-      className="bg-bg-card border border-border-subtle rounded-2xl py-1 shadow-xl max-h-60 overflow-y-auto custom-scrollbar"
+      className="bg-bg-card border border-border-subtle rounded-[18px] shadow-xl max-h-60 overflow-y-auto custom-scrollbar"
     >
       {options.map((opt) => (
         <button

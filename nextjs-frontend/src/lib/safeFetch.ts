@@ -38,10 +38,17 @@ export async function safeFetch<T = unknown>(
       return null;
     }
 
-    const data: T = await res.json();
-    return data;
+    let text = "";
+    try {
+      text = await res.text();
+      const data: T = JSON.parse(text);
+      return data;
+    } catch (err) {
+      console.error(`[${tag}] Expected JSON but failed to parse. Raw response snippet (status ${res.status}):\n`, text.slice(0, 400));
+      return null;
+    }
   } catch (err) {
-    console.error(`[${tag}] Network or parse error:`, err);
+    console.error(`[${tag}] Network error:`, err);
     return null;
   }
 }

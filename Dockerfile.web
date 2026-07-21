@@ -1,7 +1,8 @@
 FROM php:8.1-apache
 
-# Install MySQL extensions for PHP
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+# Install MySQL extensions for PHP and required tools (nmap)
+RUN apt-get update && apt-get install -y nmap \
+    && docker-php-ext-install mysqli pdo pdo_mysql
 
 # Enable Apache rewrite rules
 RUN a2enmod rewrite

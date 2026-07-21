@@ -6,7 +6,7 @@ WORKDIR /app
 RUN pip install --no-cache-dir pymysql
 
 # Copy the daemon script
-COPY syslog_receiver.py .
+COPY modules/logmanage/syslog_receiver.py .
 
 # Create the logs directory
 RUN mkdir -p /var/log/janus_siem && chmod 755 /var/log/janus_siem

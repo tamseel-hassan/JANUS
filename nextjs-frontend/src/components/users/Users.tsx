@@ -7,10 +7,11 @@ import { User } from "@/types/users";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { Toast } from "@/components/ui/Toast";
+import { toast } from "sonner";
 import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { confirmDialog } from "@/lib/use-confirm";
 
 export function Users() {
   const [users, setUsers] = useState<User[]>([]);
@@ -20,8 +21,6 @@ export function Users() {
   const [roleFilter, setRoleFilter] = useState('');
   
   const [showAddModal, setShowAddModal] = useState(false);
-  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
-
   const [newUsername, setNewUsername] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -39,9 +38,7 @@ export function Users() {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const showNotification = (type: 'success' | 'error', message: string) => {
-    setNotification({ type, message });
-  };
+
 
   const handleAction = async (action: string, id?: number, extraData?: any) => {
     const payload = { action, id, ...extraData };
@@ -54,17 +51,17 @@ export function Users() {
       });
       const data = await res.json();
       if (data.success) {
-        showNotification('success', data.success);
+        toast.success(data.success);
         fetchUsers();
         if (action === 'create') {
           setShowAddModal(false);
           setNewUsername(''); setNewPassword(''); setNewEmail('');
         }
       } else if (data.error) {
-        showNotification('error', data.error);
+        toast.error(data.error);
       }
     } catch (err: any) {
-      showNotification('error', err.message);
+      toast.error(err.message);
     }
   };
 
@@ -84,14 +81,6 @@ export function Users() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto relative">
-      
-      {notification && (
-        <Toast
-          type={notification.type}
-          message={notification.message}
-          onDismiss={() => setNotification(null)}
-        />
-      )}
 
       <PageHeader
         title={<><UsersIcon className="w-8 h-8 inline-block mr-3 text-accent-primary" />User Management</>}
@@ -196,8 +185,14 @@ export function Users() {
                           <Button
                             variant="outline-danger"
                             size="icon"
-                            onClick={() => {
-                              if (confirm(`Are you sure you want to permanently delete user ${user.username}?`)) {
+                            onClick={async () => {
+                              const ok = await confirmDialog({
+                                title: "Delete User",
+                                description: `Are you sure you want to permanently delete user ${user.username}?`,
+                                variant: 'destructive',
+                                confirmText: "Delete"
+                              });
+                              if (ok) {
                                 handleAction('delete', user.id);
                               }
                             }}

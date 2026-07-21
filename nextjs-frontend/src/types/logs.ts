@@ -33,6 +33,9 @@ export interface Flow {
   rcvdbyte: number;
   is_archive: boolean;
   full_parsed: any;
+  parsed?: boolean;
+  vendor?: string;
+  raw?: string;
 }
 
 export interface SiemSource {

@@ -53,7 +53,7 @@ const NAV: NavEntry[] = [
   {
     type: "item",
     label: "Inventory",
-    href: "/manage",
+    href: "/manage_devices",
     icon: <Server className="w-5 h-5" />,
   },
   {
@@ -125,7 +125,7 @@ const NAV: NavEntry[] = [
       },
       {
         label: "Layer 2 Monitoring",
-        href: "/availability",
+        href: "/nac",
         icon: <Layers className="w-4 h-4" />,
       },
     ],
@@ -190,8 +190,8 @@ export default function Sidebar({
 
   return (
     <div
-      className={`fixed left-0 top-0 h-screen bg-bg-darker border-r border-border-subtle transition-all duration-300 z-50 flex flex-col ${
-        isCollapsed ? "w-18" : "w-64"
+      className={`relative h-screen bg-bg-darker border-r border-border-subtle transition-all duration-300 z-50 flex flex-col shrink-0 ${
+        isCollapsed ? "w-[72px]" : "w-[260px]"
       }`}
     >
       {/* Header */}
@@ -270,7 +270,7 @@ export default function Sidebar({
                       className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
                         isCollapsed
                           ? "w-0 opacity-0 ml-0 min-w-0"
-                          : "w-[200px] opacity-100 ml-3"
+                          : "w-[160px] opacity-100 ml-3"
                       }`}
                     >
                       {entry.label}
@@ -308,7 +308,7 @@ export default function Sidebar({
                     className={`flex items-center justify-between whitespace-nowrap overflow-hidden transition-all duration-300 ${
                       isCollapsed
                         ? "w-0 opacity-0 ml-0 min-w-0"
-                        : "w-[200px] opacity-100 ml-3"
+                        : "w-[160px] opacity-100 ml-3"
                     }`}
                   >
                     <span className="truncate">{entry.label}</span>

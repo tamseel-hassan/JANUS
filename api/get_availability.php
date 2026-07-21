@@ -70,26 +70,32 @@ $report_data = null;
 $rtt_data = [];
 
 if ($selected_device_id && $time_range) {
-    $end_time = date('Y-m-d H:i:s');
+    // Determine start and end times in UTC based on range
+    $end_time_raw = time();
     switch ($time_range) {
-        case '24h': $start_time = date('Y-m-d H:i:s', strtotime('-24 hours')); break;
-        case '7d': $start_time = date('Y-m-d H:i:s', strtotime('-7 days')); break;
-        case '30d': $start_time = date('Y-m-d H:i:s', strtotime('-30 days')); break;
+        case '24h': $start_time_raw = strtotime('-24 hours'); break;
+        case '7d': $start_time_raw = strtotime('-7 days'); break;
+        case '30d': $start_time_raw = strtotime('-30 days'); break;
         case 'custom':
             if ($start_datetime && $end_datetime) {
-                $start_time = str_replace('T', ' ', $start_datetime) . ':00';
-                $end_time = str_replace('T', ' ', $end_datetime) . ':59';
-                if (!strtotime($start_time) || !strtotime($end_time)) {
-                    $start_time = date('Y-m-d H:i:s', strtotime('-24 hours'));
-                    $end_time = date('Y-m-d H:i:s');
+                $start_time_raw = strtotime(str_replace('T', ' ', $start_datetime) . ':00');
+                $end_time_raw = strtotime(str_replace('T', ' ', $end_datetime) . ':59');
+                if (!$start_time_raw || !$end_time_raw) {
+                    $start_time_raw = strtotime('-24 hours');
+                    $end_time_raw = time();
                 }
             } else {
-                $start_time = date('Y-m-d H:i:s', strtotime('-24 hours'));
+                $start_time_raw = strtotime('-24 hours');
             }
             break;
         default:
-            $start_time = date('Y-m-d H:i:s', strtotime('-24 hours'));
+            $start_time_raw = strtotime('-24 hours');
     }
+
+    $start_time = gmdate('Y-m-d H:i:s', $start_time_raw);
+    $end_time = gmdate('Y-m-d H:i:s', $end_time_raw);
+    $start_time_local = date('Y-m-d H:i:s', $start_time_raw);
+    $end_time_local = date('Y-m-d H:i:s', $end_time_raw);
 
     $device_info = null;
     foreach ($devices as $dev) {
@@ -116,22 +122,28 @@ if ($selected_device_id && $time_range) {
         $stmt = $con->prepare($logs_query);
         $stmt->bind_param('ississ', $selected_device_id, $start_time, $end_time, $selected_device_id, $start_time, $end_time);
         $stmt->execute();
-        $logs_result = $stmt->get_result();
+        $stmt->bind_result($db_status, $db_checked_at, $db_rtt_avg);
         
         $logs = [];
         $sum_rtt = 0;
         $count_rtt = 0;
         
-        while ($row = mysqli_fetch_assoc($logs_result)) {
+        while ($stmt->fetch()) {
+            $local_checked_at = date('Y-m-d H:i:s', strtotime($db_checked_at . ' UTC'));
+            $row = [
+                'status' => $db_status,
+                'checked_at' => $local_checked_at,
+                'rtt_avg' => $db_rtt_avg
+            ];
             $logs[] = $row;
-            if ($row['status'] === 'up' && $row['rtt_avg'] !== null) {
-                $sum_rtt += $row['rtt_avg'];
+            if ($db_status === 'up' && $db_rtt_avg !== null) {
+                $sum_rtt += $db_rtt_avg;
                 $count_rtt++;
             }
             $rtt_data[] = [
-                'time' => $row['checked_at'],
-                'rtt' => $row['rtt_avg'] !== null ? floatval($row['rtt_avg']) : null,
-                'status' => $row['status']
+                'time' => $local_checked_at,
+                'rtt' => $db_rtt_avg !== null ? floatval($db_rtt_avg) : null,
+                'status' => $db_status
             ];
         }
         $stmt->close();
@@ -139,7 +151,7 @@ if ($selected_device_id && $time_range) {
         $avg_rtt = $count_rtt > 0 ? round($sum_rtt / $count_rtt, 1) : 0;
 
         $periods = [];
-        $total_time = strtotime($end_time) - strtotime($start_time);
+        $total_time = $end_time_raw - $start_time_raw;
         $total_up_time = 0;
         $total_down_time = 0;
         $event_comments = [];
@@ -166,11 +178,11 @@ if ($selected_device_id && $time_range) {
                 }
             }
 
-            $duration = strtotime($end_time) - strtotime($current_start);
+            $duration = strtotime($end_time_local) - strtotime($current_start);
             $periods[] = [
                 'status' => $prev_status,
                 'start' => $current_start,
-                'end' => $end_time,
+                'end' => $end_time_local,
                 'duration' => $duration
             ];
             if ($prev_status === 'up') $total_up_time += $duration;
@@ -187,13 +199,25 @@ if ($selected_device_id && $time_range) {
                     $comment_types .= 'is';
                 }
                 if (!empty($comment_conditions)) {
-                    $comments_query = "SELECT * FROM event_comments WHERE " . implode(' OR ', $comment_conditions);
+                    $comments_query = "SELECT id, device_id, event_start_time, event_end_time, comments, action_taken, escalation_level, vendor_contacted, ticket_number, resolution_time, created_at FROM event_comments WHERE " . implode(' OR ', $comment_conditions);
                     $stmt = $con->prepare($comments_query);
                     $stmt->bind_param($comment_types, ...$comment_params);
                     $stmt->execute();
-                    $comments_result = $stmt->get_result();
-                    while ($comment_row = $comments_result->fetch_assoc()) {
-                        $event_comments[$comment_row['event_start_time']] = $comment_row;
+                    $stmt->bind_result($c_id, $c_dev_id, $c_start, $c_end, $c_comments, $c_action, $c_level, $c_vendor, $c_ticket, $c_res, $c_created);
+                    while ($stmt->fetch()) {
+                        $event_comments[$c_start] = [
+                            'id' => $c_id,
+                            'device_id' => $c_dev_id,
+                            'event_start_time' => $c_start,
+                            'event_end_time' => $c_end,
+                            'comments' => $c_comments,
+                            'action_taken' => $c_action,
+                            'escalation_level' => $c_level,
+                            'vendor_contacted' => $c_vendor,
+                            'ticket_number' => $c_ticket,
+                            'resolution_time' => $c_res,
+                            'created_at' => $c_created
+                        ];
                     }
                     $stmt->close();
                 }
@@ -222,8 +246,8 @@ if ($selected_device_id && $time_range) {
 
         $report_data = [
             'device' => $device_info,
-            'start_time' => $start_time,
-            'end_time' => $end_time,
+            'start_time' => $start_time_local,
+            'end_time' => $end_time_local,
             'total_up_time' => $total_up_time,
             'total_down_time' => $total_down_time,
             'availability_percent' => $availability,

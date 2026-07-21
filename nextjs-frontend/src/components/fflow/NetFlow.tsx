@@ -1,15 +1,17 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Network, Search, Server, Database, Eye } from 'lucide-react';
+import { confirmDialog } from "@/lib/use-confirm";
 import CustomSelect from '@/components/ui/CustomSelect';
-import { Log } from "@/types/logs";
+import { Flow } from "@/types/logs";
 import { Pagination } from "@/components/ui/Pagination";
 import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
+import { Tabs } from "@/components/ui/Tabs";
 
 export function NetFlow() {
-  const [logs, setLogs] = useState<Log[]>([]);
+  const [flows, setFlows] = useState<Flow[]>([]);
   const [devices, setDevices] = useState<{source_ip: string, appliance_type: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -33,11 +35,11 @@ export function NetFlow() {
       page: page.toString(),
       ...filters
     });
-    const data = await safeFetch<{ logs: Log[]; devices: {source_ip: string; appliance_type: string}[]; total_pages: number; total: number }>(
+    const data = await safeFetch<{ flows: Flow[]; devices: {source_ip: string; appliance_type: string}[]; total_pages: number; total: number }>(
       `/api/get_fflow.php?${queryParams}`, {}, "NetFlow"
     );
     if (data) {
-      setLogs(data.logs || []);
+      setFlows(data.flows || []);
       setDevices(data.devices || []);
       setTotalPages(data.total_pages || 1);
       setTotal(data.total || 0);
@@ -55,16 +57,6 @@ export function NetFlow() {
     fetchLogs();
   };
 
-  const extractMessageParts = (message: string) => {
-    const parts: Record<string, string> = {};
-    const regex = /(\w+)=("[^"]*"|[^ ]+)/g;
-    let match;
-    while ((match = regex.exec(message)) !== null) {
-      parts[match[1]] = match[2].replace(/"/g, '');
-    }
-    return parts;
-  };
-
   return (
     <div className="p-6 max-w-[1600px] mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -75,23 +67,15 @@ export function NetFlow() {
           </h1>
           <p className="text-text-muted mt-2">Analyze firewall traffic logs in real-time or historical mode</p>
         </div>
-        <div className="flex bg-bg-raised rounded-2xl p-1 border border-border-subtle">
-          <button
-            onClick={() => setFilters({ ...filters, view: 'live' })}
-            className={`px-4 py-2 rounded-2xl text-sm font-medium transition-colors flex items-center gap-2 ${
-              filters.view === 'live' ? 'bg-accent-primary text-foreground' : 'text-text-muted hover:text-foreground'
-            }`}
-          >
-            <Server className="w-4 h-4" /> Live Traffic
-          </button>
-          <button
-            onClick={() => setFilters({ ...filters, view: 'historical' })}
-            className={`px-4 py-2 rounded-2xl text-sm font-medium transition-colors flex items-center gap-2 ${
-              filters.view === 'historical' ? 'bg-accent-primary text-foreground' : 'text-text-muted hover:text-foreground'
-            }`}
-          >
-            <Database className="w-4 h-4" /> Historical Archive
-          </button>
+        <div className="pt-2">
+          <Tabs
+            tabs={[
+              { id: 'live', label: 'Live Traffic', icon: <Server className="w-4 h-4" /> },
+              { id: 'historical', label: 'Historical Archive', icon: <Database className="w-4 h-4" /> }
+            ]}
+            activeTab={filters.view}
+            onChange={(id) => setFilters({ ...filters, view: id })}
+          />
         </div>
       </div>
 
@@ -204,25 +188,27 @@ export function NetFlow() {
                 <tr>
                   <td colSpan={9} className="p-8 text-center text-text-muted">Loading traffic logs...</td>
                 </tr>
-              ) : logs.length === 0 ? (
+              ) : flows.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-8 text-center text-text-muted">No traffic logs found matching criteria.</td>
                 </tr>
               ) : (
-                logs.map((log) => {
-                  const parts = extractMessageParts(log.message);
-                  const action = (parts.action || 'unknown').toLowerCase();
+                flows.map((flow) => {
+                  const action = (flow.action || 'unknown').toLowerCase();
+                  const [srcIp, srcPort] = flow.src !== '—' ? flow.src.split(':') : ['-', '-'];
+                  const [dstIp, dstPort] = flow.dst !== '—' ? flow.dst.split(':') : ['-', '-'];
+                  
                   return (
-                    <tr key={`${log.source_table}-${log.log_id}`} className="border-b border-border-subtle/50 hover:bg-slate-700/20 transition-colors">
-                      <td className="p-4 text-sm text-foreground whitespace-nowrap">{log.received_at}</td>
-                      <td className="p-4 text-sm text-foreground">{parts.srcip || '-'}</td>
-                      <td className="p-4 text-sm text-text-muted">{parts.srcport || '-'}</td>
-                      <td className="p-4 text-sm text-foreground">{parts.dstip || '-'}</td>
-                      <td className="p-4 text-sm text-text-muted">{parts.dstport || '-'}</td>
+                    <tr key={`${flow.is_archive ? 'archive' : 'live'}-${flow.log_id}`} className={`border-b border-border-subtle/50 transition-colors ${!flow.parsed ? 'opacity-70 bg-slate-900/30' : 'hover:bg-slate-700/20'}`}>
+                      <td className="p-4 text-sm text-foreground whitespace-nowrap">{flow.time}</td>
+                      <td className="p-4 text-sm text-foreground">{srcIp}</td>
+                      <td className="p-4 text-sm text-text-muted">{srcPort || '-'}</td>
+                      <td className="p-4 text-sm text-foreground">{dstIp}</td>
+                      <td className="p-4 text-sm text-text-muted">{dstPort || '-'}</td>
                       <td className="p-4 text-sm text-foreground">
-                        {parts.service && (
+                        {flow.service && flow.service !== '-/-' && (
                           <span className="bg-slate-700/50 text-foreground px-2 py-0.5 rounded-2xl text-xs">
-                            {parts.service}
+                            {flow.service}
                           </span>
                         )}
                       </td>
@@ -232,16 +218,26 @@ export function NetFlow() {
                           action === 'deny' || action === 'drop' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
                           'bg-slate-700 text-foreground'
                         }`}>
-                          {parts.action || '-'}
+                          {flow.action || '-'}
                         </span>
                       </td>
-                      <td className="p-4 text-sm text-text-muted">{log.source_ip}</td>
+                      <td className="p-4 text-sm text-text-muted">
+                        <div className="flex flex-col">
+                          <span>{flow.devname || flow.source_ip}</span>
+                          {flow.vendor && <span className="text-[10px] uppercase text-accent-primary opacity-80">{flow.vendor}</span>}
+                        </div>
+                      </td>
                       <td className="p-4 text-sm text-right">
                         <Button 
                           variant="ghost"
                           size="icon"
                           className="text-accent-primary hover:text-purple-300 ml-auto"
-                          onClick={() => alert(log.message)}
+                          onClick={() => confirmDialog({
+                            title: "Flow Details",
+                            description: <pre className="text-xs overflow-auto max-h-60 mt-2">{flow.raw || JSON.stringify(flow, null, 2)}</pre>,
+                            hideCancel: true,
+                            confirmText: "Close"
+                          })}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>

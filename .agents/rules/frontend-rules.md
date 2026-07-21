@@ -61,3 +61,7 @@ globs: nextjs-frontend/**/*
 - **Clean Commits:** Strip all dead code, unused imports, and temporary logging variables before staging.
 - **Documentation:** Code must be highly self-documenting. Reserve comments strictly for non-obvious business logic or intricate GSAP timelines.
 - **Test Strategy:** Write unit tests (`*.test.ts` via Vitest) for custom hooks and utilities. Write integration tests via React Testing Library for multi-step interactive workflows.
+
+## 7. Design Theme
+- **Consistency:** When creating or migrating new components, make sure to keep a consistent smooth design theme in accordance with other components.
+- **Smoothness:** Make sure all the component actions and transitions are smooth, whether it be a button click or a content appearance

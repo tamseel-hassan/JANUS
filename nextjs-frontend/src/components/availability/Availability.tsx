@@ -9,6 +9,7 @@ import { CommentModal } from "@/components/availability/CommentModal";
 import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
 import { safeFetch } from "@/lib/safeFetch";
+import { toast } from "sonner";
 
 export function Availability() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -40,7 +41,7 @@ export function Availability() {
   const generateReport = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedDevice) {
-      alert("Please select a device");
+      toast.warning("Please select a device");
       return;
     }
     
@@ -100,7 +101,7 @@ export function Availability() {
         setShowCommentModal(false);
         generateReport(); // Refresh
       } else {
-        alert(data.error);
+        toast.error(data.error);
       }
     } catch (err) { console.error(err); }
   };
@@ -264,15 +265,17 @@ export function Availability() {
         </div>
       )}
 
-      <CommentModal
-        isOpen={showCommentModal && !!editingPeriod}
-        editingPeriod={editingPeriod!}
-        commentForm={commentForm}
-        setCommentForm={setCommentForm}
-        saveComment={saveComment}
-        formatDuration={formatDuration}
-        onClose={() => setShowCommentModal(false)}
-      />
+      {editingPeriod && (
+        <CommentModal
+          isOpen={showCommentModal}
+          editingPeriod={editingPeriod}
+          commentForm={commentForm}
+          setCommentForm={setCommentForm}
+          saveComment={saveComment}
+          formatDuration={formatDuration}
+          onClose={() => setShowCommentModal(false)}
+        />
+      )}
     </div>
   );
 }

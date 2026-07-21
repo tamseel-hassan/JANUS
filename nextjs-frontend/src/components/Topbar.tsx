@@ -78,7 +78,7 @@ function NavDropdown({
         />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-2 min-w-[200px] bg-bg-card border border-border-subtle rounded-2xl py-1 z-50 shadow-lg">
+        <div className="absolute top-full left-0 mt-2 min-w-[250px] bg-bg-card rounded-2xl z-50 shadow-lg">
           {items.map((item) => (
             <Link
               key={item.href}
@@ -211,7 +211,7 @@ export default function Topbar({ data }: { data: NavData | null }) {
     },
     {
       label: "Response Automation",
-      href: "/responder",
+      href: "/responder/automation",
       icon: <Zap className="w-4 h-4" />,
     },
   ];

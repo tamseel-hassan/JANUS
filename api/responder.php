@@ -22,11 +22,11 @@ if (!$con) {
 mysqli_query($con, "
     CREATE TABLE IF NOT EXISTS response_config (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        firewall_ip VARCHAR(45) NOT NULL UNIQUE,
-        api_key VARCHAR(255) NOT NULL,
+        firewall_ip VARCHAR(45) UNIQUE,
+        api_key VARCHAR(255),
         username VARCHAR(100),
         is_active TINYINT(1) DEFAULT 1,
-        added_by INT NOT NULL,
+        added_by INT,
         added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB
 ");
@@ -34,16 +34,47 @@ mysqli_query($con, "
 mysqli_query($con, "
     CREATE TABLE IF NOT EXISTS response_actions (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        firewall_ip VARCHAR(45) NOT NULL,
-        action_type VARCHAR(50) NOT NULL,
+        firewall_ip VARCHAR(45),
+        action_type VARCHAR(50),
         target_ip VARCHAR(45),
         details TEXT,
         status VARCHAR(20) DEFAULT 'pending',
-        created_by INT NOT NULL,
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         executed_at TIMESTAMP NULL
     ) ENGINE=InnoDB
 ");
+
+// Patch response_config if schema conflict exists
+try {
+    $check = mysqli_query($con, "SHOW COLUMNS FROM response_config LIKE 'firewall_ip'");
+    if ($check && $check->num_rows === 0) {
+        mysqli_query($con, "ALTER TABLE response_config ADD COLUMN firewall_ip VARCHAR(45) UNIQUE");
+        mysqli_query($con, "ALTER TABLE response_config ADD COLUMN api_key VARCHAR(255)");
+        mysqli_query($con, "ALTER TABLE response_config ADD COLUMN username VARCHAR(100)");
+        mysqli_query($con, "ALTER TABLE response_config ADD COLUMN added_by INT");
+        mysqli_query($con, "ALTER TABLE response_config ADD COLUMN added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+    }
+} catch (Exception $e) {
+    // Ignore alter errors if columns already exist or partial
+}
+
+// Patch response_actions if schema conflict exists
+try {
+    $check2 = mysqli_query($con, "SHOW COLUMNS FROM response_actions LIKE 'firewall_ip'");
+    if ($check2 && $check2->num_rows === 0) {
+        mysqli_query($con, "ALTER TABLE response_actions ADD COLUMN firewall_ip VARCHAR(45)");
+        mysqli_query($con, "ALTER TABLE response_actions ADD COLUMN action_type VARCHAR(50)");
+        mysqli_query($con, "ALTER TABLE response_actions ADD COLUMN target_ip VARCHAR(45)");
+        mysqli_query($con, "ALTER TABLE response_actions ADD COLUMN details TEXT");
+        mysqli_query($con, "ALTER TABLE response_actions ADD COLUMN status VARCHAR(20) DEFAULT 'pending'");
+        mysqli_query($con, "ALTER TABLE response_actions ADD COLUMN created_by INT");
+        mysqli_query($con, "ALTER TABLE response_actions ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+    }
+} catch (Exception $e) {
+    // Ignore alter errors
+}
+
 
 // ========== FORTIGATE API FUNCTIONS ==========
 

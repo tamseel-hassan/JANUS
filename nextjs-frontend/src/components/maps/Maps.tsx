@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { 
   Network, Plus, Trash2, Save, Eye, LayoutDashboard
 } from "lucide-react";
+import { confirmDialog } from "@/lib/use-confirm";
+import { toast } from "sonner";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -73,7 +75,13 @@ export function Maps() {
   };
 
   const deleteMap = async () => {
-    if (!confirm('Are you sure you want to delete this map?')) return;
+    const ok = await confirmDialog({
+      title: "Delete Map",
+      description: "Are you sure you want to delete this map?",
+      variant: "destructive",
+      confirmText: "Delete"
+    });
+    if (!ok) return;
     try {
       await fetch('/api/get_maps.php', {
         method: 'POST',
@@ -95,7 +103,7 @@ export function Maps() {
         credentials: "include"
       });
       const data = await res.json();
-      if (data.success) alert('Positions saved successfully!');
+      if (data.success) toast.success('Positions saved successfully!');
     } catch (err) { console.error(err); }
   };
 

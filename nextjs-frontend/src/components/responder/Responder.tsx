@@ -68,10 +68,10 @@ export function Responder() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/responder.php', {
+      const res = await fetch('/api/responder_block.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'block_ip', ...blockForm })
+        body: JSON.stringify(blockForm)
       });
       const data = await res.json();
       if (data.error) {

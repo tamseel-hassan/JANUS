@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
+import { Toaster } from "@/components/ui/Toaster";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const sora = localFont({
   src: [
@@ -118,6 +120,8 @@ export default function RootLayout({
       </head>
       <body className={`${sora.variable} font-sans min-h-full flex flex-col antialiased`}>
         <ClientLayout>{children}</ClientLayout>
+        <Toaster />
+        <ConfirmDialog />
       </body>
     </html>
   );
