@@ -10,6 +10,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if (!$con) {

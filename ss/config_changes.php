@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/config_changes.php - Device / admin configuration change audit
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -22,23 +25,40 @@ $cfg_filter = "(
 $where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
           AND $cfg_filter $device_where";
 
-$result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 500);
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("config_changes", $start, $end, $device, $range);
 
-$changes = [];
-$by_admin = [];
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $p = parseMessage($row['message']);
-        $admin = $p['user'] ?? $p['admin'] ?? 'system';
-        $path = $p['cfgpath'] ?? $p['cfgobj'] ?? 'n/a';
-        $attr = $p['cfgattr'] ?? '';
-        $msg = $p['msg'] ?? mb_substr($row['message'], 0, 130);
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $where) {
+    $result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 500);
 
-        $changes[] = ['time' => $row['received_at'], 'admin' => $admin, 'source' => $row['source_ip'], 'path' => $path, 'attr' => $attr, 'summary' => $msg];
-        $by_admin[$admin] = ($by_admin[$admin] ?? 0) + 1;
+    $changes = [];
+    $by_admin = [];
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $p = parseMessage($row['message']);
+            $admin = $p['user'] ?? $p['admin'] ?? 'system';
+            $path = $p['cfgpath'] ?? $p['cfgobj'] ?? 'n/a';
+            $attr = $p['cfgattr'] ?? '';
+            $msg = $p['msg'] ?? mb_substr($row['message'], 0, 130);
+
+            $changes[] = ['time' => $row['received_at'], 'admin' => $admin, 'source' => $row['source_ip'], 'path' => $path, 'attr' => $attr, 'summary' => $msg];
+            $by_admin[$admin] = ($by_admin[$admin] ?? 0) + 1;
+        }
     }
+    arsort($by_admin);
+
+    return compact('changes', 'by_admin');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
 }
-arsort($by_admin);
+extract($cached);
+
 mysqli_close($con);
 ?>
 

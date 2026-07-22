@@ -1,4 +1,6 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/security_analysis.php - Heuristic MITRE ATT&CK tactic mapping
 // NOTE: Fortinet/syslog messages don't natively carry MITRE technique IDs.
@@ -6,6 +8,7 @@ require_once __DIR__ . '/../db_config.php';
 // page is useful today; tune the $tactic_rules table to your real log samples.
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -34,38 +37,54 @@ foreach ($tactic_rules as $rule) {
 }
 $keyword_where = '(' . implode(' OR ', $where_parts) . ')';
 
-$where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
-          AND $keyword_where $device_where";
+$where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "' AND $keyword_where $device_where";
 
-$result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 8000);
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("security_analysis", $start, $end, $device, $range);
 
-$techniques = [];
-$tactic_counts = [];
-$total_events = 0;
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $where, $tactic_rules) {
+    $result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 8000);
 
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $msg_lower = strtolower($row['message']);
-        foreach ($tactic_rules as $rule) {
-            foreach ($rule['match'] as $kw) {
-                if (strpos($msg_lower, $kw) !== false) {
-                    $key = $rule['id'];
-                    if (!isset($techniques[$key])) {
-                        $techniques[$key] = ['id' => $rule['id'], 'technique' => $rule['technique'], 'tactic' => $rule['tactic'], 'count' => 0, 'sources' => []];
+    $techniques = [];
+    $tactic_counts = [];
+    $total_events = 0;
+
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $msg_lower = strtolower($row['message']);
+            foreach ($tactic_rules as $rule) {
+                foreach ($rule['match'] as $kw) {
+                    if (strpos($msg_lower, $kw) !== false) {
+                        $key = $rule['id'];
+                        if (!isset($techniques[$key])) {
+                            $techniques[$key] = ['id' => $rule['id'], 'technique' => $rule['technique'], 'tactic' => $rule['tactic'], 'count' => 0, 'sources' => []];
+                        }
+                        $techniques[$key]['count']++;
+                        $techniques[$key]['sources'][$row['source_ip']] = true;
+                        $tactic_counts[$rule['tactic']] = ($tactic_counts[$rule['tactic']] ?? 0) + 1;
+                        $total_events++;
+                        break 2;
                     }
-                    $techniques[$key]['count']++;
-                    $techniques[$key]['sources'][$row['source_ip']] = true;
-                    $tactic_counts[$rule['tactic']] = ($tactic_counts[$rule['tactic']] ?? 0) + 1;
-                    $total_events++;
-                    break 2;
                 }
             }
         }
     }
-}
 
-uasort($techniques, fn($a, $b) => $b['count'] <=> $a['count']);
-arsort($tactic_counts);
+    uasort($techniques, fn($a, $b) => $b['count'] <=> $a['count']);
+    arsort($tactic_counts);
+
+    return compact('techniques', 'tactic_counts', 'total_events');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
+}
+extract($cached);
+
 mysqli_close($con);
 ?>
 

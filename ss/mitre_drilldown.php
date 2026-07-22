@@ -1,4 +1,6 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/mitre_drilldown.php - Detailed MITRE ATT&CK Technique Analysis
 // FIXED: Theme-aware nav-tabs and tables (no black blocks)
@@ -7,6 +9,7 @@ session_start();
 if (!isset($_SESSION['loggedin'])) {
     die('Unauthorized');
 }
+session_write_close();
 
 function parseMessage($msg) {
     $parsed = [];
@@ -120,73 +123,91 @@ if (!$technique || !isset($mitre_rules[$technique])) {
 
 $rule = $mitre_rules[$technique];
 
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("mitre_{$technique}", $start, $end, "", $range);
+
 $query = "
-    SELECT message, received_at, source_ip
+    SELECT message, received_at, source_ip, src_ip, dst_ip, dst_port, app, service, action
     FROM (
-        SELECT message, received_at, source_ip
+        SELECT message, received_at, source_ip, src_ip, dst_ip, dst_port, app, service, action
         FROM syslog_entries
         WHERE received_at BETWEEN '$start' AND '$end'
         UNION ALL
-        SELECT message, received_at, source_ip
+        SELECT message, received_at, source_ip, src_ip, dst_ip, dst_port, app, service, action
         FROM syslog_entries_archive
         WHERE received_at BETWEEN '$start' AND '$end'
     ) AS combined
     ORDER BY received_at DESC
-    LIMIT 10000
 ";
 
-$result = mysqli_query($con, $query);
-$matching_events = [];
-$source_ips = [];
-$target_ips = [];
-$users = [];
-$devices = [];
-$timeline = [];
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $query, $rule) {
+    $result = mysqli_query($con, $query);
+    if (!$result) return null;
 
-while ($row = mysqli_fetch_assoc($result)) {
-    $msg = $row['message'];
-    $matched = false;
-    foreach ($rule['patterns'] as $pattern) {
-        if (preg_match('/' . $pattern . '/i', $msg)) { $matched = true; break; }
+    $matching_events = [];
+    $source_ips = [];
+    $target_ips = [];
+    $users = [];
+    $devices = [];
+    $timeline = [];
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $msg = $row['message'];
+        $matched = false;
+        foreach ($rule['patterns'] as $pattern) {
+            if (preg_match('/' . $pattern . '/i', $msg)) { $matched = true; break; }
+        }
+        if (!$matched) continue;
+
+        $parsed = parseMessage($msg);
+        $srcip   = $row['src_ip'] ?: $parsed['srcip'] ?: $parsed['remip'] ?: 'N/A';
+        $dstip   = $row['dst_ip'] ?: $parsed['dstip'] ?: $parsed['locip'] ?: 'N/A';
+        $user    = $parsed['user'] ?? $parsed['unauthuser'] ?? 'N/A';
+        $device  = $row['source_ip'];
+        $action  = $row['action'] ?: $parsed['action'] ?? 'N/A';
+        $service = $row['service'] ?: $parsed['service'] ?? $parsed['proto'] ?? 'N/A';
+        $dstport = $row['dst_port'] ?: $parsed['dstport'] ?? 'N/A';
+
+        $source_ips[$srcip] = ($source_ips[$srcip] ?? 0) + 1;
+        $target_ips[$dstip] = ($target_ips[$dstip] ?? 0) + 1;
+        $users[$user]       = ($users[$user] ?? 0) + 1;
+        $devices[$device]   = ($devices[$device] ?? 0) + 1;
+
+        $hour = date('Y-m-d H:00', strtotime($row['received_at']));
+        $timeline[$hour] = ($timeline[$hour] ?? 0) + 1;
+
+        if (count($matching_events) < 100) {
+            $matching_events[] = [
+                'timestamp' => $row['received_at'],
+                'srcip'     => $srcip,
+                'dstip'     => $dstip,
+                'user'      => $user,
+                'device'    => $device,
+                'action'    => $action,
+                'service'   => $service,
+                'dstport'   => $dstport,
+                'message'   => substr($msg, 0, 200)
+            ];
+        }
     }
-    if (!$matched) continue;
 
-    $parsed = parseMessage($msg);
-    $srcip   = $parsed['srcip'] ?? $parsed['remip'] ?? 'N/A';
-    $dstip   = $parsed['dstip'] ?? $parsed['locip'] ?? 'N/A';
-    $user    = $parsed['user'] ?? $parsed['unauthuser'] ?? 'N/A';
-    $device  = $parsed['devname'] ?? $row['source_ip'];
-    $action  = $parsed['action'] ?? 'N/A';
-    $service = $parsed['service'] ?? $parsed['proto'] ?? 'N/A';
-    $dstport = $parsed['dstport'] ?? 'N/A';
+    arsort($source_ips);
+    arsort($target_ips);
+    arsort($users);
+    arsort($devices);
 
-    $source_ips[$srcip] = ($source_ips[$srcip] ?? 0) + 1;
-    $target_ips[$dstip] = ($target_ips[$dstip] ?? 0) + 1;
-    $users[$user]       = ($users[$user] ?? 0) + 1;
-    $devices[$device]   = ($devices[$device] ?? 0) + 1;
+    return compact('matching_events', 'source_ips', 'target_ips', 'users', 'devices', 'timeline');
+});
 
-    $hour = date('Y-m-d H:00', strtotime($row['received_at']));
-    $timeline[$hour] = ($timeline[$hour] ?? 0) + 1;
-
-    if (count($matching_events) < 100) {
-        $matching_events[] = [
-            'timestamp' => $row['received_at'],
-            'srcip'     => $srcip,
-            'dstip'     => $dstip,
-            'user'      => $user,
-            'device'    => $device,
-            'action'    => $action,
-            'service'   => $service,
-            'dstport'   => $dstport,
-            'message'   => substr($msg, 0, 200)
-        ];
-    }
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please try again.</div>';
+    mysqli_close($con);
+    exit;
 }
+extract($cached);
 
-arsort($source_ips);
-arsort($target_ips);
-arsort($users);
-arsort($devices);
 mysqli_close($con);
 
 // Read theme from cookie for JS chart colors

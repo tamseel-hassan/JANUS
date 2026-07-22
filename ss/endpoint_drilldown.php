@@ -3,6 +3,7 @@ require_once __DIR__ . '/../db_config.php';
 // ss/endpoint_drilldown.php - full detail for one endpoint, correlated with syslog traffic
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);

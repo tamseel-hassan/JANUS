@@ -4,6 +4,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 $theme = $_COOKIE['theme'] ?? 'dark';
 ?>
 <!DOCTYPE html>

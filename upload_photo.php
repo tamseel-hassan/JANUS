@@ -5,6 +5,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_photo'])) {
     $user_id = $_POST['user_id'];

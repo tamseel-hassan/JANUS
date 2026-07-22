@@ -5,6 +5,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 // Only admins should manage icons
 if (($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: home.php');

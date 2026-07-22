@@ -24,9 +24,9 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
     <!-- Your Custom Styles -->
-    <link rel="stylesheet" href="/css/theme.css">
-    <link rel="stylesheet" href="/css/topbar.css">
-    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="/css/theme.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/topbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/sidebar.css?v=<?= time() ?>">
 
     <!-- Chart.js + Datalabels Plugin (for home.php charts) -->
     <script src="/assets/chart.min.js"></script>

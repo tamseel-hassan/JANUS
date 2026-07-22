@@ -44,7 +44,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <!-- Lucide Icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
 <link rel="stylesheet" href="/css/topbar.css">
-<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/theme.css?v=<?= time() ?>">
 
 <nav class="topbar">
     <div class="topbar-left">

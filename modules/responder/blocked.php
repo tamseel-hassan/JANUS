@@ -52,38 +52,8 @@ $blocks = $con->query("SELECT b.*, COALESCE(u.username, 'System') as blocked_by_
 <title>Janus :: Blocked IPs</title>
 <link href="../../css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../../css/font-awesome/css/all.min.css">
-<link rel="stylesheet" href="../../css/theme.css">
-<style>
-:root {
-    --void:#090c11; --panel:#10151d; --panel-raised:#141b25; --inset:#0a0e14;
-    --line:#1d2733; --line-active:#2c3948; --amber:#ffb020; --cyan:#29d3ee;
-    --red:#ff4d5e; --green:#2be8a4; --violet:#9d8cff;
-    --text-hi:#eef3f7; --text-mid:#93a1b0; --text-lo:#56626f;
-    --radius:3px;
-}
-[data-theme="light"] {
-    --void:#eef1f5; --panel:#fff; --panel-raised:#f6f8fa; --inset:#edf0f4;
-    --line:#d7dde4; --line-active:#b9c2cd; --text-hi:#10151d; --text-mid:#4b5768; --text-lo:#8894a3;
-}
-body.loggedin { background:var(--void); color:var(--text-hi); font-family:'Segoe UI',sans-serif; }
-#main-content { margin-left:250px; padding:80px 25px 25px; min-height:100vh; transition:margin-left 0.3s; }
-.sidebar.collapsed ~ #main-content { margin-left:80px; }
-.page-title { font-size:1.6rem; font-weight:700; }
-.page-title .accent { color:var(--amber); }
-.eyebrow { font-size:0.72rem; font-weight:600; letter-spacing:0.25em; color:var(--cyan); text-transform:uppercase; margin-bottom:10px; }
-.form-card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:20px; }
-.form-control { background:var(--inset); border:1px solid var(--line); color:var(--text-hi); border-radius:var(--radius); font-size:0.88rem; }
-.form-control:focus { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(41,211,238,0.15); }
-.form-label { font-size:0.8rem; font-weight:600; color:var(--text-mid); text-transform:uppercase; letter-spacing:0.05em; }
-.btn-ghost { padding:6px 14px; border-radius:var(--radius); font-size:0.75rem; font-weight:600; letter-spacing:0.03em; text-transform:uppercase; background:transparent; border:1px solid var(--line-active); color:var(--text-mid); transition:all 0.15s; }
-.btn-ghost:hover { border-color:var(--cyan); color:var(--cyan); }
-.btn-ghost-red:hover { border-color:var(--red); color:var(--red); }
-.table { color:var(--text-mid); font-size:0.85rem; }
-.table thead { color:var(--text-lo); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.1em; }
-.table td, .table th { border-color:var(--line); }
-.active-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
-@media(max-width:768px) { #main-content { margin-left:0; padding:80px 16px 16px; } }
-</style>
+<link rel="stylesheet" href="../../css/theme.css?v=<?= time() ?>">
+<link rel="stylesheet" href="../../css/pages/responder.css?v=<?= time() ?>">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; ?>

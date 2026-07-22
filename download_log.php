@@ -7,6 +7,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 
 $log_base_dir = '/var/log/janus_siem';
 $filename = $_GET['file'] ?? '';

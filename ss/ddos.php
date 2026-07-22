@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/ddos.php - Volumetric flood / DDoS detection
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -13,46 +16,79 @@ $end    = $_GET['end']    ?? date('Y-m-d H:i:s');
 $device = $_GET['device'] ?? '';
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-$where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
-          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%' OR message LIKE '%dos%' OR message LIKE '%flood%') $device_where";
+$check_archive = mysqli_query($con, "SHOW TABLES LIKE 'syslog_entries_archive'");
+$has_archive = mysqli_num_rows($check_archive) > 0;
 
-// Per-minute per-source counts, flag minutes exceeding a flood threshold.
-$flood_query = "
-    SELECT source_ip, DATE_FORMAT(received_at, '%Y-%m-%d %H:%i:00') AS minute_bucket, COUNT(*) AS cnt
-    FROM (
-        SELECT source_ip, received_at FROM syslog_entries WHERE $where
+$range = $_GET['range'] ?? '24h';
+
+require_once __DIR__ . '/../includes/cache.php';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("ddos", $start, $end, $device, $range);
+
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end, $device_where, $has_archive) {
+    $archive_query = $has_archive ? "
         UNION ALL
-        SELECT source_ip, received_at FROM syslog_entries_archive WHERE $where
-    ) AS combined
-    GROUP BY source_ip, minute_bucket
-    HAVING cnt >= 100
-    ORDER BY cnt DESC
-    LIMIT 200
-";
-$result = mysqli_query($con, $flood_query);
+        SELECT source_ip, received_at FROM syslog_entries_archive
+        WHERE received_at BETWEEN '$start' AND '$end' AND src_ip IS NOT NULL $device_where
+    " : "";
 
-$floods = [];
-$total_flood_events = 0;
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $floods[] = $row;
-        $total_flood_events += (int)$row['cnt'];
+    $timeline_archive_query = $has_archive ? "
+        UNION ALL
+        SELECT received_at FROM syslog_entries_archive
+        WHERE received_at BETWEEN '$start' AND '$end' AND src_ip IS NOT NULL $device_where
+    " : "";
+
+    $flood_query = "
+        SELECT source_ip, DATE_FORMAT(received_at, '%Y-%m-%d %H:%i:00') AS minute_bucket, COUNT(*) AS cnt
+        FROM (
+            SELECT source_ip, received_at FROM syslog_entries 
+            WHERE received_at BETWEEN '$start' AND '$end' AND src_ip IS NOT NULL $device_where
+            $archive_query
+        ) AS combined
+        GROUP BY source_ip, minute_bucket
+        HAVING cnt >= 100
+        ORDER BY cnt DESC
+        LIMIT 200
+    ";
+    
+    $result = mysqli_query($con, $flood_query);
+    $floods = [];
+    $total_flood_events = 0;
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $floods[] = $row;
+            $total_flood_events += (int)$row['cnt'];
+        }
     }
+
+    $affected_sources = count(array_unique(array_column($floods, 'source_ip')));
+
+    $timeline_query = "
+        SELECT DATE_FORMAT(received_at, '%Y-%m-%d %H:00') AS hour, COUNT(*) AS cnt
+        FROM (
+            SELECT received_at FROM syslog_entries 
+            WHERE received_at BETWEEN '$start' AND '$end' AND src_ip IS NOT NULL $device_where
+            $timeline_archive_query
+        ) AS combined GROUP BY hour ORDER BY hour ASC
+    ";
+    
+    $tl_result = mysqli_query($con, $timeline_query);
+    $timeline = [];
+    if ($tl_result) {
+        while ($row = mysqli_fetch_assoc($tl_result)) {
+            $timeline[$row['hour']] = (int)$row['cnt'];
+        }
+    }
+
+    return compact('floods', 'total_flood_events', 'affected_sources', 'timeline');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
 }
-
-$affected_sources = count(array_unique(array_column($floods, 'source_ip')));
-
-$timeline_query = "
-    SELECT DATE_FORMAT(received_at, '%Y-%m-%d %H:00') AS hour, COUNT(*) AS cnt
-    FROM (
-        SELECT received_at FROM syslog_entries WHERE $where
-        UNION ALL
-        SELECT received_at FROM syslog_entries_archive WHERE $where
-    ) AS combined GROUP BY hour ORDER BY hour ASC
-";
-$tl_result = mysqli_query($con, $timeline_query);
-$timeline = [];
-if ($tl_result) { while ($row = mysqli_fetch_assoc($tl_result)) { $timeline[$row['hour']] = (int)$row['cnt']; } }
+extract($cached);
 
 mysqli_close($con);
 ?>
