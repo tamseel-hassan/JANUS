@@ -1,4 +1,6 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/ip_drilldown.php - FIXED: No chart melting issues
 // Detailed IP Address Analysis
@@ -7,6 +9,7 @@ session_start();
 if (!isset($_SESSION['loggedin'])) {
     die('Unauthorized');
 }
+session_write_close();
 
 function formatBytes($bytes) {
     if ($bytes == 0) return '0 B';
@@ -40,112 +43,151 @@ if (!$ip) {
     exit;
 }
 
-$query = "
-    SELECT message, received_at, source_ip
-    FROM (
-        SELECT message, received_at, source_ip
-        FROM syslog_entries
-        WHERE received_at BETWEEN '$start' AND '$end'
-          AND (message LIKE '%srcip=\"$ip\"%' OR message LIKE '%dstip=\"$ip\"%'
-               OR message LIKE '%srcip=$ip %' OR message LIKE '%dstip=$ip %')
+$check_archive = mysqli_query($con, "SHOW TABLES LIKE 'syslog_entries_archive'");
+$has_archive = mysqli_num_rows($check_archive) > 0;
+
+$range = $_GET['range'] ?? '24h';
+$is_large_range = ($range === '7d' || $range === '30d');
+
+if ($is_large_range) {
+    // Large ranges can query rollup tables to be extremely fast!
+    $query = "
+        SELECT log_date AS received_at, source_ip AS src_ip, destination_ip AS dst_ip,
+               app, service, action, flow_count, total_sent AS sent_bytes, total_rcvd AS rcvd_bytes,
+               'unknown' AS source_ip, 0 AS dst_port
+        FROM syslog_traffic_daily
+        WHERE log_date BETWEEN DATE('$start') AND DATE('$end')
+          AND (source_ip = '$ip' OR destination_ip = '$ip')
+    ";
+} else {
+    $archive_query = $has_archive ? "
         UNION ALL
-        SELECT message, received_at, source_ip
+        SELECT src_ip, dst_ip, dst_port, service, app, action, sent_bytes, rcvd_bytes, received_at, source_ip
         FROM syslog_entries_archive
         WHERE received_at BETWEEN '$start' AND '$end'
-          AND (message LIKE '%srcip=\"$ip\"%' OR message LIKE '%dstip=\"$ip\"%'
-               OR message LIKE '%srcip=$ip %' OR message LIKE '%dstip=$ip %')
-    ) AS combined
-    ORDER BY received_at DESC
-    LIMIT 5000
-";
+          AND (src_ip = '$ip' OR dst_ip = '$ip')
+    " : "";
 
-$result = mysqli_query($con, $query);
-
-$total_flows = 0;
-$sent_bytes = 0;
-$received_bytes = 0;
-$top_destinations = [];
-$top_sources = [];
-$applications = [];
-$services = [];
-$ports = [];
-$protocols = [];
-$actions = ['accept' => 0, 'deny' => 0, 'timeout' => 0];
-$recent_events = [];
-$countries = [];
-$timeline = [];
-
-while ($row = mysqli_fetch_assoc($result)) {
-    $parsed = parseMessage($row['message']);
-    $srcip = $parsed['srcip'] ?? '';
-    $dstip = $parsed['dstip'] ?? '';
-    
-    if ($srcip !== $ip && $dstip !== $ip) continue;
-    
-    $total_flows++;
-    $sent = intval($parsed['sentbyte'] ?? 0);
-    $rcvd = intval($parsed['rcvdbyte'] ?? 0);
-    
-    if ($srcip === $ip) {
-        $sent_bytes += $sent;
-        $direction = 'outbound';
-    } else {
-        $received_bytes += $rcvd;
-        $direction = 'inbound';
-    }
-    
-    $top_destinations[$dstip] = ($top_destinations[$dstip] ?? 0) + 1;
-    $top_sources[$srcip] = ($top_sources[$srcip] ?? 0) + 1;
-    
-    $app = $parsed['app'] ?? $parsed['appcat'] ?? 'Unknown';
-    $service = $parsed['service'] ?? $parsed['proto'] ?? 'Unknown';
-    $dstport = $parsed['dstport'] ?? 'N/A';
-    $srcport = $parsed['srcport'] ?? 'N/A';
-    $proto = $parsed['proto'] ?? 'Unknown';
-    $action = strtolower($parsed['action'] ?? 'other');
-    $country = $parsed['srccountry'] ?? $parsed['dstcountry'] ?? '';
-    
-    $applications[$app] = ($applications[$app] ?? 0) + 1;
-    $services[$service] = ($services[$service] ?? 0) + 1;
-    $ports[$dstport] = ($ports[$dstport] ?? 0) + 1;
-    $protocols[$proto] = ($protocols[$proto] ?? 0) + 1;
-    
-    if (isset($actions[$action])) {
-        $actions[$action]++;
-    }
-    
-    if ($country) {
-        $countries[$country] = ($countries[$country] ?? 0) + 1;
-    }
-    
-    $hour = date('Y-m-d H:00', strtotime($row['received_at']));
-    $timeline[$hour] = ($timeline[$hour] ?? 0) + 1;
-    
-    if (count($recent_events) < 50) {
-        $recent_events[] = [
-            'time' => $row['received_at'],
-            'direction' => $direction,
-            'src' => $srcip,
-            'dst' => $dstip,
-            'srcport' => $srcport,
-            'dstport' => $dstport,
-            'service' => $service,
-            'app' => $app,
-            'proto' => $proto,
-            'action' => $action,
-            'sent' => $sent,
-            'rcvd' => $rcvd
-        ];
-    }
+    $query = "
+        SELECT src_ip, dst_ip, dst_port, service, app, action, sent_bytes, rcvd_bytes, received_at, source_ip
+        FROM (
+            SELECT src_ip, dst_ip, dst_port, service, app, action, sent_bytes, rcvd_bytes, received_at, source_ip
+            FROM syslog_entries
+            WHERE received_at BETWEEN '$start' AND '$end'
+              AND (src_ip = '$ip' OR dst_ip = '$ip')
+            $archive_query
+        ) AS combined
+        ORDER BY received_at DESC
+    ";
 }
 
-arsort($top_destinations);
-arsort($top_sources);
-arsort($applications);
-arsort($services);
-arsort($ports);
-arsort($protocols);
-arsort($countries);
+require_once __DIR__ . '/../includes/cache.php';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("ip_drilldown_{$ip}", $start, $end, "", $range);
+
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $query, $ip) {
+    $result = mysqli_query($con, $query);
+    if (!$result) return null;
+
+    $total_flows = 0;
+    $sent_bytes = 0;
+    $received_bytes = 0;
+    $top_destinations = [];
+    $top_sources = [];
+    $applications = [];
+    $services = [];
+    $ports = [];
+    $protocols = [];
+    $actions = ['accept' => 0, 'deny' => 0, 'timeout' => 0];
+    $recent_events = [];
+    $countries = [];
+    $timeline = [];
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $srcip = $row['src_ip'];
+        $dstip = $row['dst_ip'];
+        
+        if ($srcip !== $ip && $dstip !== $ip) continue;
+        
+        $flows = isset($row['flow_count']) ? intval($row['flow_count']) : 1;
+        $total_flows += $flows;
+        
+        $sent = intval($row['sent_bytes'] ?? 0);
+        $rcvd = intval($row['rcvd_bytes'] ?? 0);
+        
+        if ($srcip === $ip) {
+            $sent_bytes += $sent;
+            $direction = 'outbound';
+        } else {
+            $received_bytes += $rcvd;
+            $direction = 'inbound';
+        }
+        
+        $top_destinations[$dstip] = ($top_destinations[$dstip] ?? 0) + $flows;
+        $top_sources[$srcip] = ($top_sources[$srcip] ?? 0) + $flows;
+        
+        $app = $row['app'] ?: 'Unknown';
+        $service = $row['service'] ?: 'Unknown';
+        $dstport = $row['dst_port'] ?: 'N/A';
+        $srcport = 'N/A';
+        $proto = $row['service'] ?: 'Unknown';
+        $action = strtolower($row['action'] ?? 'other');
+        $country = 'Unknown';
+        
+        $applications[$app] = ($applications[$app] ?? 0) + $flows;
+        $services[$service] = ($services[$service] ?? 0) + $flows;
+        $ports[$dstport] = ($ports[$dstport] ?? 0) + $flows;
+        $protocols[$proto] = ($protocols[$proto] ?? 0) + $flows;
+        
+        if (isset($actions[$action])) {
+            $actions[$action] += $flows;
+        }
+        
+        if ($country) {
+            $countries[$country] = ($countries[$country] ?? 0) + 1;
+        }
+        
+        $hour = date('Y-m-d H:00', strtotime($row['received_at']));
+        $timeline[$hour] = ($timeline[$hour] ?? 0) + 1;
+        
+        if (count($recent_events) < 50) {
+            $recent_events[] = [
+                'time' => $row['received_at'],
+                'direction' => $direction,
+                'src' => $srcip,
+                'dst' => $dstip,
+                'srcport' => $srcport,
+                'dstport' => $dstport,
+                'service' => $service,
+                'app' => $app,
+                'proto' => $proto,
+                'action' => $action,
+                'sent' => $sent,
+                'rcvd' => $rcvd
+            ];
+        }
+    }
+
+    arsort($top_destinations);
+    arsort($top_sources);
+    arsort($applications);
+    arsort($services);
+    arsort($ports);
+    arsort($protocols);
+    arsort($countries);
+
+    return compact(
+        'total_flows', 'sent_bytes', 'received_bytes', 'top_destinations', 'top_sources',
+        'applications', 'services', 'ports', 'protocols', 'actions', 'recent_events', 'countries', 'timeline'
+    );
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please try again.</div>';
+    mysqli_close($con);
+    exit;
+}
+extract($cached);
 
 mysqli_close($con);
 

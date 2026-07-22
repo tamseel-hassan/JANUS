@@ -19,9 +19,9 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
     <!-- Your Custom Styles -->
-    <link rel="stylesheet" href="/css/theme.css">
-    <link rel="stylesheet" href="/css/topbar.css">
-    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="/css/theme.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/topbar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/sidebar.css?v=<?= time() ?>">
 
     <!-- Chart.js + Datalabels Plugin (for home.php charts) -->
     <script src="/assets/chart.min.js"></script>

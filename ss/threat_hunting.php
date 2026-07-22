@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/threat_hunting.php - Consolidated notable-event feed for manual hunting
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -14,53 +17,64 @@ $device = $_GET['device'] ?? '';
 $search = trim($_GET['q'] ?? '');
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-$notable_filter = "(
-    message LIKE '%virus%' OR message LIKE '%malware%' OR message LIKE '%botnet%'
-    OR message LIKE '%exploit%' OR message LIKE '%ips%' OR message LIKE '%attack%'
-    OR message LIKE '%blocked%' OR message LIKE '%denied%' OR message LIKE '%c2%'
-    OR message LIKE '%anomaly%' OR message LIKE '%suspicious%'
-)";
+$notable_filter = "is_notable = 1";
 
 $search_where = $search ? " AND message LIKE '%" . mysqli_real_escape_string($con, $search) . "%'" : '';
 
 $where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
           AND $notable_filter $device_where $search_where";
 
-$result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 150);
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("threat_hunting", $start, $end, $device . "_" . $search, $range);
 
-$events = [];
-$severity_counts = ['critical' => 0, 'high' => 0, 'medium' => 0];
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $p = parseMessage($row['message']);
-        $lower = strtolower($row['message']);
-        if (strpos($lower, 'virus') !== false || strpos($lower, 'malware') !== false || strpos($lower, 'botnet') !== false || strpos($lower, 'c2') !== false) {
-            $sev = 'critical';
-        } elseif (strpos($lower, 'exploit') !== false || strpos($lower, 'attack') !== false || strpos($lower, 'ips') !== false) {
-            $sev = 'high';
-        } else {
-            $sev = 'medium';
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $where, $start, $end, $notable_filter, $device_where, $search_where) {
+    $result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 150);
+
+    $events = [];
+    $severity_counts = ['critical' => 0, 'high' => 0, 'medium' => 0];
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $p = parseMessage($row['message']);
+            $lower = strtolower($row['message']);
+            if (strpos($lower, 'virus') !== false || strpos($lower, 'malware') !== false || strpos($lower, 'botnet') !== false || strpos($lower, 'c2') !== false) {
+                $sev = 'critical';
+            } elseif (strpos($lower, 'exploit') !== false || strpos($lower, 'attack') !== false || strpos($lower, 'ips') !== false) {
+                $sev = 'high';
+            } else {
+                $sev = 'medium';
+            }
+            $severity_counts[$sev]++;
+            $events[] = [
+                'time' => $row['received_at'],
+                'source' => $row['source_ip'],
+                'severity' => $sev,
+                'action' => $p['action'] ?? 'n/a',
+                'summary' => $p['msg'] ?? mb_substr($row['message'], 0, 140),
+            ];
         }
-        $severity_counts[$sev]++;
-        $events[] = [
-            'time' => $row['received_at'],
-            'source' => $row['source_ip'],
-            'severity' => $sev,
-            'action' => $p['action'] ?? 'n/a',
-            'summary' => $p['msg'] ?? mb_substr($row['message'], 0, 140),
-        ];
     }
-}
 
-$total_notable_sql = "
-    SELECT COUNT(*) AS total FROM (
-        SELECT 1 FROM syslog_entries WHERE received_at BETWEEN '$start' AND '$end' AND $notable_filter $device_where $search_where
-        UNION ALL
-        SELECT 1 FROM syslog_entries_archive WHERE received_at BETWEEN '$start' AND '$end' AND $notable_filter $device_where $search_where
-    ) AS combined
-";
-$total_res = mysqli_query($con, $total_notable_sql);
-$total_notable = $total_res ? (int)mysqli_fetch_assoc($total_res)['total'] : count($events);
+    $total_notable_sql = "
+        SELECT COUNT(*) AS total FROM (
+            SELECT 1 FROM syslog_entries WHERE received_at BETWEEN '$start' AND '$end' AND $notable_filter $device_where $search_where
+            UNION ALL
+            SELECT 1 FROM syslog_entries_archive WHERE received_at BETWEEN '$start' AND '$end' AND $notable_filter $device_where $search_where
+        ) AS combined
+    ";
+    $total_res = mysqli_query($con, $total_notable_sql);
+    $total_notable = $total_res ? (int)mysqli_fetch_assoc($total_res)['total'] : count($events);
+
+    return compact('events', 'severity_counts', 'total_notable');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
+}
+extract($cached);
 
 mysqli_close($con);
 ?>

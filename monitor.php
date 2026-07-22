@@ -4,6 +4,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 
 require_once __DIR__ . '/db_config.php';
 

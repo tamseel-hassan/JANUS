@@ -1,4 +1,5 @@
 <?php
+ini_set('memory_limit', '1024M');
 require_once __DIR__ . '/../db_config.php';
 // ss/bruteforce.php - Brute Force Detection (Tactical HUD visual pass, backend unchanged)
 // Uses 2-phase SQL aggregation to avoid 504 timeout on 30d range
@@ -9,6 +10,7 @@ session_start();
 if (!isset($_SESSION['loggedin'])) {
     die('Unauthorized');
 }
+session_write_close();
 
 function getPortName($port) {
     $port_map = [
@@ -54,201 +56,205 @@ $device = $_GET['device'] ?? '';
 
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-$has_firewall = false;
-$firewall_ip = '';
-$fw_result = mysqli_query($con, "SELECT firewall_ip FROM response_config WHERE is_active = 1 LIMIT 1");
-if ($fw_result && $fw_row = mysqli_fetch_assoc($fw_result)) {
-    $has_firewall = true;
-    $firewall_ip = $fw_row['firewall_ip'];
-}
+$auth_filter = "is_auth_failure = 1";
 
-$auth_filter = "(
-    message LIKE '%authentication%failed%'
-    OR message LIKE '%login%failed%'
-    OR message LIKE '%status=\"failure\"%'
-    OR message LIKE '%reason=%failure%'
-    OR (message LIKE '%Progress IPsec phase 2%' AND message LIKE '%result=\"ERROR\"%')
-    OR message LIKE '%logid=\"0101039424\"%'
-    OR message LIKE '%logid=\"0100032001\"%'
-    OR message LIKE '%logid=\"0100032002\"%'
-)";
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("bruteforce", $start, $end, $device, $range);
 
-// PHASE 1: aggregation
-$agg_query = "
-    SELECT source_ip, COUNT(*) AS attempt_count
-    FROM (
-        SELECT source_ip, message FROM syslog_entries
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-        UNION ALL
-        SELECT source_ip, message FROM syslog_entries_archive
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-    ) AS combined
-    GROUP BY source_ip
-    HAVING attempt_count >= 3
-    ORDER BY attempt_count DESC
-    LIMIT 200
-";
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end, $device_where, $auth_filter) {
+    $has_firewall = false;
+    $firewall_ip = '';
+    $fw_result = mysqli_query($con, "SELECT firewall_ip FROM response_config WHERE is_active = 1 LIMIT 1");
+    if ($fw_result && $fw_row = mysqli_fetch_assoc($fw_result)) {
+        $has_firewall = true;
+        $firewall_ip = $fw_row['firewall_ip'];
+    }
 
-$agg_result = mysqli_query($con, $agg_query);
-if (!$agg_result) {
-    echo '<div class="alert alert-danger">Query error (phase 1): ' . mysqli_error($con) . '</div>';
+    // PHASE 1: aggregation
+    $agg_query = "
+        SELECT source_ip, COUNT(*) AS attempt_count
+        FROM (
+            SELECT source_ip, message FROM syslog_entries
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+            UNION ALL
+            SELECT source_ip, message FROM syslog_entries_archive
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+        ) AS combined
+        GROUP BY source_ip
+        HAVING attempt_count >= 3
+        ORDER BY attempt_count DESC
+        LIMIT 200
+    ";
+
+    $agg_result = mysqli_query($con, $agg_query);
+    if (!$agg_result) return null;
+
+    $ip_counts = [];
+    while ($row = mysqli_fetch_assoc($agg_result)) {
+        $ip_counts[$row['source_ip']] = (int)$row['attempt_count'];
+    }
+
+    $timeline_query = "
+        SELECT DATE_FORMAT(received_at, '%Y-%m-%d %H:00') AS hour, COUNT(*) AS cnt
+        FROM (
+            SELECT received_at FROM syslog_entries
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+            UNION ALL
+            SELECT received_at FROM syslog_entries_archive
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+        ) AS combined
+        GROUP BY hour
+        ORDER BY hour ASC
+    ";
+    $tl_result = mysqli_query($con, $timeline_query);
+    $timeline = [];
+    if ($tl_result) {
+        while ($row = mysqli_fetch_assoc($tl_result)) {
+            $timeline[$row['hour']] = (int)$row['cnt'];
+        }
+    }
+
+    $breakdown_query = "
+        SELECT message
+        FROM (
+            SELECT message, received_at FROM syslog_entries
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+            UNION ALL
+            SELECT message, received_at FROM syslog_entries_archive
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+        ) AS combined
+        ORDER BY received_at DESC
+    ";
+    $bd_result = mysqli_query($con, $breakdown_query);
+    $service_breakdown = [];
+    $port_breakdown = [];
+    if ($bd_result) {
+        while ($row = mysqli_fetch_assoc($bd_result)) {
+            $p = parseMessage($row['message']);
+            $svc = $p['vpntunnel'] ?? $p['service'] ?? $p['proto'] ?? 'unknown';
+            $port = $p['remport'] ?? $p['locport'] ?? $p['dstport'] ?? 'unknown';
+            $service_breakdown[$svc] = ($service_breakdown[$svc] ?? 0) + 1;
+            $port_breakdown[$port] = ($port_breakdown[$port] ?? 0) + 1;
+        }
+    }
+    arsort($service_breakdown);
+    arsort($port_breakdown);
+
+    // PHASE 2: detail for top 50 IPs
+    $brute_force_attacks = [];
+    $failed_attempts_detail = [];
+    $top_ip_list = array_keys(array_slice($ip_counts, 0, 50, true));
+
+    if (!empty($top_ip_list)) {
+        $ip_placeholders = implode(',', array_map(fn($ip) => "'" . mysqli_real_escape_string($con, $ip) . "'", $top_ip_list));
+
+        $detail_query = "
+            SELECT message, received_at, source_ip
+            FROM (
+                SELECT message, received_at, source_ip FROM syslog_entries
+                WHERE received_at BETWEEN '$start' AND '$end' AND source_ip IN ($ip_placeholders) AND $auth_filter
+                UNION ALL
+                SELECT message, received_at, source_ip FROM syslog_entries_archive
+                WHERE received_at BETWEEN '$start' AND '$end' AND source_ip IN ($ip_placeholders) AND $auth_filter
+            ) AS combined
+            ORDER BY received_at ASC
+        ";
+
+        $detail_result = mysqli_query($con, $detail_query);
+        if ($detail_result) {
+            while ($row = mysqli_fetch_assoc($detail_result)) {
+                $parsed = parseMessage($row['message']);
+                $srcip   = $parsed['remip'] ?? $parsed['srcip'] ?? $parsed['srcaddr'] ?? $row['source_ip'] ?? 'unknown';
+                $dstip   = $parsed['locip'] ?? $parsed['dstip'] ?? $parsed['dstaddr'] ?? 'unknown';
+                $user    = $parsed['user'] ?? $parsed['xauthuser'] ?? 'N/A';
+                $service = $parsed['vpntunnel'] ?? $parsed['service'] ?? $parsed['proto'] ?? 'unknown';
+                $port    = $parsed['remport'] ?? $parsed['locport'] ?? $parsed['dstport'] ?? 'unknown';
+
+                if ($srcip === 'unknown' || $srcip === $dstip) continue;
+
+                if (!isset($failed_attempts_detail[$srcip])) {
+                    $failed_attempts_detail[$srcip] = [
+                        'source_ip' => $srcip, 'target_ip' => $dstip, 'port' => $port,
+                        'service' => $service, 'attempts' => [], 'usernames' => []
+                    ];
+                }
+                $failed_attempts_detail[$srcip]['attempts'][] = $row['received_at'];
+                if ($user !== 'N/A' && $user !== $srcip && !in_array($user, $failed_attempts_detail[$srcip]['usernames'])) {
+                    $failed_attempts_detail[$srcip]['usernames'][] = $user;
+                }
+            }
+        }
+
+        foreach ($failed_attempts_detail as $ip => $data) {
+            $attempts = $data['attempts'];
+            if (count($attempts) < 3) continue;
+            sort($attempts);
+            for ($i = 0; $i < count($attempts) - 2; $i++) {
+                $first = strtotime($attempts[$i]);
+                $third = strtotime($attempts[$i + 2]);
+                $diff  = ($third - $first) / 60;
+                if ($diff <= 5) {
+                    $total = $ip_counts[$ip] ?? count($attempts);
+                    $score = min(99, 40 + ($total * 2));
+                    $brute_force_attacks[] = [
+                        'source_ip'     => $data['source_ip'],
+                        'target_ip'     => $data['target_ip'],
+                        'port'          => $data['port'],
+                        'port_name'     => getPortName($data['port']),
+                        'service'       => $data['service'],
+                        'attempt_count' => $total,
+                        'time_window'   => round($diff, 1) . ' min',
+                        'first_attempt' => $attempts[0],
+                        'last_attempt'  => end($attempts),
+                        'usernames'     => $data['usernames'],
+                        'risk_level'    => $total > 10 ? 'critical' : 'high',
+                        'score'         => $score
+                    ];
+                    break;
+                }
+            }
+        }
+    }
+
+    usort($brute_force_attacks, fn($a, $b) => strtotime($b['last_attempt']) <=> strtotime($a['last_attempt']));
+
+    $top_attackers = [];
+    foreach ($ip_counts as $ip => $count) {
+        $top_attackers[] = ['ip' => $ip, 'count' => $count];
+    }
+    $top_attackers = array_slice($top_attackers, 0, 10);
+
+    ksort($timeline);
+    $timeline_labels = array_keys($timeline);
+    $timeline_values = array_values($timeline);
+
+    $total_failed_sql = "
+        SELECT COUNT(*) AS total
+        FROM (
+            SELECT 1 FROM syslog_entries WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+            UNION ALL
+            SELECT 1 FROM syslog_entries_archive WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+        ) AS combined
+    ";
+    $total_res = mysqli_query($con, $total_failed_sql);
+    $total_failed = $total_res ? (int)mysqli_fetch_assoc($total_res)['total'] : array_sum($ip_counts);
+
+    $critical_count = count(array_filter($brute_force_attacks, fn($a) => $a['risk_level'] === 'critical'));
+
+    return compact(
+        'has_firewall', 'firewall_ip', 'ip_counts', 'timeline', 'service_breakdown', 'port_breakdown',
+        'brute_force_attacks', 'top_attackers', 'timeline_labels', 'timeline_values', 'total_failed', 'critical_count'
+    );
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please try again.</div>';
     mysqli_close($con);
     exit;
 }
-
-$ip_counts = [];
-while ($row = mysqli_fetch_assoc($agg_result)) {
-    $ip_counts[$row['source_ip']] = (int)$row['attempt_count'];
-}
-
-$timeline_query = "
-    SELECT DATE_FORMAT(received_at, '%Y-%m-%d %H:00') AS hour, COUNT(*) AS cnt
-    FROM (
-        SELECT received_at FROM syslog_entries
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-        UNION ALL
-        SELECT received_at FROM syslog_entries_archive
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-    ) AS combined
-    GROUP BY hour
-    ORDER BY hour ASC
-";
-$tl_result = mysqli_query($con, $timeline_query);
-$timeline = [];
-if ($tl_result) {
-    while ($row = mysqli_fetch_assoc($tl_result)) {
-        $timeline[$row['hour']] = (int)$row['cnt'];
-    }
-}
-
-$breakdown_query = "
-    SELECT message
-    FROM (
-        SELECT message, received_at FROM syslog_entries
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-        UNION ALL
-        SELECT message, received_at FROM syslog_entries_archive
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-    ) AS combined
-    ORDER BY received_at DESC
-    LIMIT 2000
-";
-$bd_result = mysqli_query($con, $breakdown_query);
-$service_breakdown = [];
-$port_breakdown = [];
-if ($bd_result) {
-    while ($row = mysqli_fetch_assoc($bd_result)) {
-        $p = parseMessage($row['message']);
-        $svc = $p['vpntunnel'] ?? $p['service'] ?? $p['proto'] ?? 'unknown';
-        $port = $p['remport'] ?? $p['locport'] ?? $p['dstport'] ?? 'unknown';
-        $service_breakdown[$svc] = ($service_breakdown[$svc] ?? 0) + 1;
-        $port_breakdown[$port] = ($port_breakdown[$port] ?? 0) + 1;
-    }
-}
-arsort($service_breakdown);
-arsort($port_breakdown);
-
-// PHASE 2: detail for top 50 IPs
-$brute_force_attacks = [];
-$failed_attempts_detail = [];
-$top_ip_list = array_keys(array_slice($ip_counts, 0, 50, true));
-
-if (!empty($top_ip_list)) {
-    $ip_placeholders = implode(',', array_map(fn($ip) => "'" . mysqli_real_escape_string($con, $ip) . "'", $top_ip_list));
-
-    $detail_query = "
-        SELECT message, received_at, source_ip
-        FROM (
-            SELECT message, received_at, source_ip FROM syslog_entries
-            WHERE received_at BETWEEN '$start' AND '$end' AND source_ip IN ($ip_placeholders) AND $auth_filter
-            UNION ALL
-            SELECT message, received_at, source_ip FROM syslog_entries_archive
-            WHERE received_at BETWEEN '$start' AND '$end' AND source_ip IN ($ip_placeholders) AND $auth_filter
-        ) AS combined
-        ORDER BY received_at ASC
-        LIMIT 5000
-    ";
-
-    $detail_result = mysqli_query($con, $detail_query);
-    if ($detail_result) {
-        while ($row = mysqli_fetch_assoc($detail_result)) {
-            $parsed = parseMessage($row['message']);
-            $srcip   = $parsed['remip'] ?? $parsed['srcip'] ?? $parsed['srcaddr'] ?? $row['source_ip'] ?? 'unknown';
-            $dstip   = $parsed['locip'] ?? $parsed['dstip'] ?? $parsed['dstaddr'] ?? 'unknown';
-            $user    = $parsed['user'] ?? $parsed['xauthuser'] ?? 'N/A';
-            $service = $parsed['vpntunnel'] ?? $parsed['service'] ?? $parsed['proto'] ?? 'unknown';
-            $port    = $parsed['remport'] ?? $parsed['locport'] ?? $parsed['dstport'] ?? 'unknown';
-
-            if ($srcip === 'unknown' || $srcip === $dstip) continue;
-
-            if (!isset($failed_attempts_detail[$srcip])) {
-                $failed_attempts_detail[$srcip] = [
-                    'source_ip' => $srcip, 'target_ip' => $dstip, 'port' => $port,
-                    'service' => $service, 'attempts' => [], 'usernames' => []
-                ];
-            }
-            $failed_attempts_detail[$srcip]['attempts'][] = $row['received_at'];
-            if ($user !== 'N/A' && $user !== $srcip && !in_array($user, $failed_attempts_detail[$srcip]['usernames'])) {
-                $failed_attempts_detail[$srcip]['usernames'][] = $user;
-            }
-        }
-    }
-
-    foreach ($failed_attempts_detail as $ip => $data) {
-        $attempts = $data['attempts'];
-        if (count($attempts) < 3) continue;
-        sort($attempts);
-        for ($i = 0; $i < count($attempts) - 2; $i++) {
-            $first = strtotime($attempts[$i]);
-            $third = strtotime($attempts[$i + 2]);
-            $diff  = ($third - $first) / 60;
-            if ($diff <= 5) {
-                $total = $ip_counts[$ip] ?? count($attempts);
-                $score = min(99, 40 + ($total * 2));
-                $brute_force_attacks[] = [
-                    'source_ip'     => $data['source_ip'],
-                    'target_ip'     => $data['target_ip'],
-                    'port'          => $data['port'],
-                    'port_name'     => getPortName($data['port']),
-                    'service'       => $data['service'],
-                    'attempt_count' => $total,
-                    'time_window'   => round($diff, 1) . ' min',
-                    'first_attempt' => $attempts[0],
-                    'last_attempt'  => end($attempts),
-                    'usernames'     => $data['usernames'],
-                    'risk_level'    => $total > 10 ? 'critical' : 'high',
-                    'score'         => $score
-                ];
-                break;
-            }
-        }
-    }
-}
-
-usort($brute_force_attacks, fn($a, $b) => strtotime($b['last_attempt']) <=> strtotime($a['last_attempt']));
-
-$top_attackers = [];
-foreach ($ip_counts as $ip => $count) {
-    $top_attackers[] = ['ip' => $ip, 'count' => $count];
-}
-$top_attackers = array_slice($top_attackers, 0, 10);
-
-ksort($timeline);
-$timeline_labels = array_keys($timeline);
-$timeline_values = array_values($timeline);
-
-$total_failed_sql = "
-    SELECT COUNT(*) AS total
-    FROM (
-        SELECT 1 FROM syslog_entries WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-        UNION ALL
-        SELECT 1 FROM syslog_entries_archive WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-    ) AS combined
-";
-$total_res = mysqli_query($con, $total_failed_sql);
-$total_failed = $total_res ? (int)mysqli_fetch_assoc($total_res)['total'] : array_sum($ip_counts);
-
-$critical_count = count(array_filter($brute_force_attacks, fn($a) => $a['risk_level'] === 'critical'));
+extract($cached);
 
 mysqli_close($con);
 ?>
@@ -469,15 +475,15 @@ mysqli_close($con);
                             </td>
                             <td><code><?= htmlspecialchars($bf['target_ip']) ?></code></td>
                             <td><small><?= timeAgo($bf['last_attempt']) ?></small></td>
-                            <td><span class="badge bg-danger"><?= number_format($bf['attempt_count']) ?></span></td>
+                            <td><strong class="text-danger"><?= number_format($bf['attempt_count']) ?></strong></td>
                             <td onclick="event.stopPropagation()">
                                 <?php if ($has_firewall): ?>
                                     <button class="btn btn-danger btn-sm" onclick="quarantineIP('<?= htmlspecialchars($bf['source_ip']) ?>', '<?= htmlspecialchars($firewall_ip) ?>', 'Brute force attack - <?= $bf['attempt_count'] ?> attempts on <?= htmlspecialchars($bf['port_name']) ?>')">
-                                        <i class="fas fa-ban"></i>
+                                        <i class="fa fa-ban"></i>
                                     </button>
                                 <?php else: ?>
                                     <a href="../responder.php?ip=<?= urlencode($bf['source_ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank" onclick="event.stopPropagation()">
-                                        <i class="fas fa-cog"></i>
+                                        <i class="fa fa-cog"></i>
                                     </a>
                                 <?php endif; ?>
                             </td>

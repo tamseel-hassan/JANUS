@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/applications.php - Application usage breakdown
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -13,41 +16,94 @@ $end    = $_GET['end']    ?? date('Y-m-d H:i:s');
 $device = $_GET['device'] ?? '';
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-$where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
-          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%') $device_where";
+$check_archive = mysqli_query($con, "SHOW TABLES LIKE 'syslog_entries_archive'");
+$has_archive = mysqli_num_rows($check_archive) > 0;
 
-$result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 10000);
+$range = $_GET['range'] ?? '24h';
+$is_large_range = ($range === '7d' || $range === '30d');
 
-$apps = [];
-$risk_categories = [];
-$total_flows = 0;
-$total_bw = 0;
+require_once __DIR__ . '/../includes/cache.php';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("applications", $start, $end, $device, $range);
 
-if ($result) {
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end, $device, $device_where, $is_large_range, $has_archive) {
+    if ($is_large_range) {
+        $rollup_device_where = $device ? "AND (source_ip = '" . mysqli_real_escape_string($con, $device) . "' OR destination_ip = '" . mysqli_real_escape_string($con, $device) . "')" : '';
+        $query = "
+            SELECT log_date AS received_at, source_ip, app, action, flow_count, total_sent AS sent_bytes, total_rcvd AS rcvd_bytes
+            FROM syslog_traffic_daily
+            WHERE log_date BETWEEN DATE('$start') AND DATE('$end')
+              $rollup_device_where
+        ";
+    } else {
+        $archive_query = $has_archive ? "
+            UNION ALL
+            SELECT src_ip, dst_ip, app, action, sent_bytes, rcvd_bytes, received_at, source_ip
+            FROM syslog_entries_archive
+            WHERE received_at BETWEEN '$start' AND '$end'
+              AND src_ip IS NOT NULL
+              $device_where
+        " : "";
+
+        $query = "
+            SELECT src_ip, dst_ip, app, action, sent_bytes, rcvd_bytes, received_at, source_ip
+            FROM (
+                SELECT src_ip, dst_ip, app, action, sent_bytes, rcvd_bytes, received_at, source_ip
+                FROM syslog_entries
+                WHERE received_at BETWEEN '$start' AND '$end'
+                  AND src_ip IS NOT NULL
+                  $device_where
+                $archive_query
+            ) AS combined
+            ORDER BY received_at DESC
+        ";
+    }
+
+    $result = mysqli_query($con, $query);
+    if (!$result) return null;
+
+    $apps = [];
+    $risk_categories = [];
+    $total_flows = 0;
+    $total_bw = 0;
+
     while ($row = mysqli_fetch_assoc($result)) {
-        $p = parseMessage($row['message']);
-        $app = $p['app'] ?? $p['appcat'] ?? 'Unknown';
-        $cat = $p['appcat'] ?? $p['app'] ?? 'Uncategorized';
-        $risk = $p['apprisk'] ?? 'unknown';
-        $sent = intval($p['sentbyte'] ?? 0);
-        $rcvd = intval($p['rcvdbyte'] ?? 0);
+        $app = $row['app'] ?: 'Unknown';
+        $cat = $row['app'] ?: 'Uncategorized';
+        $risk = 'medium'; // Default or simplified risk
+        $flows = isset($row['flow_count']) ? intval($row['flow_count']) : 1;
+        
+        $sent = intval($row['sent_bytes'] ?? 0);
+        $rcvd = intval($row['rcvd_bytes'] ?? 0);
         $bw = $sent + $rcvd;
 
-        $total_flows++;
+        $total_flows += $flows;
         $total_bw += $bw;
 
         if (!isset($apps[$app])) {
             $apps[$app] = ['name' => $app, 'category' => $cat, 'risk' => $risk, 'flows' => 0, 'bandwidth' => 0, 'sources' => []];
         }
-        $apps[$app]['flows']++;
+        $apps[$app]['flows'] += $flows;
         $apps[$app]['bandwidth'] += $bw;
-        $apps[$app]['sources'][$row['source_ip']] = true;
+        
+        $source_dev = $row['source_ip'] ?: ($row['src_ip'] ?? 'unknown');
+        $apps[$app]['sources'][$source_dev] = true;
 
-        $risk_categories[$risk] = ($risk_categories[$risk] ?? 0) + 1;
+        $risk_categories[$risk] = ($risk_categories[$risk] ?? 0) + $flows;
     }
-}
 
-uasort($apps, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
+    uasort($apps, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
+
+    return compact('apps', 'risk_categories', 'total_flows', 'total_bw');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
+}
+extract($cached);
+
 mysqli_close($con);
 
 $high_risk_flows = ($risk_categories['4'] ?? 0) + ($risk_categories['5'] ?? 0) + ($risk_categories['high'] ?? 0) + ($risk_categories['critical'] ?? 0);

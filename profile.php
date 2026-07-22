@@ -4,6 +4,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 
 // Generate CSRF token if not exists
 if (!isset($_SESSION['csrf_token'])) {

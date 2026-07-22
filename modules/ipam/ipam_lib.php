@@ -143,7 +143,7 @@ function process_discovered(mysqli $db, array $found_ips, int $net_long, int $br
         if ($last_octet === 0 || $last_octet === 255) continue;
 
         // Fetch current state – use get_result() to avoid bind_result sync issues
-        $s = $db->prepare('SELECT mac, status FROM janus_ipam WHERE ip = ?');
+        $s = $db->prepare('SELECT mac, status, assigned_to FROM janus_ipam WHERE ip = ?');
         if (!$s) continue;
         $s->bind_param('s', $ip);
         $s->execute();
@@ -152,8 +152,20 @@ function process_discovered(mysqli $db, array $found_ips, int $net_long, int $br
         $exists = (bool)$cur;
         $s->close();
 
-        $cur_mac    = $cur['mac']    ?? null;
-        $cur_status = $cur['status'] ?? null;
+        $cur_mac      = $cur['mac']         ?? null;
+        $cur_status   = $cur['status']      ?? null;
+        $cur_assigned = $cur['assigned_to']  ?? '';
+
+        // Attempt reverse DNS resolution
+        $resolved_host = '';
+        if (empty($cur_assigned)) {
+            $hostname = @gethostbyaddr($ip);
+            if ($hostname !== $ip && !empty($hostname)) {
+                $resolved_host = $hostname;
+            }
+        } else {
+            $resolved_host = $cur_assigned;
+        }
 
         // MAC spoofing check (only if we have a real MAC)
         if ($mac !== '') {
@@ -184,11 +196,11 @@ function process_discovered(mysqli $db, array $found_ips, int $net_long, int $br
         if ($exists) {
             // Update
             if ($mac !== '') {
-                $u = $db->prepare("UPDATE janus_ipam SET mac=?,status='active',last_seen=NOW() WHERE ip=?");
-                if ($u) { $u->bind_param('ss',$mac,$ip); $u->execute(); $u->close(); }
+                $u = $db->prepare("UPDATE janus_ipam SET mac=?,status='active',assigned_to=?,last_seen=NOW() WHERE ip=?");
+                if ($u) { $u->bind_param('sss',$mac,$resolved_host,$ip); $u->execute(); $u->close(); }
             } else {
-                $u = $db->prepare("UPDATE janus_ipam SET status='active',last_seen=NOW() WHERE ip=?");
-                if ($u) { $u->bind_param('s',$ip); $u->execute(); $u->close(); }
+                $u = $db->prepare("UPDATE janus_ipam SET status='active',assigned_to=?,last_seen=NOW() WHERE ip=?");
+                if ($u) { $u->bind_param('ss',$resolved_host,$ip); $u->execute(); $u->close(); }
             }
             // Log MAC change
             if ($mac !== '' && $cur_mac && $cur_mac !== $mac) {
@@ -199,16 +211,18 @@ function process_discovered(mysqli $db, array $found_ips, int $net_long, int $br
             // Log came online
             if ($cur_status === 'inactive') {
                 ipam_log_event($db, $ip, $cur_mac??'', $mac, 'Device came back online');
-// Auto-acknowledge "online" events so they don't trigger alerts
-    $db->query("UPDATE janus_ipam_log SET acknowledged=1 WHERE ip='".$db->real_escape_string($ip)."' AND note='Device came back online' ORDER BY changed_at DESC LIMIT 1");
+                // Auto-acknowledge "online" events so they don't trigger alerts
+                $db->query("UPDATE janus_ipam_log SET acknowledged=1 WHERE ip='".$db->real_escape_string($ip)."' AND note='Device came back online' ORDER BY changed_at DESC LIMIT 1");
                 $changes[] = ['type'=>'online','ip'=>$ip,'mac'=>$mac,'note'=>'Came back online'];
             }
         } else {
             // New device
+            $hostname = @gethostbyaddr($ip);
+            if ($hostname === $ip) $hostname = '';
             $ins = $db->prepare(
-                "INSERT INTO janus_ipam (ip,mac,status,first_seen,last_seen) VALUES (?,?,'active',NOW(),NOW())"
+                "INSERT INTO janus_ipam (ip,mac,status,assigned_to,first_seen,last_seen) VALUES (?,?,'active',?,NOW(),NOW())"
             );
-            if ($ins) { $ins->bind_param('ss',$ip,$mac); $ins->execute(); $ins->close(); }
+            if ($ins) { $ins->bind_param('sss',$ip,$mac,$hostname); $ins->execute(); $ins->close(); }
             ipam_log_event($db, $ip, '', $mac, 'New device discovered');
             $changes[] = ['type'=>'new','ip'=>$ip,'mac'=>$mac,'note'=>'New device discovered'];
         }

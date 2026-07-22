@@ -214,6 +214,7 @@ function fetchSNMPMetrics($ip, $community, $version, $port)
             if ($l5 !== false) $metrics['load_5min'] = (float)trim(preg_replace('/^STRING:\s*/i', '', $l5));
             if ($l15 !== false) $metrics['load_15min'] = (float)trim(preg_replace('/^STRING:\s*/i', '', $l15));
 
+            // --- Primary: UCD-SNMP MIBs (net-snmp full installs) ---
             $memTot = @snmp2_get($ip, $community, '.1.3.6.1.4.1.2021.4.5.0', $timeout, $retries);
             $memFre = @snmp2_get($ip, $community, '.1.3.6.1.4.1.2021.4.6.0', $timeout, $retries);
             if ($memTot !== false && $memFre !== false) {
@@ -222,7 +223,7 @@ function fetchSNMPMetrics($ip, $community, $version, $port)
                 $metrics['memory_total'] = $total;
                 $metrics['memory_used'] = $total - $free;
                 $metrics['memory_free'] = $free;
-                echo "Memory: " . formatBytes($total) . " total, " . formatBytes($total - $free) . " used\n";
+                echo "Memory (UCD): " . formatBytes($total) . " total, " . formatBytes($total - $free) . " used\n";
             }
 
             $diskTot = @snmp2_get($ip, $community, '.1.3.6.1.4.1.2021.9.1.6.1', $timeout, $retries);
@@ -233,12 +234,92 @@ function fetchSNMPMetrics($ip, $community, $version, $port)
                 $metrics['disk_total'] = $total;
                 $metrics['disk_used'] = $used;
                 $metrics['disk_free'] = $total - $used;
-                echo "Disk: " . formatBytes($total) . " total, " . formatBytes($used) . " used\n";
+                echo "Disk (UCD): " . formatBytes($total) . " total, " . formatBytes($used) . " used\n";
+            }
+
+            // --- Fallback: HOST-RESOURCES-MIB (works on embedded Linux APs, routers, etc.) ---
+            if ($metrics['memory_total'] === null || $metrics['disk_total'] === null) {
+                echo "UCD-SNMP MIBs unavailable — trying HOST-RESOURCES-MIB fallback...\n";
+                $metrics = fetchHRMibMetrics($ip, $community, $timeout, $retries, $metrics);
             }
         }
     } catch (Exception $e) {
         error_log("SNMP Error [$ip]: " . $e->getMessage());
     }
+
+    return $metrics;
+}
+
+/* ==============================================================
+    HOST-RESOURCES-MIB FALLBACK (embedded Linux / APs / routers)
+    Tries hrStorage table: covers RAM, fixed disks, flash, etc.
+    ============================================================== */
+function fetchHRMibMetrics($ip, $community, $timeout, $retries, $metrics)
+{
+    // hrStorageType OIDs
+    $HR_RAM        = '.1.3.6.1.2.1.25.2.1.2';  // hrStorageRam
+    $HR_FLASH      = '.1.3.6.1.2.1.25.2.1.9';  // hrStorageFlashMemory
+    $HR_FIXED_DISK = '.1.3.6.1.2.1.25.2.1.4';  // hrStorageFixedDisk
+    $HR_VIRTUAL    = '.1.3.6.1.2.1.25.2.1.1';  // hrStorageOther (virtual mem)
+
+    $typeWalk = @snmp2_real_walk($ip, $community, '.1.3.6.1.2.1.25.2.3.1.2', $timeout, $retries);
+    if (!$typeWalk) {
+        echo "HR-MIB fallback: no hrStorageType walk returned\n";
+        return $metrics;
+    }
+
+    foreach ($typeWalk as $oid => $typeRaw) {
+        preg_match('/\.(\d+)$/', $oid, $m);
+        $idx = $m[1] ?? null;
+        if (!$idx) continue;
+
+        // Normalise type OID (strip leading dot, take last component suffix)
+        $typeOid = trim(preg_replace('/^OID:\s*/i', '', $typeRaw));
+        // Some agents return short form e.g. "hrStorageRam"
+        $isRam   = (strpos($typeOid, '2.1.2') !== false || stripos($typeOid, 'Ram') !== false);
+        $isDisk  = (strpos($typeOid, '2.1.4') !== false || stripos($typeOid, 'FixedDisk') !== false ||
+                    strpos($typeOid, '2.1.9') !== false || stripos($typeOid, 'Flash') !== false);
+
+        if (!$isRam && !$isDisk) continue;
+
+        $units = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.4.$idx", $timeout, $retries);
+        $size  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.5.$idx", $timeout, $retries);
+        $used  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.6.$idx", $timeout, $retries);
+        $desc  = @snmp2_get($ip, $community, ".1.3.6.1.2.1.25.2.3.1.3.$idx", $timeout, $retries);
+
+        if ($units === false || $size === false || $used === false) continue;
+
+        $unitVal  = (int)trim(preg_replace('/^INTEGER:\s*/i', '', $units));
+        $sizeVal  = (int)trim(preg_replace('/^INTEGER:\s*/i', '', $size));
+        $usedVal  = (int)trim(preg_replace('/^INTEGER:\s*/i', '', $used));
+        $descStr  = $desc ? decodeSNMPString($desc) : "idx$idx";
+
+        $totalBytes = $sizeVal * $unitVal;
+        $usedBytes  = $usedVal * $unitVal;
+        $freeBytes  = $totalBytes - $usedBytes;
+
+        if ($totalBytes <= 0) continue;
+
+        if ($isRam && $metrics['memory_total'] === null) {
+            $metrics['memory_total'] = $totalBytes;
+            $metrics['memory_used']  = $usedBytes;
+            $metrics['memory_free']  = $freeBytes;
+            echo "Memory (HR-MIB [$descStr]): " . formatBytes($totalBytes) . " total, " . formatBytes($usedBytes) . " used\n";
+        }
+
+        if ($isDisk && $metrics['disk_total'] === null) {
+            $metrics['disk_total'] = $totalBytes;
+            $metrics['disk_used']  = $usedBytes;
+            $metrics['disk_free']  = $freeBytes;
+            echo "Disk (HR-MIB [$descStr]): " . formatBytes($totalBytes) . " total, " . formatBytes($usedBytes) . " used\n";
+        }
+
+        // Stop early if both found
+        if ($metrics['memory_total'] !== null && $metrics['disk_total'] !== null) break;
+    }
+
+    if ($metrics['memory_total'] === null) echo "HR-MIB fallback: no RAM entry found for $ip\n";
+    if ($metrics['disk_total']   === null) echo "HR-MIB fallback: no disk entry found for $ip\n";
 
     return $metrics;
 }

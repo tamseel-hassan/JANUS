@@ -5,6 +5,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 
 // Increase execution time for scans (Nmap takes time)
 set_time_limit(300); 

@@ -1,0 +1,289 @@
+/* ============================================================
+   Resource Utilization Styles - Midnight Violet Dark Theme
+   ============================================================ */
+
+/* ---------- Progress circles ---------- */
+.progress-circle {
+    --size: 80px;
+    --bg-color: rgba(73, 80, 87, 0.5);
+    --value: 0;
+    --fg-color: var(--accent);
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--card-bg) 80%, transparent 0 99.9%, var(--card-bg) 0),
+                conic-gradient(var(--fg-color) calc(var(--value) * 1%), var(--bg-color) 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s;
+    color: var(--text);
+}
+
+.progress-circle::before {
+    content: attr(data-value) '%';
+    font-weight: bold;
+    color: var(--text);
+}
+
+.cpu-high {
+    --fg-color: var(--metric-down);
+}
+
+.cpu-medium {
+    --fg-color: var(--metric-warning);
+}
+
+.cpu-low {
+    --fg-color: var(--metric-up);
+}
+
+.traffic-in {
+    color: var(--metric-up) !important;
+    font-weight: 600;
+}
+
+.traffic-out {
+    color: var(--metric-down) !important;
+    font-weight: 600;
+}
+
+.network-stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.bandwidth-bar {
+    height: 4px;
+    background: rgba(178, 132, 190, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 3px;
+}
+
+.bandwidth-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--metric-up), var(--accent));
+    transition: width 0.3s;
+}
+
+/* ============================================================
+   ACCORDION — Override Bootstrap's hardcoded white/light defaults
+   Forces a beautiful dark / black style for interfaces
+   ============================================================ */
+
+/* Force dark transparent background on accordion containers */
+.accordion,
+.accordion-item,
+.accordion-collapse,
+.accordion-body {
+    background-color: #1a0b22 !important; /* Very dark/black purple background */
+    background: #1a0b22 !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.accordion-item {
+    border-radius: 8px !important;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+/* Accordion header button - dark themed */
+.accordion-button {
+    background-color: rgba(178, 132, 190, 0.12) !important;
+    background: rgba(178, 132, 190, 0.12) !important;
+    color: var(--text) !important;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    box-shadow: none !important;
+    border: none !important;
+    letter-spacing: 0.02em;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: rgba(178, 132, 190, 0.22) !important;
+    background: rgba(178, 132, 190, 0.22) !important;
+    color: var(--accent) !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+/* Chevron indicator */
+.accordion-button::after {
+    filter: invert(1) brightness(2) sepia(1) hue-rotate(220deg) saturate(0.5) !important;
+}
+
+.accordion-button:focus {
+    box-shadow: none !important;
+    border-color: var(--border) !important;
+}
+
+.accordion-body {
+    padding: 0 !important;
+    border-top: none !important;
+}
+
+/* Interface table inside accordion */
+.accordion-body .table {
+    margin-bottom: 0 !important;
+    background: transparent !important;
+    color: var(--text) !important;
+}
+
+.accordion-body .table th {
+    background-color: rgba(178, 132, 190, 0.15) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border) !important;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 12px !important;
+}
+
+.accordion-body .table td {
+    color: var(--text) !important; /* Visible light lavender text */
+    background-color: transparent !important;
+    border-color: var(--border) !important;
+    padding: 7px 12px !important;
+    font-size: 0.83rem;
+    vertical-align: middle;
+}
+
+.accordion-body .table tr:hover td {
+    background-color: rgba(178, 132, 190, 0.06) !important;
+}
+
+/* Truncate long interface names */
+.accordion-body .table td:first-child {
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--accent) !important;
+}
+
+/* ============================================================
+   CUSTOM INTERFACE COLLAPSIBLE (.ifc-*)
+   Ensures custom layout is also dark themed if deployed
+   ============================================================ */
+
+.ifc-panel {
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    margin-top: 10px;
+    overflow: hidden;
+    background-color: #1a0b22 !important;
+}
+
+.ifc-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    background: rgba(178, 132, 190, 0.12) !important;
+    border: none !important;
+    color: var(--text) !important;
+    font-size: 0.83rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: 10px 14px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.ifc-toggle:hover {
+    background: rgba(178, 132, 190, 0.22) !important;
+}
+
+.ifc-chevron {
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+    stroke: var(--accent);
+}
+
+.ifc-panel.open .ifc-chevron {
+    transform: rotate(180deg);
+}
+
+.ifc-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+    background: #1a0b22 !important;
+}
+
+.ifc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: 0.82rem;
+    background: transparent !important;
+}
+
+.ifc-table thead tr {
+    background: rgba(178, 132, 190, 0.15) !important;
+}
+
+.ifc-table th {
+    color: var(--text-muted) !important;
+    font-size: 0.69rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.ifc-table tbody tr {
+    border-bottom: 1px solid var(--border);
+}
+
+.ifc-table tbody tr:hover {
+    background: rgba(178, 132, 190, 0.06);
+}
+
+.ifc-table td {
+    color: var(--text) !important;
+    background: transparent !important;
+    padding: 8px 12px;
+    vertical-align: middle;
+}
+
+.ifc-name {
+    font-family: 'Courier New', monospace !important;
+    font-size: 0.78rem;
+    color: var(--accent) !important;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ifc-bytes-in,
+.ifc-bytes-out {
+    color: var(--text-muted) !important;
+    font-size: 0.78rem;
+}
+
+.ifc-bps-in {
+    color: var(--metric-up) !important;
+    font-weight: 700;
+}
+
+.ifc-bps-out {
+    color: var(--metric-down) !important;
+    font-weight: 700;
+}
+
+.ifc-collecting {
+    color: var(--metric-warning) !important;
+    font-size: 0.75rem;
+    font-style: italic;
+}

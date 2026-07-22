@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/dns_attacks.php - DNS abuse: query floods and possible tunneling
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -13,24 +16,51 @@ $end    = $_GET['end']    ?? date('Y-m-d H:i:s');
 $device = $_GET['device'] ?? '';
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-$dns_filter = "(message LIKE '%dstport=53%' OR message LIKE '%service=\"DNS\"%' OR message LIKE '%service=DNS%')";
+$check_archive = mysqli_query($con, "SHOW TABLES LIKE 'syslog_entries_archive'");
+$has_archive = mysqli_num_rows($check_archive) > 0;
 
-$where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
-          AND $dns_filter $device_where";
+$archive_query = $has_archive ? "
+    UNION ALL
+    SELECT message, source_ip, received_at, dst_port, action
+    FROM syslog_entries_archive
+    WHERE received_at BETWEEN '$start' AND '$end'
+      AND dst_port = 53
+      $device_where
+" : "";
 
-$result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 10000);
+$query = "
+    SELECT message, source_ip, received_at, dst_port, action
+    FROM (
+        SELECT message, source_ip, received_at, dst_port, action
+        FROM syslog_entries
+        WHERE received_at BETWEEN '$start' AND '$end'
+          AND dst_port = 53
+          $device_where
+        $archive_query
+    ) AS combined
+    ORDER BY received_at DESC
+    LIMIT 10000
+";
 
-$per_source = [];
-$denied = 0;
-$total = 0;
-$long_query_hits = 0;
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("dns_attacks", $start, $end, $device, $range);
 
-if ($result) {
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $query) {
+    $result = mysqli_query($con, $query);
+    if (!$result) return null;
+
+    $per_source = [];
+    $denied = 0;
+    $total = 0;
+    $long_query_hits = 0;
+
     while ($row = mysqli_fetch_assoc($result)) {
         $p = parseMessage($row['message']);
         $total++;
         $src = $row['source_ip'];
-        $action = strtolower($p['action'] ?? '');
+        $action = strtolower($row['action'] ?: ($p['action'] ?? ''));
         if ($action === 'deny' || $action === 'block') $denied++;
 
         $qname = $p['qname'] ?? '';
@@ -42,9 +72,19 @@ if ($result) {
         if ($action === 'deny' || $action === 'block') $per_source[$src]['denied']++;
         if ($is_long) $per_source[$src]['long_queries']++;
     }
-}
 
-uasort($per_source, fn($a, $b) => $b['queries'] <=> $a['queries']);
+    uasort($per_source, fn($a, $b) => $b['queries'] <=> $a['queries']);
+
+    return compact('per_source', 'denied', 'total', 'long_query_hits');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
+}
+extract($cached);
+
 mysqli_close($con);
 ?>
 

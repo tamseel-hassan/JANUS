@@ -88,6 +88,7 @@ if (!in_array($_current_role, $_allowed_roles, true)) {
     header("Location: /access_denied.php?reason={$reason}");
     exit;
 }
+session_write_close();
 
 // ── 5. Helper function ────────────────────────────────────────────────────────
 function nac_can_access(string $page): bool {

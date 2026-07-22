@@ -92,59 +92,8 @@ if ($playbook) {
 <title>Janus :: <?= $editId ? 'Edit' : 'Create' ?> Playbook</title>
 <link href="../../css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../../css/font-awesome/css/all.min.css">
-<link rel="stylesheet" href="../../css/theme.css">
-<style>
-:root {
-    --void:#090c11; --panel:#10151d; --panel-raised:#141b25; --inset:#0a0e14;
-    --line:#1d2733; --line-active:#2c3948; --amber:#ffb020; --cyan:#29d3ee;
-    --red:#ff4d5e; --green:#2be8a4; --violet:#9d8cff;
-    --text-hi:#eef3f7; --text-mid:#93a1b0; --text-lo:#56626f;
-    --radius:3px;
-}
-[data-theme="light"] {
-    --void:#eef1f5; --panel:#fff; --panel-raised:#f6f8fa; --inset:#edf0f4;
-    --line:#d7dde4; --line-active:#b9c2cd; --text-hi:#10151d; --text-mid:#4b5768; --text-lo:#8894a3;
-}
-body.loggedin { background:var(--void); color:var(--text-hi); font-family:'Segoe UI',sans-serif; }
-#main-content { margin-left:250px; padding:80px 25px 25px; min-height:100vh; transition:margin-left 0.3s; }
-.sidebar.collapsed ~ #main-content { margin-left:80px; }
-.page-title { font-size:1.6rem; font-weight:700; }
-.page-title .accent { color:var(--amber); }
-.eyebrow { font-size:0.72rem; font-weight:600; letter-spacing:0.25em; color:var(--cyan); text-transform:uppercase; margin-bottom:10px; }
-.form-card {
-    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
-    padding:24px; margin-bottom:20px;
-}
-.form-card h5 { font-size:0.95rem; font-weight:700; color:var(--text-hi); margin-bottom:16px; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--line); padding-bottom:12px; }
-.form-card h5 i { color:var(--amber); }
-.form-control, .form-select {
-    background:var(--inset); border:1px solid var(--line); color:var(--text-hi);
-    border-radius:var(--radius); font-size:0.88rem;
-}
-.form-control:focus, .form-select:focus { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(41,211,238,0.15); }
-.form-control::placeholder { color:var(--text-lo); }
-.form-label { font-size:0.8rem; font-weight:600; color:var(--text-mid); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
-.btn-ghost {
-    padding:8px 16px; border-radius:var(--radius); font-size:0.75rem; font-weight:600;
-    letter-spacing:0.03em; text-transform:uppercase; background:transparent;
-    border:1px solid var(--line-active); color:var(--text-mid); transition:all 0.15s;
-}
-.btn-ghost:hover { border-color:var(--cyan); color:var(--cyan); }
-.btn-primary-custom {
-    background:var(--cyan); color:#04232a; border:none; border-radius:var(--radius);
-    padding:8px 20px; font-size:0.78rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:0.04em; transition:all 0.15s;
-}
-.btn-primary-custom:hover { opacity:0.85; }
-.action-row {
-    background:var(--inset); border:1px solid var(--line); border-radius:var(--radius);
-    padding:16px; margin-bottom:12px; position:relative;
-}
-.action-row .remove-btn { position:absolute; top:8px; right:8px; }
-.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
-@media(max-width:768px) { #main-content { margin-left:0; padding:80px 16px 16px; } .grid-2, .grid-3 { grid-template-columns:1fr; } }
-</style>
+<link rel="stylesheet" href="../../css/theme.css?v=<?= time() ?>">
+<link rel="stylesheet" href="../../css/pages/responder.css?v=<?= time() ?>">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; ?>

@@ -6,6 +6,7 @@ session_start();
 if (!isset($_SESSION['loggedin'])) {
     die('Unauthorized');
 }
+session_write_close();
 
 $start  = $_GET['start']  ?? date('Y-m-d H:i:s', strtotime('-24 hours'));
 $end    = $_GET['end']    ?? date('Y-m-d H:i:s');

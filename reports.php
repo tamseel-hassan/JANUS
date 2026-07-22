@@ -7,6 +7,7 @@ if (!isset($_SESSION['loggedin'])) {
     header('Location: index.html');
     exit;
 }
+session_write_close();
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if (mysqli_connect_errno()) {
@@ -1077,6 +1078,10 @@ async function loadReportContent(type, extraParams = '') {
             document.head.appendChild(newScript);
             document.head.removeChild(newScript);
         });
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
 
     } catch (error) {
         console.error('Load error:', error);

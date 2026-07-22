@@ -70,64 +70,8 @@ $playbooks = $con->query("SELECT p.*, COALESCE(u.username, 'System') as created_
 <title>Janus :: Playbooks</title>
 <link href="../../css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../../css/font-awesome/css/all.min.css">
-<link rel="stylesheet" href="../../css/theme.css">
-<style>
-:root {
-    --void:#090c11; --panel:#10151d; --panel-raised:#141b25; --inset:#0a0e14;
-    --line:#1d2733; --line-active:#2c3948; --amber:#ffb020; --cyan:#29d3ee;
-    --red:#ff4d5e; --green:#2be8a4; --violet:#9d8cff;
-    --text-hi:#eef3f7; --text-mid:#93a1b0; --text-lo:#56626f;
-    --radius:3px;
-}
-[data-theme="light"] {
-    --void:#eef1f5; --panel:#fff; --panel-raised:#f6f8fa; --inset:#edf0f4;
-    --line:#d7dde4; --line-active:#b9c2cd; --text-hi:#10151d; --text-mid:#4b5768; --text-lo:#8894a3;
-}
-body.loggedin {
-    background:var(--void); color:var(--text-hi);
-    font-family:'Segoe UI',sans-serif;
-}
-#main-content { margin-left:250px; padding:80px 25px 25px; min-height:100vh; transition:margin-left 0.3s; }
-.sidebar.collapsed ~ #main-content { margin-left:80px; }
-.page-title { font-size:1.6rem; font-weight:700; letter-spacing:-0.01em; }
-.page-title .accent { color:var(--amber); }
-.eyebrow { font-size:0.72rem; font-weight:600; letter-spacing:0.25em; color:var(--cyan); text-transform:uppercase; margin-bottom:10px; }
-.pb-card {
-    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
-    padding:20px 22px; margin-bottom:16px; transition:all 0.2s;
-}
-.pb-card:hover { border-color:var(--line-active); }
-.pb-card .name { font-size:1.05rem; font-weight:600; color:var(--text-hi); }
-.pb-card .desc { color:var(--text-mid); font-size:0.88rem; }
-.badge-trigger { font-size:0.68rem; padding:3px 10px; border-radius:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
-.bg-cyan { background:var(--cyan); color:#04232a; }
-.bg-amber { background:var(--amber); color:#1a1204; }
-.bg-green { background:var(--green); color:#04231a; }
-.bg-violet { background:var(--violet); color:#14103a; }
-.bg-red { background:var(--red); color:#2b0a0e; }
-.bg-line { background:var(--line-active); color:var(--text-hi); }
-.btn-ghost {
-    padding:6px 14px; border-radius:var(--radius); font-size:0.75rem; font-weight:600;
-    letter-spacing:0.03em; text-transform:uppercase; background:transparent;
-    border:1px solid var(--line-active); color:var(--text-mid); transition:all 0.15s;
-}
-.btn-ghost:hover { border-color:var(--cyan); color:var(--cyan); }
-.btn-ghost-red:hover { border-color:var(--red); color:var(--red); }
-.btn-ghost-green:hover { border-color:var(--green); color:var(--green); }
-.stat-mini { font-size:0.75rem; color:var(--text-lo); }
-.stat-mini strong { color:var(--text-mid); }
-.empty-state { text-align:center; padding:60px 20px; color:var(--text-lo); }
-.empty-state i { font-size:3rem; margin-bottom:16px; opacity:0.4; }
-.empty-state h4 { color:var(--text-mid); }
-.toast { position:fixed; top:80px; right:25px; z-index:9999;
-    padding:12px 20px; border-radius:var(--radius);
-    font-size:0.85rem; font-weight:500; animation:fadeIn 0.3s;
-}
-.toast-success { background:var(--green); color:#04231a; }
-.toast-fail { background:var(--red); color:#2b0a0e; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-@media(max-width:768px) { #main-content { margin-left:0; padding:80px 16px 16px; } }
-</style>
+<link rel="stylesheet" href="../../css/theme.css?v=<?= time() ?>">
+<link rel="stylesheet" href="../../css/pages/responder.css?v=<?= time() ?>">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; ?>
@@ -153,7 +97,7 @@ body.loggedin {
             <p class="text-muted" style="color:var(--text-mid);font-size:0.9rem;">Automated response workflows for security incidents</p>
         </div>
         <div class="col-md-4 text-end">
-            <a href="edit.php" class="btn-ghost"><i class="fas fa-plus"></i> Create Playbook</a>
+            <a href="edit.php" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create Playbook</a>
         </div>
     </div>
 </div>
@@ -163,7 +107,7 @@ body.loggedin {
     <i class="fas fa-bolt"></i>
     <h4>No Playbooks Yet</h4>
     <p>Create your first automated response workflow</p>
-    <a href="edit.php" class="btn-ghost mt-3"><i class="fas fa-plus"></i> Create Playbook</a>
+    <a href="edit.php" class="btn btn-primary"><i class="fas fa-plus"></i> Create Playbook</a>
 </div>
 <?php else: ?>
 <div class="row">
@@ -193,14 +137,14 @@ body.loggedin {
             </div>
             <div class="d-flex gap-2">
                 <?php if ($pb['enabled']): ?>
-                <a href="?execute=<?= $pb['id'] ?>" class="btn-ghost btn-ghost-green" title="Execute"><i class="fas fa-play"></i> Run</a>
+                <a href="?execute=<?= $pb['id'] ?>" class="btn btn-success btn-sm" title="Execute"><i class="fas fa-play"></i> Run</a>
                 <?php endif; ?>
-                <a href="edit.php?id=<?= $pb['id'] ?>" class="btn-ghost" title="Edit"><i class="fas fa-pen"></i></a>
-                <a href="index.php?executions=<?= $pb['id'] ?>" class="btn-ghost" title="Execution Log"><i class="fas fa-list"></i> Log</a>
-                <a href="?toggle=<?= $pb['id'] ?>" class="btn-ghost" title="Toggle">
+                <a href="edit.php?id=<?= $pb['id'] ?>" class="btn btn-secondary btn-sm" title="Edit"><i class="fas fa-pen"></i></a>
+                <a href="index.php?executions=<?= $pb['id'] ?>" class="btn btn-secondary btn-sm" title="Execution Log"><i class="fas fa-list"></i> Log</a>
+                <a href="?toggle=<?= $pb['id'] ?>" class="btn btn-secondary btn-sm" title="Toggle">
                     <i class="fas fa-<?= $pb['enabled'] ? 'pause' : 'play' ?>"></i>
                 </a>
-                <a href="?delete=<?= $pb['id'] ?>" class="btn-ghost btn-ghost-red" title="Delete" onclick="return confirm('Delete this playbook?')"><i class="fas fa-trash"></i></a>
+                <a href="?delete=<?= $pb['id'] ?>" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Delete this playbook?')"><i class="fas fa-trash"></i></a>
             </div>
         </div>
     </div>
@@ -217,7 +161,7 @@ $pbname = $con->query("SELECT name FROM responder_playbooks WHERE id = $eid")->f
 <hr style="border-color:var(--line);margin:30px 0 16px;">
 <h5 style="color:var(--text-mid);font-size:0.9rem;margin-bottom:16px;">
     <i class="fas fa-history"></i> Recent Executions: <?= htmlspecialchars($pbname) ?>
-    <a href="index.php" class="btn-ghost ms-3" style="font-size:0.7rem;"><i class="fas fa-times"></i> Close</a>
+    <a href="index.php" class="btn btn-secondary btn-sm ms-3"><i class="fas fa-times"></i> Close</a>
 </h5>
 <div class="table-responsive">
 <table class="table" style="color:var(--text-mid);font-size:0.85rem;">

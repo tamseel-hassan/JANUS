@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/remote_access.php - VPN / remote session activity
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -13,37 +16,51 @@ $end    = $_GET['end']    ?? date('Y-m-d H:i:s');
 $device = $_GET['device'] ?? '';
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-$remote_filter = "(
-    message LIKE '%vpntunnel%' OR message LIKE '%sslvpn%' OR message LIKE '%ipsec%'
-    OR message LIKE '%xauthuser%' OR message LIKE '%ppp%' OR message LIKE '%tunnel%'
-)";
+$remote_filter = "is_remote_access = 1";
 
 $where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
           AND $remote_filter $device_where";
 
-$result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at ASC', 8000);
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("remote_access", $start, $end, $device, $range);
 
-$sessions = [];
-$total_events = 0;
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $p = parseMessage($row['message']);
-        $user = $p['user'] ?? $p['xauthuser'] ?? 'unknown';
-        $tunnel = $p['vpntunnel'] ?? $p['tunnel'] ?? 'n/a';
-        $remip = $p['remip'] ?? $row['source_ip'];
-        $key = $user . '|' . $remip;
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $where) {
+    $result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at ASC', 8000);
 
-        if (!isset($sessions[$key])) {
-            $sessions[$key] = ['user' => $user, 'ip' => $remip, 'tunnel' => $tunnel, 'first' => $row['received_at'], 'last' => $row['received_at'], 'events' => 0];
+    $sessions = [];
+    $total_events = 0;
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $p = parseMessage($row['message']);
+            $user = $p['user'] ?? $p['xauthuser'] ?? 'unknown';
+            $tunnel = $p['vpntunnel'] ?? $p['tunnel'] ?? 'n/a';
+            $remip = $p['remip'] ?? $row['source_ip'];
+            $key = $user . '|' . $remip;
+
+            if (!isset($sessions[$key])) {
+                $sessions[$key] = ['user' => $user, 'ip' => $remip, 'tunnel' => $tunnel, 'first' => $row['received_at'], 'last' => $row['received_at'], 'events' => 0];
+            }
+            $sessions[$key]['last'] = $row['received_at'];
+            $sessions[$key]['events']++;
+            $total_events++;
         }
-        $sessions[$key]['last'] = $row['received_at'];
-        $sessions[$key]['events']++;
-        $total_events++;
     }
-}
 
-uasort($sessions, fn($a, $b) => strtotime($b['last']) <=> strtotime($a['last']));
-$unique_users = count(array_unique(array_column($sessions, 'user')));
+    uasort($sessions, fn($a, $b) => strtotime($b['last']) <=> strtotime($a['last']));
+    $unique_users = count(array_unique(array_column($sessions, 'user')));
+
+    return compact('sessions', 'total_events', 'unique_users');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
+}
+extract($cached);
+
 mysqli_close($con);
 ?>
 

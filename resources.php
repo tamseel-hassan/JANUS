@@ -64,7 +64,7 @@ $devs = []; $res = mysqli_query($con,$dq);
 if (!$res) die('Query error: '.mysqli_error($con));
 while ($r = mysqli_fetch_assoc($res)) $devs[] = $r;
 
-/* Interface traffic */
+/* Interface traffic - BPS from interface_traffic + cumulative bytes from snmp_interfaces */
 $ifstats = []; $ids = array_column($devs,'id');
 if ($ids) {
     $ids = implode(',',array_map('intval',$ids));
@@ -72,7 +72,9 @@ if ($ids) {
         SELECT it.device_id, it.if_index, it.if_name,
                it.bytes_in, it.bytes_out, it.traffic_in_bps, it.traffic_out_bps,
                it.checked_at, d.name device_name, d.ip device_ip,
-               si.if_speed, si.if_descr
+               COALESCE(si.if_speed, 0) if_speed, si.if_descr,
+               COALESCE(si.bytes_in,  it.bytes_in)  si_bytes_in,
+               COALESCE(si.bytes_out, it.bytes_out) si_bytes_out
         FROM interface_traffic it
         JOIN devices d ON it.device_id = d.id
         LEFT JOIN snmp_interfaces si ON it.device_id = si.device_id AND it.if_index = si.if_index
@@ -89,8 +91,31 @@ if ($ids) {
     while ($r = mysqli_fetch_assoc($ir)) $ifstats[$r['device_id']][] = $r;
 }
 
+/* Also pull snmp_interfaces for devices that have NO interface_traffic yet (brand-new first run) */
+$rawIfStats = []; 
+$riq = "
+    SELECT si.device_id, si.if_index, si.if_descr as if_name,
+           si.bytes_in, si.bytes_out, 0 as traffic_in_bps, 0 as traffic_out_bps,
+           si.checked_at, si.if_speed,
+           si.bytes_in as si_bytes_in, si.bytes_out as si_bytes_out
+    FROM snmp_interfaces si
+    WHERE si.device_id IN ($ids)
+      AND si.checked_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+    ORDER BY si.device_id, si.if_index
+";
+$rir = mysqli_query($con, $riq);
+while ($r = mysqli_fetch_assoc($rir)) $rawIfStats[$r['device_id']][] = $r;
+
+/* Merge: use interface_traffic if available, else fall back to snmp_interfaces */
+foreach ($rawIfStats as $did => $rawList) {
+    if (!isset($ifstats[$did])) {
+        $ifstats[$did] = $rawList;
+    }
+}
+
 /* Totals */
 $td = count($devs); $sw=0; $tcpu=$tmem=$tdisk=0; $tin=$tout=0; $tif=0;
+$firstRunDevices = []; // track devices that only have raw bytes, no BPS yet
 foreach ($devs as $d) {
     if ($d['cpu_usage'] !== null) {
         $sw++; $tcpu += (float)$d['cpu_usage'];
@@ -98,11 +123,16 @@ foreach ($devs as $d) {
         if ($d['disk_total']>0)   $tdisk += ($d['disk_used']/$d['disk_total'])*100;
     }
     if (isset($ifstats[$d['id']])) {
+        $hasBps = false;
         foreach ($ifstats[$d['id']] as $if) {
-            $tin += $if['traffic_in_bps']??0;
-            $tout += $if['traffic_out_bps']??0;
+            $bpsIn  = $if['traffic_in_bps']??0;
+            $bpsOut = $if['traffic_out_bps']??0;
+            $tin  += $bpsIn;
+            $tout += $bpsOut;
             $tif++;
+            if ($bpsIn > 0 || $bpsOut > 0) $hasBps = true;
         }
+        if (!$hasBps) $firstRunDevices[$d['id']] = true;
     }
 }
 $acpu = $sw ? round($tcpu/$sw,1) : 0;
@@ -205,20 +235,47 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <div class="col-4"><div class="progress-circle mx-auto" style="--value:<?=$dp?>;--fg-color:<?=$dp>80?'#dc3545':($dp>60?'#ffc107':'#fd7e14')?>;" data-value="<?=$dp?>"></div><small>DISK</small></div>
                     </div>
                     <div class="mt-2">
-                        <div><i class="fas fa-memory"></i> Memory: <?=$mt?formatBytes($mu).'/'.formatBytes($mt)." ($mp%)":'No data'?></div>
-                        <div><i class="fas fa-hdd"></i> Disk: <?=$dt?formatBytes($du).'/'.formatBytes($dt)." ($dp%)":'No data'?></div>
-                        <div><i class="fas fa-network-wired"></i> BW: <span class="traffic-in"><?=formatBits($din)?></span> IN / <span class="traffic-out"><?=formatBits($dout)?></span> OUT</div>
-                        <div><i class="fas fa-clock"></i> Last SNMP: <?=$last?></div>
+                        <div><i data-lucide="memory" class="icon-lucide"></i> Memory: <?=$mt?formatBytes($mu).'/'.formatBytes($mt)." ($mp%)":'<span class="text-warning">No data &mdash; device may not expose memory MIB</span>'?></div>
+                        <div><i data-lucide="hdd" class="icon-lucide"></i> Disk: <?=$dt?formatBytes($du).'/'.formatBytes($dt)." ($dp%)":'<span class="text-warning">No data &mdash; device may not expose disk MIB</span>'?></div>
+                        <div>
+                            <i data-lucide="network" class="icon-lucide"></i> BW:
+                            <?php if ($din > 0 || $dout > 0): ?>
+                                <span class="traffic-in"><?=formatBits($din)?></span> IN /
+                                <span class="traffic-out"><?=formatBits($dout)?></span> OUT
+                            <?php elseif (isset($firstRunDevices[$did])): ?>
+                                <span class="badge bg-warning text-dark"><i data-lucide="loader" class="icon-lucide" style="width:12px;height:12px;"></i> Collecting baseline&hellip;</span>
+                                <small class="text-muted ms-1">(cumulative bytes available &mdash; BPS after next poll)</small>
+                            <?php else: ?>
+                                <span class="traffic-in">0 bps</span> IN / <span class="traffic-out">0 bps</span> OUT
+                            <?php endif; ?>
+                        </div>
+                        <div><i data-lucide="clock" class="icon-lucide"></i> Last SNMP: <?=$last?></div>
                     </div>
                     <?php if ($ifs): ?>
                     <div class="accordion mt-2" id="acc<?=$did?>">
                         <div class="accordion-item border-0">
                             <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#coll<?=$did?>">Interfaces (<?=count($ifs)?>)</button></h2>
                             <div id="coll<?=$did?>" class="accordion-collapse collapse">
-                                <div class="accordion-body p-0"><table class="table table-sm"><thead><tr><th>Name</th><th>IN</th><th>OUT</th></tr></thead><tbody>
-                                <?php foreach ($ifs as $if): $in=$if['traffic_in_bps']??0; $out=$if['traffic_out_bps']??0; ?>
-                                <tr><td><?=htmlspecialchars($if['if_name']??'?')?></td><td class="traffic-in"><?=formatBits($in)?></td><td class="traffic-out"><?=formatBits($out)?></td></tr>
-                                <?php endforeach; ?></tbody></table></div>
+                                <div class="accordion-body p-0"><table class="table table-sm">
+                                    <thead><tr><th>Name</th><th>Cumulative IN</th><th>Cumulative OUT</th><th>BPS IN</th><th>BPS OUT</th></tr></thead>
+                                    <tbody>
+                                <?php foreach ($ifs as $if):
+                                    $in    = $if['traffic_in_bps']??0;
+                                    $out   = $if['traffic_out_bps']??0;
+                                    $sibIn  = $if['si_bytes_in']  ?? $if['bytes_in']  ?? 0;
+                                    $sibOut = $if['si_bytes_out'] ?? $if['bytes_out'] ?? 0;
+                                    $isFirstRun = ($in == 0 && $out == 0 && ($sibIn > 0 || $sibOut > 0));
+                                ?>
+                                <tr>
+                                    <td><?=htmlspecialchars($if['if_name']??'?')?></td>
+                                    <td><?=formatBytes($sibIn)?></td>
+                                    <td><?=formatBytes($sibOut)?></td>
+                                    <td class="traffic-in"><?=$isFirstRun ? '<span class="text-warning small">collecting&hellip;</span>' : formatBits($in)?></td>
+                                    <td class="traffic-out"><?=$isFirstRun ? '<span class="text-warning small">collecting&hellip;</span>' : formatBits($out)?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                                    </tbody>
+                                </table></div>
                             </div>
                         </div>
                     </div>

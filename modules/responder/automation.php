@@ -35,44 +35,8 @@ if ($tablesExist) {
 <title>Janus :: Response Automation</title>
 <link href="../../css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../../css/font-awesome/css/all.min.css">
-<link rel="stylesheet" href="../../css/theme.css">
-<style>
-:root {
-    --void:#090c11; --panel:#10151d; --panel-raised:#141b25; --inset:#0a0e14;
-    --line:#1d2733; --line-active:#2c3948; --amber:#ffb020; --cyan:#29d3ee;
-    --red:#ff4d5e; --green:#2be8a4; --violet:#9d8cff;
-    --text-hi:#eef3f7; --text-mid:#93a1b0; --text-lo:#56626f;
-    --radius:3px;
-}
-[data-theme="light"] {
-    --void:#eef1f5; --panel:#fff; --panel-raised:#f6f8fa; --inset:#edf0f4;
-    --line:#d7dde4; --line-active:#b9c2cd; --text-hi:#10151d; --text-mid:#4b5768; --text-lo:#8894a3;
-}
-body.loggedin { background:var(--void); color:var(--text-hi); font-family:'Segoe UI',sans-serif; }
-#main-content { margin-left:250px; padding:80px 25px 25px; min-height:100vh; transition:margin-left 0.3s; }
-.sidebar.collapsed ~ #main-content { margin-left:80px; }
-.page-title { font-size:1.6rem; font-weight:700; }
-.page-title .accent { color:var(--amber); }
-.eyebrow { font-size:0.72rem; font-weight:600; letter-spacing:0.25em; color:var(--cyan); text-transform:uppercase; margin-bottom:10px; }
-.stat-box { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; transition:all 0.2s; height:100%; position:relative; }
-.stat-box:hover { border-color:var(--line-active); transform:translateY(-2px); }
-.stat-icon { font-size:1.5rem; margin-bottom:12px; }
-.stat-value { font-size:1.85rem; font-weight:700; color:var(--text-hi); margin-bottom:4px; }
-.stat-label { font-size:0.7rem; color:var(--text-lo); text-transform:uppercase; letter-spacing:0.1em; font-weight:600; }
-.table { color:var(--text-mid); font-size:0.85rem; }
-.table thead { color:var(--text-lo); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.1em; }
-.table td, .table th { border-color:var(--line); }
-.stat-chip { display:inline-block; padding:5px 13px; border-radius:3px; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-top:14px; }
-.chip-info { background:var(--cyan); color:#04232a; }
-.chip-success { background:var(--green); color:#04231a; }
-.chip-danger { background:var(--red); color:#2b0a0e; }
-.chip-warning { background:var(--amber); color:#1a1204; }
-.chip-violet { background:var(--violet); color:#14103a; }
-.chip-neutral { background:var(--line-active); color:var(--text-hi); }
-@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-.stat-box { animation:fadeIn 0.35s ease-out; }
-@media(max-width:768px) { #main-content { margin-left:0; padding:80px 16px 16px; } }
-</style>
+<link rel="stylesheet" href="../../css/theme.css?v=<?= time() ?>">
+<link rel="stylesheet" href="../../css/pages/responder.css?v=<?= time() ?>">
 </head>
 <body class="loggedin">
 <?php include __DIR__ . '/../../topbar.php'; ?>
@@ -103,81 +67,105 @@ body.loggedin { background:var(--void); color:var(--text-hi); font-family:'Segoe
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="stat-box">
-            <div class="stat-icon" style="color:var(--cyan);"><i class="fas fa-book"></i></div>
-            <div class="stat-value"><?= $totalPlaybooks ?></div>
-            <span class="stat-chip chip-info">Total Playbooks</span>
+        <div class="stat-box cyan-widget">
+            <div class="stat-box-content">
+                <div>
+                    <span class="stat-chip chip-info">Total Playbooks</span>
+                    <div class="stat-value"><?= $totalPlaybooks ?></div>
+                </div>
+                <div class="stat-icon"><i class="fas fa-book"></i></div>
+            </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-box">
-            <div class="stat-icon" style="color:var(--green);"><i class="fas fa-check-circle"></i></div>
-            <div class="stat-value"><?= $enabledPlaybooks ?></div>
-            <span class="stat-chip chip-success">Enabled</span>
+        <div class="stat-box green-widget">
+            <div class="stat-box-content">
+                <div>
+                    <span class="stat-chip chip-success">Enabled</span>
+                    <div class="stat-value"><?= $enabledPlaybooks ?></div>
+                </div>
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-box">
-            <div class="stat-icon" style="color:var(--amber);"><i class="fas fa-history"></i></div>
-            <div class="stat-value"><?= $totalExecutions ?></div>
-            <span class="stat-chip chip-warning">Executions</span>
+        <div class="stat-box amber-widget">
+            <div class="stat-box-content">
+                <div>
+                    <span class="stat-chip chip-warning">Executions</span>
+                    <div class="stat-value"><?= $totalExecutions ?></div>
+                </div>
+                <div class="stat-icon"><i class="fas fa-history"></i></div>
+            </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-box">
-            <div class="stat-icon" style="color:var(--red);"><i class="fas fa-ban"></i></div>
-            <div class="stat-value"><?= $failedExecutions ?></div>
-            <span class="stat-chip chip-danger">Failed</span>
+        <div class="stat-box red-widget">
+            <div class="stat-box-content">
+                <div>
+                    <span class="stat-chip chip-danger">Failed</span>
+                    <div class="stat-value"><?= $failedExecutions ?></div>
+                </div>
+                <div class="stat-icon"><i class="fas fa-ban"></i></div>
+            </div>
         </div>
     </div>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="stat-box">
-            <div class="stat-icon" style="color:var(--violet);"><i class="fas fa-ban"></i></div>
-            <div class="stat-value"><?= $activeBlocked ?></div>
-            <span class="stat-chip chip-violet">Active Blocks</span>
+        <div class="stat-box violet-widget">
+            <div class="stat-box-content">
+                <div>
+                    <span class="stat-chip chip-violet">Active Blocks</span>
+                    <div class="stat-value"><?= $activeBlocked ?></div>
+                </div>
+                <div class="stat-icon"><i class="fas fa-user-shield"></i></div>
+            </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-box">
-            <div class="stat-icon" style="color:var(--text-mid);"><i class="fas fa-list"></i></div>
-            <div class="stat-value"><?= $totalBlocked ?></div>
-            <span class="stat-chip chip-neutral">Total Blocks</span>
+        <div class="stat-box neutral-widget">
+            <div class="stat-box-content">
+                <div>
+                    <span class="stat-chip chip-neutral">Total Blocks</span>
+                    <div class="stat-value"><?= $totalBlocked ?></div>
+                </div>
+                <div class="stat-icon"><i class="fas fa-list"></i></div>
+            </div>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-md-6">
-        <div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;">
-            <h5 style="font-size:0.9rem;font-weight:700;color:var(--text-hi);margin-bottom:16px;text-transform:uppercase;letter-spacing:0.04em;">
-                <i class="fas fa-bolt" style="color:var(--amber);"></i> Quick Actions
+        <div class="card p-4">
+            <h5 class="mb-4 text-uppercase fw-bold" style="font-size: 0.9rem; letter-spacing: 0.05em; color: var(--text);">
+                <i class="fas fa-bolt me-2" style="color: var(--metric-warning);"></i> Quick Actions
             </h5>
             <div class="d-grid gap-2">
-                <a href="index.php" class="btn btn-outline-light btn-sm text-start" style="border-color:var(--line);color:var(--text-hi);">
-                    <i class="fas fa-book" style="color:var(--cyan);width:24px;"></i> Manage Playbooks
+                <a href="index.php" class="btn btn-secondary text-start py-2">
+                    <i class="fas fa-book me-2" style="color: var(--accent); width: 24px;"></i> Manage Playbooks
                 </a>
-                <a href="edit.php" class="btn btn-outline-light btn-sm text-start" style="border-color:var(--line);color:var(--text-hi);">
-                    <i class="fas fa-plus-circle" style="color:var(--green);width:24px;"></i> Create New Playbook
+                <a href="edit.php" class="btn btn-secondary text-start py-2">
+                    <i class="fas fa-plus-circle" style="color: #4ade80; width: 24px;"></i> Create New Playbook
                 </a>
-                <a href="blocked.php" class="btn btn-outline-light btn-sm text-start" style="border-color:var(--line);color:var(--text-hi);">
-                    <i class="fas fa-ban" style="color:var(--red);width:24px;"></i> View Blocked IPs
+                <a href="blocked.php" class="btn btn-secondary text-start py-2">
+                    <i class="fas fa-ban" style="color: #f87171; width: 24px;"></i> View Blocked IPs
                 </a>
-                <a href="?install" class="btn btn-outline-light btn-sm text-start" style="border-color:var(--line);color:var(--text-hi);">
-                    <i class="fas fa-database" style="color:var(--amber);width:24px;"></i> Setup Database Tables
+                <a href="?install" class="btn btn-secondary text-start py-2">
+                    <i class="fas fa-database" style="color: #fbbf24; width: 24px;"></i> Setup Database Tables
                 </a>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;">
-            <h5 style="font-size:0.9rem;font-weight:700;color:var(--text-hi);margin-bottom:16px;text-transform:uppercase;letter-spacing:0.04em;">
-                <i class="fas fa-history" style="color:var(--amber);"></i> Recent Executions
+        <div class="card p-4">
+            <h5 class="mb-4 text-uppercase fw-bold" style="font-size: 0.9rem; letter-spacing: 0.05em; color: var(--text);">
+                <i class="fas fa-history me-2" style="color: var(--metric-warning);"></i> Recent Executions
             </h5>
-            <?php if ($recentExecs->num_rows === 0): ?>
-            <p style="color:var(--text-lo);font-size:0.85rem;">No executions yet</p>
+            <?php if (!$recentExecs || $recentExecs->num_rows === 0): ?>
+            <p class="text-muted" style="font-size:0.85rem;">No executions yet</p>
             <?php else: ?>
             <div class="table-responsive">
             <table class="table">
@@ -186,7 +174,7 @@ body.loggedin { background:var(--void); color:var(--text-hi); font-family:'Segoe
                 <?php while ($ex = $recentExecs->fetch_assoc()): ?>
                 <tr>
                     <td><?= htmlspecialchars($ex['pb_name'] ?? 'Unknown') ?></td>
-                    <td><span style="color:<?= match($ex['status']) { 'completed'=>'var(--green)', 'failed'=>'var(--red)', 'running'=>'var(--cyan)', default=>'var(--text-lo)' } ?>"><?= $ex['status'] ?></span></td>
+                    <td><span style="color:<?= match($ex['status']) { 'completed'=>'#4ade80', 'failed'=>'#f87171', 'running'=>'#29d3ee', default=>'var(--text-muted)' } ?>"><?= $ex['status'] ?></span></td>
                     <td><?= $ex['triggered_by'] ?></td>
                     <td><?= date('M d H:i', strtotime($ex['created_at'])) ?></td>
                 </tr>
