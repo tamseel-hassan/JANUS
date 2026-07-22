@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 export default function ResponderAutomation() {
   const [data, setData] = useState<AutomationData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   const fetchData = async () => {
     const result = await safeFetch<AutomationData>('/api/get_automation.php', {}, "Response Automation");
@@ -17,6 +18,22 @@ export default function ResponderAutomation() {
       setData(result);
     }
     setLoading(false);
+  };
+
+  const handleInstall = async () => {
+    setIsInstalling(true);
+    try {
+      const res = await fetch('/api/post_install_automation.php', { method: 'POST' });
+      if (res.ok) {
+        await fetchData();
+      } else {
+        alert('Failed to install tables.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error during installation.');
+    }
+    setIsInstalling(false);
   };
 
   useEffect(() => {
@@ -62,8 +79,13 @@ export default function ResponderAutomation() {
           <Database className="w-12 h-12 text-amber-400 mx-auto mb-3" />
           <h4 className="text-lg font-bold text-foreground mb-2">Database Tables Not Found</h4>
           <p className="text-slate-400 mb-4">The responder module needs database tables. You can set them up in the legacy backend or click the button below to initialize.</p>
-          <button className="bg-amber-500/10 text-amber-400 border border-amber-500/50 hover:bg-amber-500/20 px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2">
-            <Database className="w-4 h-4" /> Install Database Tables
+          <button 
+            onClick={handleInstall}
+            disabled={isInstalling}
+            className="bg-amber-500/10 text-amber-400 border border-amber-500/50 hover:bg-amber-500/20 disabled:opacity-50 px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+          >
+            {isInstalling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />} 
+            {isInstalling ? 'Installing...' : 'Install Database Tables'}
           </button>
         </div>
       )}

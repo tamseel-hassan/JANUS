@@ -136,7 +136,7 @@ export function AvailabilityReports() {
               value={deviceId}
               onChange={setDeviceId}
               options={[
-                { value: "", label: "-- Choose a device --" },
+                { value: "", label: "Choose a device" },
                 ...devices.map((d) => ({
                   value: d.id.toString(),
                   label: d.name,

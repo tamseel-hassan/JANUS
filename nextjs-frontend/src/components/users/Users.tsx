@@ -43,7 +43,7 @@ export function Users() {
   const handleAction = async (action: string, id?: number, extraData?: any) => {
     const payload = { action, id, ...extraData };
     try {
-      const res = await fetch('/api/get_users.php', {
+      const res = await fetch('/api/post_users.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

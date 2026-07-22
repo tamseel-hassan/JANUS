@@ -111,6 +111,11 @@ const NAV: NavEntry[] = [
         href: "/vuln_scan",
         icon: <Bug className="w-4 h-4" />,
       },
+      {
+        label: "Remote Access",
+        href: "/remote_access",
+        icon: <Radio className="w-4 h-4" />,
+      },
     ],
   },
   {

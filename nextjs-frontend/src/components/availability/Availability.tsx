@@ -90,7 +90,7 @@ export function Availability() {
         event_end: editingPeriod.end,
         ...commentForm
       };
-      const res = await fetch('/api/get_availability.php', {
+      const res = await fetch('/api/post_availability.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

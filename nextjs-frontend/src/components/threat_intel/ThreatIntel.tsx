@@ -42,7 +42,7 @@ export function ThreatIntel() {
     setResults(null);
     
     try {
-      const data = await safeFetch<{ results: any }>("/api/get_threat_intel.php", {
+      const data = await safeFetch<{ results: any }>("/api/post_threat_intel.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ observable_type: type, observable_value: value }),

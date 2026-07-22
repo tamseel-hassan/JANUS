@@ -47,7 +47,7 @@ export const DeviceNode: React.FC<DeviceNodeProps> = ({
           ? "scale-105 z-30 filter drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
           : "hover:scale-105"
       }`}
-      style={{ left: device.x, top: device.y, touchAction: "none" }}
+      style={{ left: Number(device.x), top: Number(device.y), touchAction: "none" }}
       onPointerDown={(e) => handlePointerDown(e, device.id)}
       onPointerMove={(e) => handlePointerMove(e, device.id)}
       onPointerUp={handlePointerUp}

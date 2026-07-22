@@ -46,7 +46,7 @@ export function Tabs({ tabs, activeTab, onChange, className = "" }: TabsProps) {
     <div className={`relative flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${className}`}>
       {/* Animated Background Indicator */}
       <div
-        className="absolute top-0 bottom-0 border border-accent-primary rounded-full shadow-[0_0_10px_rgba(167,139,250,0.1)] transition-all duration-300 ease-out z-0 pointer-events-none"
+        className="tab-indicator absolute top-0 bottom-0 border border-accent-primary rounded-full shadow-[0_0_10px_rgba(167,139,250,0.1)] !transition-all !duration-300 ease-out z-0 pointer-events-none"
         style={indicatorStyle}
       />
       {tabs.map((tab) => {

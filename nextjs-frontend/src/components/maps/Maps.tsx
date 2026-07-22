@@ -59,7 +59,7 @@ export function Maps() {
     e.preventDefault();
     if (!newMapName.trim()) return;
     try {
-      const res = await fetch('/api/get_maps.php', {
+      const res = await fetch('/api/post_maps.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'create_map', map_name: newMapName }),
@@ -83,7 +83,7 @@ export function Maps() {
     });
     if (!ok) return;
     try {
-      await fetch('/api/get_maps.php', {
+      await fetch('/api/post_maps.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete_map', map_id: currentMapId }),
@@ -96,7 +96,7 @@ export function Maps() {
   const savePositions = async () => {
     const positions = devices.map(d => ({ device_id: d.id, x: d.x, y: d.y }));
     try {
-      const res = await fetch('/api/get_maps.php', {
+      const res = await fetch('/api/post_maps.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'save_positions', map_id: currentMapId, positions }),
@@ -109,7 +109,7 @@ export function Maps() {
 
   const toggleVisibility = async (deviceId: number, currentVisible: boolean) => {
     try {
-      await fetch('/api/get_maps.php', {
+      await fetch('/api/post_maps.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update_visibility', map_id: currentMapId, device_id: deviceId, is_visible: currentVisible ? 0 : 1 }),
@@ -162,7 +162,7 @@ export function Maps() {
     const d = visibleDevices.find(dev => dev.id === id);
     if (!d) return null;
     // Align lines with center of 48px (w-12) icon within the 80px (w-20) parent container
-    return { x: d.x + 40, y: d.y + 24 };
+    return { x: Number(d.x) + 40, y: Number(d.y) + 24 };
   };
 
   if (loading) {

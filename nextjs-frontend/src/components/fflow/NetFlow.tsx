@@ -80,7 +80,7 @@ export function NetFlow() {
       </div>
 
       <div className="bg-bg-raised rounded-2xl border border-border-subtle p-4">
-        <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 items-end">
+        <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
           <div className="space-y-1">
             <label className="text-xs font-medium text-text-muted">Device Source</label>
             <CustomSelect

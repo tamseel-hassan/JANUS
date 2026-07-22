@@ -81,7 +81,34 @@ if ($filter_date) {
     $log_files = array_filter($log_files, fn($l) => $l['date'] === $filter_date);
 }
 
+// Get retention hours
+$retention_hours = 168;
+$res_retention = mysqli_query($con, "SELECT `value` FROM system_config WHERE `key` = 'archive_retention_hours'");
+if ($res_retention && $row = mysqli_fetch_assoc($res_retention)) {
+    $retention_hours = intval($row['value']);
+}
+
+// Get archive count
+$archive_count = 0;
+$archive_oldest = null;
+$archive_newest = null;
+$check = mysqli_query($con, "SHOW TABLES LIKE 'syslog_entries_archive'");
+if (mysqli_num_rows($check) > 0) {
+    $res_archive = mysqli_query($con, "SELECT COUNT(*) as cnt, MIN(received_at) as oldest, MAX(received_at) as newest FROM syslog_entries_archive");
+    if ($res_archive && $row = mysqli_fetch_assoc($res_archive)) {
+        $archive_count = intval($row['cnt']);
+        $archive_oldest = $row['oldest'];
+        $archive_newest = $row['newest'];
+    }
+}
+
 echo json_encode([
     'sources' => $sources,
-    'log_files' => array_values($log_files)
+    'log_files' => array_values($log_files),
+    'archive_stats' => [
+        'retention_hours' => $retention_hours,
+        'count' => $archive_count,
+        'oldest' => $archive_oldest,
+        'newest' => $archive_newest
+    ]
 ]);

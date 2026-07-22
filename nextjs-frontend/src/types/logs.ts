@@ -58,8 +58,27 @@ export interface LogFile {
   lines: number;
 }
 
+export interface LiveLog {
+  id: number;
+  source_id: number;
+  appliance_type: string;
+  source_type?: string;
+  source_ip: string;
+  facility: number;
+  severity: number;
+  message: string;
+  raw: string;
+  received_at: string;
+}
+
 export interface SiemData {
   sources: SiemSource[];
   log_files: LogFile[];
+  archive_stats?: {
+    retention_hours: number;
+    count: number;
+    oldest: string | null;
+    newest: string | null;
+  };
   error?: string;
 }

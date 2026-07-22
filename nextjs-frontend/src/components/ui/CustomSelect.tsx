@@ -74,7 +74,12 @@ export default function CustomSelect({
   // Close on scroll so it doesn't float away
   useEffect(() => {
     if (!isOpen) return;
-    const handler = () => setIsOpen(false);
+    const handler = (e: Event) => {
+      if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
+        return;
+      }
+      setIsOpen(false);
+    };
     window.addEventListener("scroll", handler, true);
     return () => window.removeEventListener("scroll", handler, true);
   }, [isOpen]);

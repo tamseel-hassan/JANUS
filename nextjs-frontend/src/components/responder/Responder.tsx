@@ -21,7 +21,7 @@ export function Responder() {
 
   const fetchData = async () => {
     const data = await safeFetch<{ firewalls: Firewall[]; actions: Action[] }>(
-      '/api/responder.php', {}, "Responder"
+      '/api/get_responder.php', {}, "Responder"
     );
     if (data) {
       setFirewalls(data.firewalls || []);
@@ -39,7 +39,7 @@ export function Responder() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/responder.php', {
+      const res = await fetch('/api/post_responder.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add_firewall', ...fwForm })
@@ -68,10 +68,10 @@ export function Responder() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/responder_block.php', {
+      const res = await fetch('/api/post_responder.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(blockForm)
+        body: JSON.stringify({ action: 'block_ip', ...blockForm })
       });
       const data = await res.json();
       if (data.error) {

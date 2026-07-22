@@ -31,7 +31,7 @@ export function VulnScan() {
 
     try {
       const data = await safeFetch<any>(
-        "/api/get_scan.php",
+        "/api/post_scan.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

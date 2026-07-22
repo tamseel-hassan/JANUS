@@ -244,7 +244,9 @@ export function Reports() {
             </button>
             <button
               onClick={() =>
-                toast.info("Scheduled reports configuration will be available soon.")
+                toast.info(
+                  "Scheduled reports configuration will be available soon.",
+                )
               }
               className="flex items-center px-3 py-2 text-sm font-medium text-accent-primary border border-border-subtle bg-bg-card rounded-xl hover:bg-bg-darker transition-colors"
             >
@@ -293,10 +295,10 @@ export function Reports() {
       {/* Two-Tier Navigation */}
       <div className="bg-bg-raised border border-border-subtle rounded-2xl overflow-hidden">
         {/* Category Tabs */}
-        <div className="relative flex overflow-x-auto border-b border-border-subtle bg-bg-main p-2 gap-2 hide-scrollbar">
+        <div className="tab-indicator relative flex overflow-x-auto border-b border-border-subtle bg-bg-main p-2 gap-2 hide-scrollbar">
           {/* Animated Background Pill */}
           <div
-            className="absolute top-2 bottom-2 bg-bg-card/50 border border-accent-primary rounded-full transition-all duration-300 ease-out z-0 pointer-events-none"
+            className="tab-indicator absolute top-2 bottom-2 bg-bg-card/50 border border-accent-primary rounded-full transition-all duration-300 ease-out z-0 pointer-events-none"
             style={indicatorStyle}
           />
           {Object.entries(REPORT_CATALOG).map(([key, cat]) => {

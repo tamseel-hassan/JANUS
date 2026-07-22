@@ -100,7 +100,7 @@ export function ManageDevices() {
     const payload = { action, ...deviceForm, custom_model: customModel };
 
     try {
-      const res = await fetch("/api/get_devices.php", {
+      const res = await fetch("/api/post_devices.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -128,7 +128,7 @@ export function ManageDevices() {
     });
     if (!ok) return;
     try {
-      const res = await fetch("/api/get_devices.php", {
+      const res = await fetch("/api/post_devices.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "delete_device", id }),
@@ -149,7 +149,7 @@ export function ManageDevices() {
     const action = editingLink ? "edit_link" : "add_link";
     const payload = { action, ...linkForm };
     try {
-      const res = await fetch("/api/get_devices.php", {
+      const res = await fetch("/api/post_devices.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -177,7 +177,7 @@ export function ManageDevices() {
     });
     if (!ok) return;
     try {
-      const res = await fetch("/api/get_devices.php", {
+      const res = await fetch("/api/post_devices.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "delete_link", id }),

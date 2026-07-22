@@ -367,23 +367,23 @@ export default function Topbar({ data }: { data: NavData | null }) {
             />
           </button>
           {profileOpen && (
-            <div className="absolute right-0 top-full mt-2 w-44 bg-bg-card border border-border-subtle rounded-2xl py-1 z-50 shadow-lg">
+            <div className="absolute right-0 top-full mt-2 w-44 bg-bg-card border border-border-subtle rounded-2xl  z-50 shadow-lg">
               <Link
                 href="/profile"
                 onClick={() => setProfileOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted hover:text-foreground hover:bg-bg-darker transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted hover:text-foreground hover:bg-bg-darker rounded-b-none transition-colors"
               >
                 <User className="w-4 h-4 text-accent-primary opacity-80" />
                 Profile
               </Link>
-              <div className="my-1 border-t border-border-subtle" />
+              <div className=" border-t border-border-subtle" />
               <button
                 onClick={async () => {
                   setProfileOpen(false);
                   await logout();
                   router.replace("/login");
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-bg-darker transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-bg-darker rounded-t-none transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
