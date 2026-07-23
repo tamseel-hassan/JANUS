@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ClipboardCheck, Server, Lock, Ban, Info } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 interface ComplianceRendererProps {
   timeRange: string;
@@ -17,8 +17,7 @@ export default function ComplianceRenderer({ timeRange, selectedDevice }: Compli
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_compliance.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "Compliance");
+        const result = await reportsService.getComplianceReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

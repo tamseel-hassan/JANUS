@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Crosshair, Biohazard, TriangleAlert, Info, Search, ZoomIn } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 interface ThreatHuntingRendererProps {
   timeRange: string;
@@ -19,8 +19,7 @@ export default function ThreatHuntingRenderer({ timeRange, selectedDevice }: Thr
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_threat_hunting.php?range=${timeRange}&device=${selectedDevice}&q=${encodeURIComponent(activeSearch)}`;
-        const result = await safeFetch<any>(url, {}, "ThreatHunting");
+        const result = await reportsService.getThreatHuntingReport({ range: timeRange, device: selectedDevice, q: activeSearch });
         if (result) {
           setData(result);
         }

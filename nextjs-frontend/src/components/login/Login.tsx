@@ -41,11 +41,11 @@ export function Login() {
   }, []);
 
   const toggleTheme = () => {
+    document.documentElement.classList.add("theme-transitioning");
     const nextIsDark = !isDark;
     setIsDark(nextIsDark);
     localStorage.setItem("theme", nextIsDark ? "dark" : "light");
 
-    // Fast sync (140ms) so card elements update as the 550ms radial glow wave sweeps over the card
     setTimeout(() => {
       if (nextIsDark) {
         document.documentElement.classList.add("dark");
@@ -53,6 +53,10 @@ export function Login() {
         document.documentElement.classList.remove("dark");
       }
     }, 50);
+
+    setTimeout(() => {
+      document.documentElement.classList.remove("theme-transitioning");
+    }, 500);
   };
 
   // If already authenticated, redirect to home

@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Book, CheckCircle, History, Ban, Database, PlusCircle, List, Bolt, AlertCircle, Loader2 } from 'lucide-react';
 import { AutomationData } from '@/types/responder';
-import { safeFetch } from '@/lib/safeFetch';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { notify } from '@/services/feedback/feedbackService';
+import { responderService } from '@/services/responder/responderService';
 
 export default function ResponderAutomation() {
   const [data, setData] = useState<AutomationData | null>(null);
@@ -13,7 +14,7 @@ export default function ResponderAutomation() {
   const [isInstalling, setIsInstalling] = useState(false);
 
   const fetchData = async () => {
-    const result = await safeFetch<AutomationData>('/api/get_automation.php', {}, "Response Automation");
+    const result = await responderService.getAutomation();
     if (result) {
       setData(result);
     }
@@ -23,15 +24,16 @@ export default function ResponderAutomation() {
   const handleInstall = async () => {
     setIsInstalling(true);
     try {
-      const res = await fetch('/api/post_install_automation.php', { method: 'POST' });
-      if (res.ok) {
+      const res = await responderService.installAutomation();
+      if (res?.success) {
+        notify.success('Database tables installed successfully!');
         await fetchData();
       } else {
-        alert('Failed to install tables.');
+        notify.error(res?.error || 'Failed to install tables.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Network error during installation.');
+      notify.error('Network error during installation.');
     }
     setIsInstalling(false);
   };

@@ -16,8 +16,11 @@ export interface ResourceDevice {
   cpu_usage: number | null;
   memory_total: number | null;
   memory_used: number | null;
+  memory_free?: number | null;
   disk_total: number | null;
   disk_used: number | null;
+  disk_free?: number | null;
+  last_snmp_check?: string | null;
   interfaces: InterfaceStat[];
 }
 

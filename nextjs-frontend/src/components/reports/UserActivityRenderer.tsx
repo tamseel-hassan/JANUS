@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { User, List, Lock, MapPin } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 interface UserActivityRendererProps {
   timeRange: string;
@@ -17,8 +17,7 @@ export default function UserActivityRenderer({ timeRange, selectedDevice }: User
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_user_activity.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "UserActivity");
+        const result = await reportsService.getUserActivityReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

@@ -15,6 +15,7 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+import { threatService } from "@/services/threat/threatService";
 
 ChartJS.register(
   CategoryScale,
@@ -49,8 +50,8 @@ function SearchContent() {
       setLoading(true);
       setError('');
       try {
-        const queryStr = q ? `?q=${encodeURIComponent(q)}` : `?type=${type}&id=${id}`;
-        const result = await safeFetch<any>(`/api/get_search.php${queryStr}`, {}, "Search");
+        const queryStr = q || `${type}:${id}`;
+        const result = await threatService.search(queryStr);
         if (!result) {
           setError('Could not load search results.');
         } else if (result.error) {

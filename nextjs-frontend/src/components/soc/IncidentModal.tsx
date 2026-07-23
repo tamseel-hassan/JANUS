@@ -8,6 +8,8 @@ import { safeFetch } from "@/lib/safeFetch";
 import { Incident, IncidentComment, Observable, IncidentHistory, SocOptions } from "@/types/soc";
 import { FileArchive, AlertCircle, Clock, Trash2, Link as LinkIcon, Send, Download } from "lucide-react";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { notify, promptService } from "@/services/feedback/feedbackService";
+import { socService } from "@/services/soc/socService";
 
 interface IncidentModalProps {
   incidentId: number;
@@ -46,8 +48,8 @@ export default function IncidentModal({ incidentId, isOpen, onClose, onUpdate, i
   const fetchData = async () => {
     setLoading(true);
     const [optData, detailData] = await Promise.all([
-      safeFetch<SocOptions>("/api/get_soc_incidents.php?action=options", {}, "IncidentModalOpts"),
-      safeFetch<any>(`/api/get_soc_incidents.php?action=details&id=${incidentId}`, {}, "IncidentModalDetails")
+      socService.getOptions(),
+      socService.getIncidentDetails(incidentId)
     ]);
     
     if (optData) setOptions(optData);
@@ -67,17 +69,17 @@ export default function IncidentModal({ incidentId, isOpen, onClose, onUpdate, i
     Object.entries(data).forEach(([key, val]) => formData.append(key, val));
     
     try {
-      const res = await fetch("/api/post_soc_incidents.php", {
-        method: "POST",
-        body: formData,
-      });
-      const result = await res.json();
-      if (result.success) {
+      const result = await socService.executeAction(formData);
+      if (result?.success) {
+        notify.success(typeof result.success === "string" ? result.success : (result.message || "Action completed successfully"));
         fetchData();
         onUpdate(); // refresh parent table
         if (action === "delete") onClose();
+      } else if (result?.error) {
+        notify.error(result.error);
       }
-    } catch(err) {
+    } catch(err: any) {
+      notify.error(err.message || "Action failed");
       console.error("Action failed", err);
     }
   };
@@ -215,7 +217,15 @@ export default function IncidentModal({ incidentId, isOpen, onClose, onUpdate, i
             
             {isAdmin && (
               <div className="pt-4 border-t border-border-subtle mt-8">
-                <Button variant="danger" onClick={() => { if(confirm("Are you sure you want to completely delete this incident?")) handleAction("delete", {}); }}>
+                <Button variant="danger" onClick={async () => {
+                  const ok = await promptService.confirm({
+                    title: "Delete Incident",
+                    description: "Are you sure you want to completely delete this incident?",
+                    variant: "destructive",
+                    confirmText: "Delete"
+                  });
+                  if (ok) handleAction("delete", {});
+                }}>
                   <Trash2 className="w-4 h-4 mr-2" /> Delete Incident
                 </Button>
               </div>

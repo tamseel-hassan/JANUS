@@ -23,7 +23,7 @@ import {
   Crosshair,
   ZoomIn
 } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 ChartJS.register(
   CategoryScale,
@@ -49,8 +49,7 @@ export default function AnomalyRenderer({ timeRange, selectedDevice }: AnomalyRe
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_anomaly.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "Anomaly");
+        const result = await reportsService.getAnomalyReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

@@ -7,11 +7,11 @@ import { User } from "@/types/users";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { toast } from "sonner";
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { confirmDialog } from "@/lib/use-confirm";
+import { notify, promptService } from "@/services/feedback/feedbackService";
+
+import { userService } from "@/services/user/userService";
 
 export function Users() {
   const [users, setUsers] = useState<User[]>([]);
@@ -28,49 +28,38 @@ export function Users() {
 
   const fetchUsers = useCallback(() => {
     setLoading(true);
-    const params = new URLSearchParams({ search, role: roleFilter });
-    safeFetch<{ users: User[] }>(`/api/get_users.php?${params.toString()}`, {}, "Users")
-      .then(data => {
-        if (data?.users) setUsers(data.users);
-        setLoading(false);
-      });
+    userService.getUsers(search, roleFilter).then((data) => {
+      if (data?.users) setUsers(data.users);
+      setLoading(false);
+    });
   }, [search, roleFilter]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-
-
   const handleAction = async (action: string, id?: number, extraData?: any) => {
-    const payload = { action, id, ...extraData };
     try {
-      const res = await fetch('/api/post_users.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        credentials: "include"
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.success);
+      const data = await userService.executeAction(action, id, extraData);
+      if (data?.success) {
+        notify.success(data.success);
         fetchUsers();
         if (action === 'create') {
           setShowAddModal(false);
           setNewUsername(''); setNewPassword(''); setNewEmail('');
         }
-      } else if (data.error) {
-        toast.error(data.error);
+      } else if (data?.error) {
+        notify.error(data.error);
       }
     } catch (err: any) {
-      toast.error(err.message);
+      notify.error(err.message || "Action failed");
     }
   };
 
   const getRoleBadge = (role: string) => {
     switch (role.toLowerCase()) {
-      case 'admin':    return <span className="bg-red-900/50 text-red-400 border border-red-500/50 px-2 py-0.5 rounded-2xl text-xs font-bold uppercase"><ShieldAlert className="w-3 h-3 inline mr-1"/>Admin</span>;
-      case 'analyst':  return <span className="bg-blue-900/50 text-blue-400 border border-blue-500/50 px-2 py-0.5 rounded-2xl text-xs font-bold uppercase"><ShieldCheck className="w-3 h-3 inline mr-1"/>Analyst</span>;
-      case 'operator': return <span className="bg-cyan-900/50 text-cyan-400 border border-cyan-500/50 px-2 py-0.5 rounded-2xl text-xs font-bold uppercase"><Shield className="w-3 h-3 inline mr-1"/>Operator</span>;
-      default:         return <span className="bg-gray-800 text-gray-300 px-2 py-1 rounded-2xl text-xs">{role}</span>;
+      case 'admin':    return <span className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30 px-2 py-0.5 rounded-2xl text-xs font-bold uppercase"><ShieldAlert className="w-3 h-3 inline mr-1"/>Admin</span>;
+      case 'analyst':  return <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-2xl text-xs font-bold uppercase"><ShieldCheck className="w-3 h-3 inline mr-1"/>Analyst</span>;
+      case 'operator': return <span className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-2xl text-xs font-bold uppercase"><Shield className="w-3 h-3 inline mr-1"/>Operator</span>;
+      default:         return <span className="bg-bg-raised text-text-muted border border-border-subtle px-2 py-0.5 rounded-2xl text-xs">{role}</span>;
     }
   };
 
@@ -141,10 +130,10 @@ export function Users() {
                     <div className="font-bold text-foreground text-base">{user.username}</div>
                     {user.username === 'admin' && <span className="text-text-muted text-xs">Built-in account</span>}
                   </td>
-                  <td className="px-6 py-4 text-[#d8cce2]">{user.email || <span className="text-gray-500 italic">No email set</span>}</td>
+                  <td className="px-6 py-4 text-text-muted font-normal">{user.email || <span className="text-text-muted/60 italic">No email set</span>}</td>
                   <td className="px-6 py-4 text-center">{getRoleBadge(user.role)}</td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`px-2 py-1 rounded-2xl text-xs font-bold ${user.is_active ? 'bg-green-900/30 text-green-400' : 'bg-gray-800 text-gray-500'}`}>
+                    <span className={`px-2.5 py-1 rounded-2xl text-xs font-bold ${user.is_active ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/30'}`}>
                       {user.is_active ? 'ACTIVE' : 'DISABLED'}
                     </span>
                   </td>
@@ -186,7 +175,7 @@ export function Users() {
                             variant="outline-danger"
                             size="icon"
                             onClick={async () => {
-                              const ok = await confirmDialog({
+                              const ok = await promptService.confirm({
                                 title: "Delete User",
                                 description: `Are you sure you want to permanently delete user ${user.username}?`,
                                 variant: 'destructive',

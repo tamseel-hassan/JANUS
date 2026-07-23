@@ -21,9 +21,15 @@ export async function safeFetch<T = unknown>(
       ...options,
     });
 
-    // Redirect to login on auth failure
+    // Redirect to login on auth failure (except when already on login page or checking auth)
     if (res.status === 401 || res.status === 403) {
-      if (typeof window !== "undefined") window.location.href = "/login";
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/login" &&
+        !url.includes("auth_check.php")
+      ) {
+        window.location.href = "/login";
+      }
       return null;
     }
 

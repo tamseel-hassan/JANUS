@@ -1,11 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { authService } from "@/services/auth/authService";
+import { AuthUser } from "@/services/auth/authTypes";
 
-export interface AuthUser {
-  id: number;
-  username: string;
-  role: string;
-}
+export type { AuthUser };
 
 interface AuthState {
   user: AuthUser | null;
@@ -37,19 +35,13 @@ export const useAuthStore = create<AuthState>()(
       login: async (username, password) => {
         set({ isLoading: true });
         try {
-          const res = await fetch("/api/auth_login.php", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password }),
-          });
-          const data = await res.json();
-          if (res.ok && data.success) {
+          const data = await authService.login(username, password);
+          if (data?.success && data.user) {
             set({ user: data.user, isAuthenticated: true, isLoading: false });
             return { success: true };
           } else {
             set({ isLoading: false });
-            return { success: false, error: data.error || "Login failed" };
+            return { success: false, error: data?.error || "Login failed" };
           }
         } catch {
           set({ isLoading: false });
@@ -59,10 +51,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
-          await fetch("/api/auth_logout.php", {
-            method: "POST",
-            credentials: "include",
-          });
+          await authService.logout();
         } finally {
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
@@ -74,11 +63,8 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true });
         }
         try {
-          const res = await fetch("/api/auth_check.php", {
-            credentials: "include",
-          });
-          const data = await res.json();
-          if (res.ok && data.authenticated) {
+          const data = await authService.checkSession();
+          if (data?.authenticated && data.user) {
             set({ user: data.user, isAuthenticated: true, isLoading: false });
             return true;
           } else {

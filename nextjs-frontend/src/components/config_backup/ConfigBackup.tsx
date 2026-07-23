@@ -13,12 +13,11 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { AuthError } from "@/components/ui/AuthError";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { deviceService } from "@/services/devices/deviceService";
 import { SearchInput } from "@/components/ui/SearchInput";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
-import { confirmDialog } from "@/lib/use-confirm";
-import { toast } from "sonner";
+import { notify, promptService } from "@/services/feedback/feedbackService";
 
 interface Device {
   id: string;
@@ -58,13 +57,9 @@ export default function ConfigBackup() {
 
   const fetchBackups = async () => {
     setLoading(true);
-    const data = await safeFetch<{ devices: Device[]; backups: Backup[] }>(
-      "/api/get_config_backup.php",
-      {},
-      "ConfigBackup",
-    );
+    const data = await deviceService.getConfigBackup();
     if (data) {
-      setDevices(data.devices || []);
+      setDevices((data as any).devices || []);
       setBackups(data.backups || []);
     } else {
       setError("Failed to load backups.");
@@ -84,17 +79,12 @@ export default function ConfigBackup() {
 
     const formData = new FormData(e.currentTarget);
     try {
-      const res = await fetch("/api/post_config_backup.php", {
-        method: "POST",
-        body: formData,
-        credentials: "omit", // or "include" depending on safeFetch config... Wait, if safeFetch includes credentials, let's include them.
-      });
-      const data = await res.json();
-      if (data.error) {
+      const data = await deviceService.postConfigBackup(formData as any);
+      if (data?.error) {
         setError(data.error);
       } else {
         setSuccess(
-          data.success ? "File uploaded successfully!" : "Upload complete.",
+          data?.success ? "File uploaded successfully!" : "Upload complete.",
         );
         if (formRef.current) formRef.current.reset();
         setSelectedDevice("");
@@ -107,7 +97,7 @@ export default function ConfigBackup() {
   };
 
   const handleDelete = async (file: string) => {
-    const ok = await confirmDialog({
+    const ok = await promptService.confirm({
       title: "Delete Backup",
       description: "Are you sure you want to delete this backup?",
       variant: "destructive",
@@ -115,20 +105,15 @@ export default function ConfigBackup() {
     });
     if (!ok) return;
     try {
-      const data = await safeFetch<{ success: boolean; error?: string }>(
-        "/api/post_config_backup.php",
-        {
-          method: "DELETE",
-          body: JSON.stringify({ file }),
-        },
-      );
-      if (data && data.success) {
+      const data = await deviceService.postConfigBackup({ action: "delete", file });
+      if (data && (data.success || data.message)) {
+        notify.success("Backup deleted");
         fetchBackups();
       } else {
-        toast.error(data?.error || "Failed to delete backup");
+        notify.error(data?.error || "Failed to delete backup");
       }
     } catch (e: any) {
-      toast.error("Error deleting backup");
+      notify.error("Error deleting backup");
     }
   };
 

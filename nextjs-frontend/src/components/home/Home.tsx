@@ -19,7 +19,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { AuthError } from "@/components/ui/AuthError";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { safeFetch } from "@/lib/safeFetch";
+import { monitorService } from "@/services/monitor/monitorService";
 
 ChartJS.register(ArcElement, Tooltip, Legend, DoughnutController, BarElement, CategoryScale, LinearScale, BarController);
 
@@ -28,8 +28,8 @@ export function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    safeFetch<HomeData>("/api/get_home.php", {}, "Home")
-      .then(d => { setData(d); setLoading(false); });
+    monitorService.getHome()
+      .then(d => { setData(d as any); setLoading(false); });
   }, []);
 
   if (loading) return <LoadingSpinner fullPage />;

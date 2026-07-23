@@ -24,7 +24,7 @@ import {
   Info,
   ZoomIn
 } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 ChartJS.register(
   CategoryScale,
@@ -50,8 +50,7 @@ export default function DdosRenderer({ timeRange, selectedDevice }: DdosRenderer
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_ddos.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "DDoS");
+        const result = await reportsService.getDdosReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

@@ -7,6 +7,8 @@ import Topbar from "./Topbar";
 import { useAuthStore } from "@/store/authStore";
 import { Loader2 } from "lucide-react";
 
+import { monitorService } from "@/services/monitor/monitorService";
+
 const PUBLIC_ROUTES = ["/login"];
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -40,9 +42,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   // Fetch nav data once authenticated
   useEffect(() => {
     if (isAuthenticated && !isPublicRoute) {
-      fetch("/api/get_nav_data.php", { credentials: "include" })
-        .then((res) => res.json())
-        .then((data) => setNavData(data))
+      monitorService.getNavData()
+        .then((data) => setNavData(data as any))
         .catch((err) => console.error("Failed to fetch nav data", err));
     }
   }, [isAuthenticated, pathname]);

@@ -12,8 +12,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { RiskBadge } from "@/components/ui/RiskBadge";
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
+import { threatService } from "@/services/threat/threatService";
 
 export function VulnScan() {
   const [target, setTarget] = useState("");
@@ -30,15 +30,7 @@ export function VulnScan() {
     setError(null);
 
     try {
-      const data = await safeFetch<any>(
-        "/api/post_scan.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target }),
-        },
-        "VulnScan",
-      );
+      const data = await threatService.postScan({ target });
       if (!data) {
         setError("Server returned an unexpected response.");
       } else if (data.error) {

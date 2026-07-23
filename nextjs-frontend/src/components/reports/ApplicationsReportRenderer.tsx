@@ -20,7 +20,7 @@ import {
   ChartBar, 
   Shield 
 } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 ChartJS.register(
   CategoryScale,
@@ -45,8 +45,7 @@ export default function ApplicationsReportRenderer({ timeRange, selectedDevice }
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_applications.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "ApplicationsReport");
+        const result = await reportsService.getApplicationsReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

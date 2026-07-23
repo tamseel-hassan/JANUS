@@ -9,8 +9,8 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
+import { threatService } from "@/services/threat/threatService";
 
 export function IPSLogs() {
   const [logs, setLogs] = useState<IPSLog[]>([]);
@@ -26,14 +26,11 @@ export function IPSLogs() {
 
   const fetchLogs = useCallback(() => {
     setLoading(true);
-    const params = new URLSearchParams({ page: page.toString(), search, type, action, severity });
-    safeFetch<{ logs: IPSLog[]; total: number; total_pages: number }>(
-      `/api/get_ips.php?${params.toString()}`, {}, "IPSLogs"
-    ).then(data => {
+    threatService.getIpsLogs().then(data => {
       if (data) {
-        setLogs(data.logs || []);
-        setTotal(data.total || 0);
-        setTotalPages(data.total_pages || 1);
+        setLogs((data.logs || (data as any).data) || []);
+        setTotal((data as any).total || 0);
+        setTotalPages((data as any).total_pages || 1);
       }
       setLoading(false);
     });

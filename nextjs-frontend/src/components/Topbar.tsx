@@ -129,6 +129,7 @@ export default function Topbar({ data }: { data: NavData | null }) {
   }, []);
 
   const toggleTheme = () => {
+    document.documentElement.classList.add("theme-transitioning");
     const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     if (nextTheme === "dark") {
@@ -137,6 +138,10 @@ export default function Topbar({ data }: { data: NavData | null }) {
       document.documentElement.classList.remove("dark");
     }
     localStorage.setItem("theme", nextTheme);
+
+    setTimeout(() => {
+      document.documentElement.classList.remove("theme-transitioning");
+    }, 450);
   };
 
   // Close notifications when clicking outside

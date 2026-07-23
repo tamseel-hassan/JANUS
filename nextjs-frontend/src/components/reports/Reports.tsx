@@ -23,7 +23,7 @@ import BandwidthReportRenderer from "./BandwidthReportRenderer";
 import ThreatHuntingRenderer from "./ThreatHuntingRenderer";
 import BruteForceRenderer from "./BruteForceRenderer";
 import AnomalyRenderer from "./AnomalyRenderer";
-import { toast } from "sonner";
+import { notify } from "@/services/feedback/feedbackService";
 import RemoteAccessRenderer from "./RemoteAccessRenderer";
 import UserActivityRenderer from "./UserActivityRenderer";
 import DnsAttacksRenderer from "./DnsAttacksRenderer";
@@ -233,7 +233,7 @@ export function Reports() {
           <div className="flex items-center space-x-2">
             <button
               onClick={() =>
-                toast.info(
+                notify.info(
                   "Export functionality will be available in a future update.",
                 )
               }
@@ -244,7 +244,7 @@ export function Reports() {
             </button>
             <button
               onClick={() =>
-                toast.info(
+                notify.info(
                   "Scheduled reports configuration will be available soon.",
                 )
               }

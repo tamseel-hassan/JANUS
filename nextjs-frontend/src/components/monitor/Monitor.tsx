@@ -9,8 +9,8 @@ import { AuthError } from "@/components/ui/AuthError";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
+import { monitorService } from "@/services/monitor/monitorService";
 
 export function Monitor() {
   const [data, setData] = useState<MonitorData | null>(null);
@@ -19,8 +19,8 @@ export function Monitor() {
 
   useEffect(() => {
     const fetchData = () => {
-      safeFetch<MonitorData>("/api/get_monitor.php", {}, "Monitor")
-        .then(d => { setData(d); setLoading(false); });
+      monitorService.getMonitor()
+        .then(d => { setData(d as any); setLoading(false); });
     };
     fetchData();
     const intervalId = setInterval(fetchData, 30000);

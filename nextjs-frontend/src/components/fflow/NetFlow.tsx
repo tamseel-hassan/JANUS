@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Network, Search, Server, Database, Eye } from 'lucide-react';
-import { confirmDialog } from "@/lib/use-confirm";
 import CustomSelect from '@/components/ui/CustomSelect';
 import { Flow } from "@/types/logs";
 import { Pagination } from "@/components/ui/Pagination";
 import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
+
+import { promptService } from "@/services/feedback/feedbackService";
+import { reportsService } from "@/services/reports/reportsService";
 
 export function NetFlow() {
   const [flows, setFlows] = useState<Flow[]>([]);
@@ -31,18 +33,15 @@ export function NetFlow() {
 
   const fetchLogs = async () => {
     setLoading(true);
-    const queryParams = new URLSearchParams({
+    const data = await reportsService.getNetFlow({
       page: page.toString(),
       ...filters
     });
-    const data = await safeFetch<{ flows: Flow[]; devices: {source_ip: string; appliance_type: string}[]; total_pages: number; total: number }>(
-      `/api/get_fflow.php?${queryParams}`, {}, "NetFlow"
-    );
     if (data) {
-      setFlows(data.flows || []);
-      setDevices(data.devices || []);
-      setTotalPages(data.total_pages || 1);
-      setTotal(data.total || 0);
+      setFlows((data as any).flows || []);
+      setDevices((data as any).devices || []);
+      setTotalPages((data as any).total_pages || 1);
+      setTotal((data as any).total || 0);
     }
     setLoading(false);
   };
@@ -232,7 +231,7 @@ export function NetFlow() {
                           variant="ghost"
                           size="icon"
                           className="text-accent-primary hover:text-purple-300 ml-auto"
-                          onClick={() => confirmDialog({
+                          onClick={() => promptService.confirm({
                             title: "Flow Details",
                             description: <pre className="text-xs overflow-auto max-h-60 mt-2">{flow.raw || JSON.stringify(flow, null, 2)}</pre>,
                             hideCancel: true,

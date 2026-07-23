@@ -5,8 +5,8 @@ import { Shield, Search, Database, AlertCircle, CheckCircle } from "lucide-react
 import CustomSelect from "@/components/ui/CustomSelect";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
+import { threatService } from "@/services/threat/threatService";
 
 interface HistoryItem {
   id: string;
@@ -27,8 +27,8 @@ export function ThreatIntel() {
   const [results, setResults] = useState<any>(null);
 
   const fetchHistory = () => {
-    safeFetch<{ history: HistoryItem[] }>("/api/get_threat_intel.php", {}, "ThreatIntel")
-      .then(d => { setHistory(d?.history || []); setLoading(false); });
+    threatService.getThreatIntel()
+      .then(d => { setHistory((d?.history || (d as any)?.intel) || []); setLoading(false); });
   };
 
   useEffect(() => {
@@ -42,12 +42,8 @@ export function ThreatIntel() {
     setResults(null);
     
     try {
-      const data = await safeFetch<{ results: any }>("/api/post_threat_intel.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ observable_type: type, observable_value: value }),
-      }, "ThreatIntel:analyze");
-      if (data?.results) setResults(data.results);
+      const data = await threatService.postThreatIntel({ observable_type: type, observable_value: value });
+      if (data?.data || (data as any)?.results) setResults(data?.data || (data as any)?.results);
       fetchHistory();
     } catch (err) {
       console.error(err);

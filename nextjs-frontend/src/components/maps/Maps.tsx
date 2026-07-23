@@ -4,22 +4,22 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { 
   Network, Plus, Trash2, Save, Eye, LayoutDashboard
 } from "lucide-react";
-import { confirmDialog } from "@/lib/use-confirm";
-import { toast } from "sonner";
+import { notify, promptService } from "@/services/feedback/feedbackService";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Device, Link, Map } from "@/types/maps";
 import { DeviceNode } from "@/components/maps/DeviceNode";
 import { VisibilityModal } from "@/components/maps/VisibilityModal";
-import { safeFetch } from "@/lib/safeFetch";
+import { monitorService } from "@/services/monitor/monitorService";
 
 export function Maps() {
   const [maps, setMaps] = useState<Map[]>([]);
   const [currentMapId, setCurrentMapId] = useState<number>(0);
   const [devices, setDevices] = useState<Device[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isMapLoading, setIsMapLoading] = useState(false);
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [newMapName, setNewMapName] = useState('');
@@ -32,18 +32,19 @@ export function Maps() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const fetchData = useCallback(async (mapId?: number) => {
-    setLoading(true);
-    const url = mapId ? `/api/get_maps.php?map_id=${mapId}` : '/api/get_maps.php';
-    const data = await safeFetch<{ maps: Map[]; current_map_id: number; devices: Device[]; links: Link[] }>(
-      url, {}, "Maps"
-    );
-    if (data) {
-      setMaps(data.maps || []);
-      setCurrentMapId(data.current_map_id || 0);
-      setDevices(data.devices || []);
-      setLinks(data.links || []);
+    if (mapId !== undefined) {
+      setIsMapLoading(true);
     }
-    setLoading(false);
+    const data = await monitorService.getMaps(mapId);
+    if (data) {
+      setMaps((data as any).maps || []);
+      const activeMapId = mapId ?? (data as any).current_map_id ?? 0;
+      setCurrentMapId(activeMapId);
+      setDevices((data as any).devices || []);
+      setLinks((data as any).links || []);
+    }
+    setInitialLoading(false);
+    setIsMapLoading(false);
   }, []);
 
   useEffect(() => {
@@ -51,31 +52,28 @@ export function Maps() {
   }, [fetchData]);
 
   const handleMapChange = (val: string) => {
-    const id = parseInt(val);
-    fetchData(id);
+    const id = parseInt(val, 10);
+    if (!isNaN(id) && id > 0) {
+      setCurrentMapId(id);
+      fetchData(id);
+    }
   };
 
   const createMap = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMapName.trim()) return;
     try {
-      const res = await fetch('/api/post_maps.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_map', map_name: newMapName }),
-        credentials: "include"
-      });
-      const data = await res.json();
-      if (data.success) {
+      const data = await monitorService.postMaps({ action: 'create_map', map_name: newMapName });
+      if (data?.success) {
         setShowAddModal(false);
         setNewMapName('');
-        fetchData(data.map_id);
+        fetchData((data as any).map_id);
       }
     } catch (err) { console.error(err); }
   };
 
   const deleteMap = async () => {
-    const ok = await confirmDialog({
+    const ok = await promptService.confirm({
       title: "Delete Map",
       description: "Are you sure you want to delete this map?",
       variant: "destructive",
@@ -83,12 +81,7 @@ export function Maps() {
     });
     if (!ok) return;
     try {
-      await fetch('/api/post_maps.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete_map', map_id: currentMapId }),
-        credentials: "include"
-      });
+      await monitorService.postMaps({ action: 'delete_map', map_id: currentMapId });
       fetchData();
     } catch (err) { console.error(err); }
   };
@@ -96,25 +89,14 @@ export function Maps() {
   const savePositions = async () => {
     const positions = devices.map(d => ({ device_id: d.id, x: d.x, y: d.y }));
     try {
-      const res = await fetch('/api/post_maps.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'save_positions', map_id: currentMapId, positions }),
-        credentials: "include"
-      });
-      const data = await res.json();
-      if (data.success) toast.success('Positions saved successfully!');
+      const data = await monitorService.postMaps({ action: 'save_positions', map_id: currentMapId, positions });
+      if (data?.success) notify.success('Positions saved successfully!');
     } catch (err) { console.error(err); }
   };
 
   const toggleVisibility = async (deviceId: number, currentVisible: boolean) => {
     try {
-      await fetch('/api/post_maps.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_visibility', map_id: currentMapId, device_id: deviceId, is_visible: currentVisible ? 0 : 1 }),
-        credentials: "include"
-      });
+      await monitorService.postMaps({ action: 'update_visibility', map_id: currentMapId, device_id: deviceId, is_visible: currentVisible ? 0 : 1 });
       setDevices(prev => prev.map(d => d.id === deviceId ? { ...d, is_visible: !currentVisible } : d));
     } catch (err) { console.error(err); }
   };
@@ -130,22 +112,16 @@ export function Maps() {
     setDraggingNode(id);
     setDragOffset({
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      y: e.clientY - rect.top,
     });
     node.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>, id: number) => {
-    if (draggingNode !== id) return;
-    const mapRect = mapRef.current?.getBoundingClientRect();
-    if (!mapRect) return;
-
-    let newX = e.clientX - mapRect.left - dragOffset.x;
-    let newY = e.clientY - mapRect.top - dragOffset.y;
-
-    // Constrain to map
-    newX = Math.max(0, Math.min(newX, mapRect.width - 80));
-    newY = Math.max(0, Math.min(newY, mapRect.height - 80));
+    if (draggingNode !== id || !mapRef.current) return;
+    const mapRect = mapRef.current.getBoundingClientRect();
+    const newX = Math.max(0, Math.min(e.clientX - mapRect.left - dragOffset.x, mapRect.width - 60));
+    const newY = Math.max(0, Math.min(e.clientY - mapRect.top - dragOffset.y, mapRect.height - 60));
 
     setDevices(prev => prev.map(d => d.id === id ? { ...d, x: newX, y: newY } : d));
   };
@@ -165,7 +141,7 @@ export function Maps() {
     return { x: Number(d.x) + 40, y: Number(d.y) + 24 };
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="w-10 h-10 border-4 border-border-subtle border-t-accent-primary rounded-full animate-spin"></div>
@@ -240,6 +216,14 @@ export function Maps() {
             backgroundSize: '24px 24px'
           }}
         >
+          {isMapLoading && (
+            <div className="absolute inset-0 bg-bg-darkest/60 backdrop-blur-sm z-50 flex items-center justify-center transition-all duration-300">
+              <div className="flex items-center gap-3 bg-bg-card border border-border-subtle px-4 py-2.5 rounded-2xl shadow-2xl">
+                <div className="w-5 h-5 border-2 border-border-subtle border-t-accent-primary rounded-full animate-spin"></div>
+                <span className="text-sm font-medium text-foreground">Loading topology map...</span>
+              </div>
+            </div>
+          )}
           {/* SVG for lines */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
             {links.map(link => {

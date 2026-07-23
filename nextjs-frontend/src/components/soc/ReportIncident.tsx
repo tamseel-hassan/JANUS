@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { Button } from "@/components/ui/Button";
-import { safeFetch } from "@/lib/safeFetch";
+import { socService } from "@/services/soc/socService";
 import { SocOptions, Observable } from "@/types/soc";
 import { useRouter } from "next/navigation";
 
@@ -35,7 +35,7 @@ export default function ReportIncident() {
   }, []);
 
   const fetchOptions = async () => {
-    const data = await safeFetch<SocOptions>("/api/get_soc_incidents.php?action=options", {}, "ReportIncident");
+    const data = await socService.getOptions();
     if (data) {
       setOptions(data);
       setError(null);
@@ -50,13 +50,13 @@ export default function ReportIncident() {
   };
 
   const handleRemoveObservable = (index: number) => {
-    setObservables(observables.filter((_, i) => i !== index));
+    setObservables(observables.filter((_, idx) => idx !== index));
   };
 
-  const handleObservableChange = (index: number, field: keyof Observable, value: string) => {
-    const updated = [...observables];
-    updated[index] = { ...updated[index], [field]: value };
-    setObservables(updated);
+  const handleObservableChange = (index: number, key: keyof Observable, val: string) => {
+    const next = [...observables];
+    next[index] = { ...next[index], [key]: val };
+    setObservables(next);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,13 +79,8 @@ export default function ReportIncident() {
     });
 
     try {
-      const res = await fetch("/api/post_soc_incidents.php", {
-        method: "POST",
-        body: formData,
-        credentials: "omit"
-      });
-      const data = await res.json();
-      if (data.error) {
+      const data = await socService.reportIncident(formData);
+      if (data?.error) {
         throw new Error(data.error);
       } else {
         router.push("/my_tasks?success=1");

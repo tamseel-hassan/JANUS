@@ -20,11 +20,11 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { SearchInput } from "@/components/ui/SearchInput";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { toast } from "sonner";
+import { notify } from "@/services/feedback/feedbackService";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
 import { Modal } from "@/components/ui/Modal";
-import { safeFetch } from "@/lib/safeFetch";
+import { monitorService } from "@/services/monitor/monitorService";
 
 interface IpamDevice {
   id: string;
@@ -72,14 +72,10 @@ export default function Ipam() {
 
   const fetchData = async () => {
     setLoading(true);
-    const data = await safeFetch<{ ips: IpamDevice[]; subnets: any[] }>(
-      "/api/get_ipam.php?action=load",
-      {},
-      "IPAM",
-    );
+    const data = await monitorService.getIpam();
     if (data) {
-      setIps(data.ips || []);
-      setSubnets(data.subnets || []);
+      setIps((data as any).ips || []);
+      setSubnets((data as any).subnets || []);
     }
     setLoading(false);
   };
@@ -90,20 +86,14 @@ export default function Ipam() {
 
   const handlePing = async (ip: string) => {
     setPinging((prev) => ({ ...prev, [ip]: true }));
-    const data = await safeFetch<{ success: boolean; status: string }>(
-      "/api/post_ipam.php",
-      {
-        method: "POST",
-        body: JSON.stringify({ action: "ping", ip }),
-      },
-    );
+    const data = await monitorService.postIpam({ action: "ping", ip });
     if (data && data.success) {
       setIps((prev) =>
         prev.map((device) =>
           device.ip === ip
             ? {
                 ...device,
-                status: data.status,
+                status: data.status || device.status,
                 last_seen: new Date().toISOString(),
               }
             : device,
@@ -114,10 +104,7 @@ export default function Ipam() {
   };
 
   const handleAck = async (log_id: string, ip: string) => {
-    const data = await safeFetch<{ success: boolean }>("/api/post_ipam.php", {
-      method: "POST",
-      body: JSON.stringify({ action: "acknowledge", log_id }),
-    });
+    const data = await monitorService.postIpam({ action: "acknowledge", log_id });
     if (data && data.success) {
       setIps((prev) =>
         prev.map((device) =>
@@ -130,51 +117,42 @@ export default function Ipam() {
   const handleSaveIp = async () => {
     if (!addIpForm.ip) return;
     setIsSaving(true);
-    const data = await safeFetch<{ success: boolean; error?: string }>("/api/post_ipam.php", {
-      method: "POST",
-      body: JSON.stringify({ action: "save", ...addIpForm, status: addIpStatus }),
-    });
+    const data = await monitorService.postIpam({ action: "save", ...addIpForm, status: addIpStatus });
     setIsSaving(false);
     if (data && data.success) {
       setShowAddIpModal(false);
       setAddIpForm({ ip: "", mac: "", assigned_to: "", vlan: "", notes: "" });
       fetchData();
     } else if (data && data.error) {
-      toast.error("Error: " + data.error);
+      notify.error("Error: " + data.error);
     }
   };
 
   const handleSaveSubnet = async () => {
     if (!addSubnetForm.cidr) return;
     setIsSaving(true);
-    const data = await safeFetch<{ success: boolean; error?: string }>("/api/post_ipam.php", {
-      method: "POST",
-      body: JSON.stringify({ action: "subnet_save", ...addSubnetForm, scan_enabled: addSubnetScan === "yes" ? 1 : 0 }),
-    });
+    const data = await monitorService.postIpam({ action: "subnet_save", ...addSubnetForm, scan_enabled: addSubnetScan === "yes" ? 1 : 0 });
     setIsSaving(false);
     if (data && data.success) {
       setShowAddSubnetModal(false);
       setAddSubnetForm({ cidr: "", vlan_id: "", label: "", interface: "", description: "" });
       fetchData();
     } else if (data && data.error) {
-      toast.error("Error: " + data.error);
+      notify.error("Error: " + data.error);
     }
   };
 
   const handleSaveMapping = async () => {
     if (!addMappingForm.public_ip || !addMappingForm.private_ip) return;
     setIsSaving(true);
-    const data = await safeFetch<{ success: boolean; error?: string }>("/api/post_ipam.php", {
-      method: "POST",
-      body: JSON.stringify({ action: "mapping_save", ...addMappingForm, type: addMappingType }),
-    });
+    const data = await monitorService.postIpam({ action: "mapping_save", ...addMappingForm, type: addMappingType });
     setIsSaving(false);
     if (data && data.success) {
       setShowAddMappingModal(false);
       setAddMappingForm({ public_ip: "", private_ip: "", description: "" });
       fetchData();
     } else if (data && data.error) {
-      toast.error("Error: " + data.error);
+      notify.error("Error: " + data.error);
     }
   };
 

@@ -25,8 +25,9 @@ import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
 import { Tabs } from "@/components/ui/Tabs";
-import { confirmDialog } from "@/lib/use-confirm";
-import { toast } from "sonner";
+import { notify, promptService } from "@/services/feedback/feedbackService";
+
+import { deviceService } from "@/services/devices/deviceService";
 
 export function ManageDevices() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -48,8 +49,8 @@ export function ManageDevices() {
   const emptyDevice: Device = {
     id: 0,
     name: "",
-    type: "server",
     ip: "",
+    type: "Server",
     model: "",
     city: "",
     sub_office: "",
@@ -100,27 +101,21 @@ export function ManageDevices() {
     const payload = { action, ...deviceForm, custom_model: customModel };
 
     try {
-      const res = await fetch("/api/post_devices.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success( data.success);
+      const data = await deviceService.postDevice(payload);
+      if (data?.success) {
+        notify.success( (data as any).success);
         setShowDeviceModal(false);
         fetchData();
       } else {
-        toast.error( data.error);
+        notify.error( (data as any)?.error || "Device action failed");
       }
     } catch (err: any) {
-      toast.error( err.message);
+      notify.error( err.message);
     }
   };
 
   const handleDeleteDevice = async (id: number, name: string) => {
-    const ok = await confirmDialog({
+    const ok = await promptService.confirm({
       title: "Delete Device",
       description: `Are you sure you want to delete ${name}? This will also delete all associated logs and metrics.`,
       variant: "destructive",
@@ -128,19 +123,13 @@ export function ManageDevices() {
     });
     if (!ok) return;
     try {
-      const res = await fetch("/api/post_devices.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete_device", id }),
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success( data.success);
+      const data = await deviceService.postDevice({ action: "delete_device", id });
+      if (data?.success) {
+        notify.success( (data as any).success);
         fetchData();
-      } else toast.error( data.error);
+      } else notify.error( (data as any)?.error || "Delete failed");
     } catch (err: any) {
-      toast.error( err.message);
+      notify.error( err.message);
     }
   };
 
@@ -149,27 +138,21 @@ export function ManageDevices() {
     const action = editingLink ? "edit_link" : "add_link";
     const payload = { action, ...linkForm };
     try {
-      const res = await fetch("/api/post_devices.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success( data.success);
+      const data = await deviceService.postDevice(payload);
+      if (data?.success) {
+        notify.success( (data as any).success);
         setShowLinkModal(false);
         fetchData();
       } else {
-        toast.error( data.error);
+        notify.error( (data as any)?.error || "Action failed");
       }
     } catch (err: any) {
-      toast.error( err.message);
+      notify.error( err.message);
     }
   };
 
   const handleDeleteLink = async (id: number, name: string) => {
-    const ok = await confirmDialog({
+    const ok = await promptService.confirm({
       title: "Delete Link",
       description: `Are you sure you want to delete link ${name}?`,
       variant: "destructive",
@@ -177,19 +160,13 @@ export function ManageDevices() {
     });
     if (!ok) return;
     try {
-      const res = await fetch("/api/post_devices.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete_link", id }),
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success( data.success);
+      const data = await deviceService.postDevice({ action: "delete_link", id });
+      if (data?.success) {
+        notify.success( (data as any).success);
         fetchData();
-      } else toast.error( data.error);
+      } else notify.error( (data as any)?.error || "Delete failed");
     } catch (err: any) {
-      toast.error( err.message);
+      notify.error( err.message);
     }
   };
 

@@ -42,13 +42,13 @@ export function Button({
       case "outline":
         return "bg-transparent hover:bg-bg-card text-foreground border border-border-subtle";
       case "outline-danger":
-        return "bg-bg-card hover:bg-red-600 text-red-400 hover:text-foreground border border-border-subtle hover:border-red-500";
+        return "bg-bg-card hover:bg-red-600 text-red-600 dark:text-red-400 hover:text-white border border-border-subtle hover:border-red-500";
       case "outline-primary":
-        return "bg-bg-card hover:bg-blue-600 text-blue-400 hover:text-foreground border border-border-subtle hover:border-blue-500";
+        return "bg-bg-card hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white border border-border-subtle hover:border-blue-500";
       case "outline-warning":
-        return "bg-bg-card hover:bg-yellow-600 text-yellow-400 hover:text-foreground border border-border-subtle hover:border-yellow-500";
+        return "bg-bg-card hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white border border-border-subtle hover:border-amber-500";
       case "outline-success":
-        return "bg-bg-card hover:bg-green-600 text-green-400 hover:text-foreground border border-border-subtle hover:border-green-500";
+        return "bg-bg-card hover:bg-emerald-600 text-emerald-600 dark:text-emerald-400 hover:text-white border border-border-subtle hover:border-emerald-500";
       case "ghost":
         return "bg-transparent text-text-muted hover:text-foreground hover:bg-bg-card border border-transparent";
       case "ghost-danger":

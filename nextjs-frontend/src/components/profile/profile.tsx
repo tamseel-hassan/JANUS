@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { User, Lock, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
+import { userService } from "@/services/user/userService";
 
 export function Profile() {
   const [profile, setProfile] = useState({ username: '', email: '' });
@@ -27,12 +27,10 @@ export function Profile() {
   }, []);
 
   const fetchProfile = async () => {
-    const data = await safeFetch<{ username: string; email: string }>(
-      '/api/get_profile.php', {}, "Profile"
-    );
-    if (data) {
-      setProfile({ username: data.username, email: data.email });
-      setEmailForm({ new_email: data.email });
+    const data = await userService.getProfile();
+    if (data && data.username) {
+      setProfile({ username: data.username, email: data.email || '' });
+      setEmailForm({ new_email: data.email || '' });
     }
     setLoading(false);
   };
@@ -42,18 +40,13 @@ export function Profile() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/post_profile.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'change_password',
-          ...passwordForm
-        })
+      const data = await userService.updateProfile({
+        action: 'change_password',
+        ...passwordForm
       });
-      const data = await res.json();
-      if (data.error) {
+      if (data?.error) {
         setMessage({ type: 'error', text: data.error });
-      } else {
+      } else if (data?.success) {
         setMessage({ type: 'success', text: data.success });
         setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
       }
@@ -69,18 +62,13 @@ export function Profile() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/post_profile.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'change_email',
-          ...emailForm
-        })
+      const data = await userService.updateProfile({
+        action: 'change_email',
+        ...emailForm
       });
-      const data = await res.json();
-      if (data.error) {
+      if (data?.error) {
         setMessage({ type: 'error', text: data.error });
-      } else {
+      } else if (data?.success) {
         setMessage({ type: 'success', text: data.success });
         setProfile(prev => ({ ...prev, email: emailForm.new_email }));
       }

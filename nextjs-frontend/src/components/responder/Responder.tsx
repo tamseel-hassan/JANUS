@@ -5,7 +5,7 @@ import { Shield, ShieldAlert, Plus, Server, CheckCircle2, Loader2, AlertCircle, 
 import CustomSelect from '@/components/ui/CustomSelect';
 import { Button } from "@/components/ui/Button";
 import { Firewall, Action } from "@/types/responder";
-import { safeFetch } from "@/lib/safeFetch";
+import { responderService } from "@/services/responder/responderService";
 
 export function Responder() {
   const [firewalls, setFirewalls] = useState<Firewall[]>([]);
@@ -20,9 +20,7 @@ export function Responder() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = async () => {
-    const data = await safeFetch<{ firewalls: Firewall[]; actions: Action[] }>(
-      '/api/get_responder.php', {}, "Responder"
-    );
+    const data = await responderService.getResponderData();
     if (data) {
       setFirewalls(data.firewalls || []);
       setActions(data.actions || []);
@@ -39,16 +37,11 @@ export function Responder() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/post_responder.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add_firewall', ...fwForm })
-      });
-      const data = await res.json();
-      if (data.error) {
+      const data = await responderService.executeAction({ action: 'add_firewall', ...fwForm });
+      if (data?.error) {
         setMessage({ type: 'error', text: data.error });
-      } else {
-        setMessage({ type: 'success', text: data.success });
+      } else if (data?.message || data?.success) {
+        setMessage({ type: 'success', text: data.message || 'Firewall added successfully' });
         setFwForm({ firewall_ip: '', api_key: '', username: '' });
         fetchData();
       }
@@ -68,16 +61,11 @@ export function Responder() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/post_responder.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'block_ip', ...blockForm })
-      });
-      const data = await res.json();
-      if (data.error) {
+      const data = await responderService.executeAction({ action: 'block_ip', ...blockForm });
+      if (data?.error) {
         setMessage({ type: 'error', text: data.error });
-      } else {
-        setMessage({ type: 'success', text: data.success });
+      } else if (data?.message || data?.success) {
+        setMessage({ type: 'success', text: data.message || 'IP blocked successfully' });
         setBlockForm({ target_ip: '', firewall_ip: blockForm.firewall_ip, reason: '' });
         fetchData();
       }

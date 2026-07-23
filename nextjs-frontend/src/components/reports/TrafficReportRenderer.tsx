@@ -25,7 +25,7 @@ import {
   Globe, 
   ZoomIn 
 } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 ChartJS.register(
   CategoryScale,
@@ -52,8 +52,7 @@ export default function TrafficReportRenderer({ timeRange, selectedDevice }: Tra
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_traffic.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "TrafficReport");
+        const result = await reportsService.getTrafficReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

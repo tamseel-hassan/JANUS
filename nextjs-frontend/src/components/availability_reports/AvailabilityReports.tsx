@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FileBarChart, Server, Activity, Search, Loader2 } from "lucide-react";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { safeFetch } from "@/lib/safeFetch";
-import { toast } from "sonner";
+import { notify } from "@/services/feedback/feedbackService";
 import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
 import { Line } from "react-chartjs-2";
@@ -32,6 +31,8 @@ ChartJS.register(
   Filler,
 );
 
+import { availabilityService } from "@/services/availability/availabilityService";
+
 export function AvailabilityReports() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,24 +53,11 @@ export function AvailabilityReports() {
 
   const fetchData = async () => {
     setLoading(true);
-    const query = new URLSearchParams();
-    if (deviceId) query.append("device_id", deviceId);
-    if (timeRange) query.append("time_range", timeRange);
-    if (startDate && timeRange === "custom")
-      query.append("start_date", startDate);
-    if (endDate && timeRange === "custom") query.append("end_date", endDate);
-
-    const result = await safeFetch<{
-      devices: { id: number; name: string }[];
-      report_data: any;
-    }>(
-      `/api/get_availability_reports.php?${query.toString()}`,
-      {},
-      "AvailabilityReports",
-    );
+    const queryRange = timeRange || "24h";
+    const result = await availabilityService.getReports(queryRange);
     if (result) {
-      setDevices(result.devices || []);
-      setData(result.report_data || null);
+      setDevices((result as any).devices || []);
+      setData((result as any).report_data || result.reports || null);
     }
     setLoading(false);
   };
@@ -81,7 +69,7 @@ export function AvailabilityReports() {
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!deviceId) {
-      toast.warning("Please select a device");
+      notify.warning("Please select a device");
       return;
     }
     const query = new URLSearchParams();

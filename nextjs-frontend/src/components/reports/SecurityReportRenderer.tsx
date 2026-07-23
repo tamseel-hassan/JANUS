@@ -22,7 +22,7 @@ import {
   Shield,
   ZoomIn
 } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 ChartJS.register(
   CategoryScale,
@@ -47,8 +47,7 @@ export default function SecurityReportRenderer({ timeRange, selectedDevice }: Se
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_security_analysis.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "SecurityReport");
+        const result = await reportsService.getSecurityAnalysisReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

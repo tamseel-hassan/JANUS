@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Server, Ban, Route, User, Info, ZoomIn } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 interface DnsAttacksRendererProps {
   timeRange: string;
@@ -17,8 +17,7 @@ export default function DnsAttacksRenderer({ timeRange, selectedDevice }: DnsAtt
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_dns_attacks.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "DnsAttacks");
+        const result = await reportsService.getDnsAttacksReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

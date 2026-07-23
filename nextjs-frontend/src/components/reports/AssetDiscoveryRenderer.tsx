@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Network, PlusCircle, HelpCircle, Shield, List, ZoomIn, Info } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 interface AssetDiscoveryRendererProps {
   timeRange: string;
@@ -17,8 +17,7 @@ export default function AssetDiscoveryRenderer({ timeRange, selectedDevice }: As
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_asset_discovery.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "AssetDiscovery");
+        const result = await reportsService.getAssetDiscoveryReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

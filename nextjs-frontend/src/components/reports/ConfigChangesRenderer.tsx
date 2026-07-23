@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Wrench, UserCog, History, ClipboardList, ZoomIn } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 interface ConfigChangesRendererProps {
   timeRange: string;
@@ -17,8 +17,7 @@ export default function ConfigChangesRenderer({ timeRange, selectedDevice }: Con
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_config_changes.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "ConfigChanges");
+        const result = await reportsService.getConfigChangesReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

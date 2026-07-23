@@ -23,9 +23,10 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { SearchInput } from "@/components/ui/SearchInput";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
+import { notify, promptService } from "@/services/feedback/feedbackService";
+import { siemService } from "@/services/siem/siemService";
 
 export function SiemLogs() {
   const [data, setData] = useState<SiemData | null>(null);
@@ -47,7 +48,7 @@ export function SiemLogs() {
   const [cleanupHours, setCleanupHours] = useState(168);
 
   const fetchSiemData = () => {
-    safeFetch<SiemData>("/api/get_siem_logs.php", {}, "SiemLogs").then((d) => {
+    siemService.getSiemData().then((d) => {
       if (d && !d.error) {
         setData(d);
         if (d.archive_stats) {
@@ -61,11 +62,7 @@ export function SiemLogs() {
 
   const fetchLiveLogs = () => {
     setLiveLoading(true);
-    safeFetch<{ logs: LiveLog[] }>(
-      "/api/get_siem_live_logs.php",
-      {},
-      "SiemLiveLogs",
-    ).then((d) => {
+    siemService.getLiveLogs().then((d) => {
       if (d?.logs) setLiveLogs(d.logs);
       setLiveLoading(false);
     });
@@ -85,59 +82,53 @@ export function SiemLogs() {
 
   const handleAddSource = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await safeFetch<{ success: boolean; error?: string }>(
-      "/api/post_siem_logs.php",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          action: "add_source",
-          appliance_type: newSourceType,
-          source_ip: newSourceIp,
-        }),
-      },
-    );
+    const res = await siemService.addSource(newSourceType, newSourceIp);
     if (res?.success) {
       setNewSourceIp("");
       setNewSourceType("");
+      notify.success("Source added successfully");
       fetchSiemData();
     } else {
-      alert(res?.error || "Failed to add source");
+      notify.error(res?.error || "Failed to add source");
     }
   };
 
   const handleToggleSource = async (id: string) => {
-    const res = await safeFetch<{ success: boolean }>(
-      "/api/post_siem_logs.php",
-      {
-        method: "POST",
-        body: JSON.stringify({ action: "toggle_source", id }),
-      },
-    );
-    if (res?.success) fetchSiemData();
+    const res = await siemService.toggleSource(id);
+    if (res?.success) {
+      notify.success("Source status updated");
+      fetchSiemData();
+    }
   };
 
   const handleDeleteSource = async (id: string) => {
-    if (!confirm("Delete source and all its logs?")) return;
-    const res = await safeFetch<{ success: boolean }>(
-      "/api/post_siem_logs.php",
-      {
-        method: "POST",
-        body: JSON.stringify({ action: "delete_source", id }),
-      },
-    );
-    if (res?.success) fetchSiemData();
+    const ok = await promptService.confirm({
+      title: "Delete Source",
+      description: "Delete source and all its logs?",
+      variant: "destructive",
+      confirmText: "Delete",
+    });
+    if (!ok) return;
+
+    const res = await siemService.deleteSource(id);
+    if (res?.success) {
+      notify.success("Source deleted successfully");
+      fetchSiemData();
+    }
   };
 
   const handlePurgeLogs = async (id: string) => {
-    if (!confirm("Purge all logs for this source?")) return;
-    const res = await safeFetch<{ success: boolean }>(
-      "/api/post_siem_logs.php",
-      {
-        method: "POST",
-        body: JSON.stringify({ action: "purge_logs", id }),
-      },
-    );
+    const ok = await promptService.confirm({
+      title: "Purge Logs",
+      description: "Purge all logs for this source?",
+      variant: "destructive",
+      confirmText: "Purge",
+    });
+    if (!ok) return;
+
+    const res = await siemService.purgeLogs(id);
     if (res?.success) {
+      notify.success("Logs purged successfully");
       fetchSiemData();
       if (activeTab === "live") fetchLiveLogs();
     }
@@ -145,34 +136,26 @@ export function SiemLogs() {
 
   const handleSaveRetention = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await safeFetch<{ success: boolean }>(
-      "/api/post_siem_logs.php",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          action: "save_retention",
-          hours: retentionHours,
-        }),
-      },
-    );
-    if (res?.success) fetchSiemData();
+    const res = await siemService.saveRetention(retentionHours);
+    if (res?.success) {
+      notify.success("Retention settings saved");
+      fetchSiemData();
+    }
   };
 
   const handleCleanupArchive = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!confirm(`Delete records older than ${cleanupHours} hours?`)) return;
-    const res = await safeFetch<{ success: boolean; deleted?: number }>(
-      "/api/post_siem_logs.php",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          action: "cleanup_archive",
-          hours: cleanupHours,
-        }),
-      },
-    );
+    const ok = await promptService.confirm({
+      title: "Cleanup Archive",
+      description: `Delete records older than ${cleanupHours} hours?`,
+      variant: "destructive",
+      confirmText: "Cleanup",
+    });
+    if (!ok) return;
+
+    const res = await siemService.cleanupArchive(cleanupHours);
     if (res?.success) {
-      alert(`Successfully deleted ${res.deleted} records.`);
+      notify.success(`Successfully deleted ${res.deleted ?? 0} records.`);
       fetchSiemData();
     }
   };

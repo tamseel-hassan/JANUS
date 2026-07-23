@@ -21,7 +21,7 @@ import {
   ChartArea,
   ZoomIn
 } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 ChartJS.register(
   CategoryScale,
@@ -47,8 +47,7 @@ export default function BandwidthReportRenderer({ timeRange, selectedDevice }: B
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_bandwidth.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "BandwidthReport");
+        const result = await reportsService.getBandwidthReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

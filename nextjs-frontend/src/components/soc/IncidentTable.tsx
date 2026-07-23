@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { SearchInput } from "@/components/ui/SearchInput";
-import { safeFetch } from "@/lib/safeFetch";
 import { Incident } from "@/types/soc";
 import { AlertCircle, Clock, Eye, ShieldAlert, Archive } from "lucide-react";
 import IncidentModal from "./IncidentModal";
+import { socService } from "@/services/soc/socService";
 
 interface IncidentTableProps {
   type: "my_tasks" | "active" | "history" | "manage";
@@ -28,7 +28,7 @@ export default function IncidentTable({ type, title, icon, isAdmin = false }: In
 
   const fetchIncidents = async () => {
     setLoading(true);
-    const data = await safeFetch<{ incidents: Incident[] }>(`/api/get_soc_incidents.php?action=list&type=${type}`, {}, "IncidentTable");
+    const data = await socService.getIncidents("", "", search);
     if (data && data.incidents) {
       setIncidents(data.incidents);
     }

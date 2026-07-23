@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { safeFetch } from '@/lib/safeFetch';
+import { reportsService } from '@/services/reports/reportsService';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { Button } from '@/components/ui/Button';
 import { 
@@ -120,15 +121,16 @@ const protocolColors: Record<string, string> = {
   'X11': '#3b82f6'
 };
 
-export default function RemoteAccess() {
+export function RemoteAccess() {
   const [data, setData] = useState<RemoteAccessData | null>(null);
+  const [activeTab, setActiveTab] = useState<'protocols' | 'sources' | 'destinations' | 'risky'>('protocols');
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
-    const res = await safeFetch<RemoteAccessData>('/api/get_remote_access.php', {}, "Remote Access");
+    const res = await reportsService.getRemoteAccessReport();
     if (res) {
-      setData(res);
+      setData(res as any);
     }
     setLoading(false);
   };
@@ -475,3 +477,5 @@ export default function RemoteAccess() {
     </div>
   );
 }
+
+export default RemoteAccess;

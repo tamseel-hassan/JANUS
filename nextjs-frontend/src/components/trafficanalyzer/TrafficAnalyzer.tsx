@@ -7,8 +7,8 @@ import { Flow } from "@/types/logs";
 import { StatCard } from "@/components/ui/StatCard";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { safeFetch } from "@/lib/safeFetch";
 import { Button } from "@/components/ui/Button";
+import { threatService } from "@/services/threat/threatService";
 
 export function TrafficAnalyzer() {
   const [flows, setFlows] = useState<Flow[]>([]);
@@ -26,13 +26,10 @@ export function TrafficAnalyzer() {
   const fetchTraffic = useCallback(() => {
     if (isPaused) return;
     setLoading(true);
-    const params = new URLSearchParams({ view: viewMode, srcip: srcIp, dstip: dstIp, action });
-    safeFetch<{ flows: Flow[]; total: number }>(
-      `/api/get_traffic.php?${params.toString()}`, {}, "TrafficAnalyzer"
-    ).then(data => {
+    threatService.getTrafficAnalyzer(viewMode).then(data => {
       if (data) {
-        setFlows(data.flows || []);
-        setTotal(data.total || 0);
+        setFlows((data.flows || (data as any)?.logs) || []);
+        setTotal((data as any)?.total || 0);
       }
       setLoading(false);
     });

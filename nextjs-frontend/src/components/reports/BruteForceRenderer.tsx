@@ -28,7 +28,7 @@ import {
   ZoomIn,
   Crosshair,
 } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 ChartJS.register(
   CategoryScale,
@@ -57,8 +57,7 @@ export default function BruteForceRenderer({
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_bruteforce.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "BruteForce");
+        const result = await reportsService.getBruteForceReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

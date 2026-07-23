@@ -8,8 +8,9 @@ import { AvailabilityChart } from "@/components/availability/AvailabilityChart";
 import { CommentModal } from "@/components/availability/CommentModal";
 import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
-import { safeFetch } from "@/lib/safeFetch";
-import { toast } from "sonner";
+import { notify } from "@/services/feedback/feedbackService";
+
+import { availabilityService } from "@/services/availability/availabilityService";
 
 export function Availability() {
   const [devices, setDevices] = useState<Device[]>([]);
@@ -30,8 +31,8 @@ export function Availability() {
   });
 
   const fetchData = useCallback(async () => {
-    const data = await safeFetch<{ devices: Device[] }>('/api/get_availability.php', {}, "Availability");
-    if (data) setDevices(data.devices || []);
+    const data = await availabilityService.getAvailability();
+    if (data) setDevices((data.targets || (data as any).devices) || []);
   }, []);
 
   useEffect(() => {
@@ -41,15 +42,13 @@ export function Availability() {
   const generateReport = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedDevice) {
-      toast.warning("Please select a device");
+      notify.warning("Please select a device");
       return;
     }
     
     setLoading(true);
-    let url = `/api/get_availability.php?device_id=${selectedDevice}&time_range=${timeRange}`;
-    if (timeRange === 'custom') url += `&start_datetime=${customStart}&end_datetime=${customEnd}`;
-    const data = await safeFetch<{ report: Report }>( url, {}, "Availability:report");
-    if (data) setReport(data.report || null);
+    const data = await availabilityService.getAvailability({ device_id: selectedDevice, time_range: timeRange });
+    if (data) setReport((data.report || data as any) || null);
     setLoading(false);
   };
 
@@ -90,18 +89,12 @@ export function Availability() {
         event_end: editingPeriod.end,
         ...commentForm
       };
-      const res = await fetch('/api/post_availability.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        credentials: "include"
-      });
-      const data = await res.json();
-      if (data.success) {
+      const data = await availabilityService.executeAction(payload);
+      if (data?.success) {
         setShowCommentModal(false);
         generateReport(); // Refresh
-      } else {
-        toast.error(data.error);
+      } else if (data?.error) {
+        notify.error(data.error);
       }
     } catch (err) { console.error(err); }
   };

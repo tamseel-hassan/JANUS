@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { DoorOpen, User, ArrowRightLeft, ShieldAlert, Shield, ZoomIn } from "lucide-react";
-import { safeFetch } from "@/lib/safeFetch";
+import { reportsService } from "@/services/reports/reportsService";
 
 interface RemoteAccessRendererProps {
   timeRange: string;
@@ -17,8 +17,7 @@ export default function RemoteAccessRenderer({ timeRange, selectedDevice }: Remo
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_remote_access.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "RemoteAccess");
+        const result = await reportsService.getRemoteAccessReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Monitor, Signal, Grid, Info, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
-import { safeFetch } from "@/lib/safeFetch";
+import { notify } from "@/services/feedback/feedbackService";
+import { reportsService } from "@/services/reports/reportsService";
 
 interface EndpointActivityRendererProps {
   timeRange: string;
@@ -18,8 +18,7 @@ export default function EndpointActivityRenderer({ timeRange, selectedDevice }: 
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = `/api/get_report_endpoint_activity.php?range=${timeRange}&device=${selectedDevice}`;
-        const result = await safeFetch<any>(url, {}, "EndpointActivity");
+        const result = await reportsService.getEndpointActivityReport({ range: timeRange, device: selectedDevice });
         if (result) {
           setData(result);
         }
@@ -60,7 +59,7 @@ export default function EndpointActivityRenderer({ timeRange, selectedDevice }: 
   };
 
   const handleDrillDown = (id: number, hostname: string) => {
-    toast.info(`Drill-down for endpoint ${hostname} (ID: ${id}) would open here. Modal functionality can be integrated later.`);
+    notify.info(`Drill-down for endpoint ${hostname} (ID: ${id}) would open here. Modal functionality can be integrated later.`);
   };
 
   return (
