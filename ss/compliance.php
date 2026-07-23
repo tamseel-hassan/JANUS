@@ -1,11 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/compliance.php - Lightweight compliance scorecard built from available signals
-// NOTE: this is not a certified compliance framework mapping (PCI/ISO/etc) —
-// it's an honest summary of what this SIEM can already observe. Wire in a
-// real framework mapping table if you need auditor-grade reporting.
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -27,18 +27,34 @@ function countWhere($con, $where) {
     return $r ? (int)mysqli_fetch_assoc($r)['c'] : 0;
 }
 
-$total_events   = countWhere($con, $w);
-$auth_fail      = countWhere($con, $w . " AND (message LIKE '%authentication%failed%' OR message LIKE '%login%failed%')");
-$denied_traffic = countWhere($con, $w . " AND message LIKE '%action=deny%'");
-$total_traffic  = countWhere($con, $w . " AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%')");
-$malware_hits   = countWhere($con, $w . " AND (message LIKE '%virus%' OR message LIKE '%malware%')");
-$cfg_events     = countWhere($con, $w . " AND (message LIKE '%cfgattr%' OR message LIKE '%cfgpath%')");
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("compliance", $start, $end, $device, $range);
 
-$devices_res = mysqli_query($con, "SELECT COUNT(DISTINCT source_ip) AS c FROM syslog_entries");
-$devices_reporting = $devices_res ? (int)mysqli_fetch_assoc($devices_res)['c'] : 0;
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $w) {
+    $total_events   = countWhere($con, $w);
+    $auth_fail      = countWhere($con, $w . " AND (message LIKE '%authentication%failed%' OR message LIKE '%login%failed%')");
+    $denied_traffic = countWhere($con, $w . " AND (message LIKE '%action=deny%' OR action = 'deny')");
+    $total_traffic  = countWhere($con, $w . " AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%' OR action IS NOT NULL)");
+    $malware_hits   = countWhere($con, $w . " AND (message LIKE '%virus%' OR message LIKE '%malware%')");
+    $cfg_events     = countWhere($con, $w . " AND (message LIKE '%cfgattr%' OR message LIKE '%cfgpath%')");
 
-$fw_result = mysqli_query($con, "SELECT firewall_ip FROM response_config WHERE is_active = 1 LIMIT 1");
-$has_firewall = $fw_result && mysqli_num_rows($fw_result) > 0;
+    $devices_res = mysqli_query($con, "SELECT COUNT(DISTINCT source_ip) AS c FROM syslog_entries");
+    $devices_reporting = $devices_res ? (int)mysqli_fetch_assoc($devices_res)['c'] : 0;
+
+    $fw_result = mysqli_query($con, "SELECT firewall_ip FROM response_config WHERE is_active = 1 LIMIT 1");
+    $has_firewall = $fw_result && mysqli_num_rows($fw_result) > 0;
+
+    return compact('total_events', 'auth_fail', 'denied_traffic', 'total_traffic', 'malware_hits', 'cfg_events', 'devices_reporting', 'has_firewall');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
+}
+extract($cached);
 
 $auth_fail_ratio = $total_events > 0 ? round(($auth_fail / $total_events) * 100, 2) : 0;
 $deny_ratio = $total_traffic > 0 ? round(($denied_traffic / $total_traffic) * 100, 2) : 0;
@@ -56,33 +72,33 @@ $passed = count(array_filter($checks, fn($c) => $c['pass']));
 $score = round(($passed / count($checks)) * 100);
 ?>
 
-<div class="alert alert-info"><i data-lucide="info" class="icon-lucide"></i> This is a lightweight posture scorecard built from what this SIEM already observes — not a certified PCI-DSS / ISO 27001 / SOC 2 mapping. Treat the score as directional.</div>
+<div class="alert alert-info"><i class="fas fa-info-circle"></i> This is a lightweight posture scorecard built from what this SIEM already observes — not a certified PCI-DSS / ISO 27001 / SOC 2 mapping. Treat the score as directional.</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon <?= $score >= 80 ? 'text-success' : ($score >= 50 ? 'text-warning' : 'text-danger') ?>"><i data-lucide="clipboard-check" class="icon-lucide"></i></div>
+            <div class="stat-icon <?= $score >= 80 ? 'text-success' : ($score >= 50 ? 'text-warning' : 'text-danger') ?>"><i class="fas fa-clipboard-check"></i></div>
             <div class="stat-value"><?= $score ?>%</div>
             <span class="stat-chip <?= $score >= 80 ? 'chip-success' : ($score >= 50 ? 'chip-warning' : 'chip-danger') ?>">Posture Score</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i data-lucide="server" class="icon-lucide"></i></div>
+            <div class="stat-icon text-info"><i class="fas fa-server"></i></div>
             <div class="stat-value" data-raw="<?= $devices_reporting ?>">0</div>
             <span class="stat-chip chip-info">Devices Reporting</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i data-lucide="lock" class="icon-lucide"></i></div>
+            <div class="stat-icon text-warning"><i class="fas fa-lock"></i></div>
             <div class="stat-value"><?= $auth_fail_ratio ?>%</div>
             <span class="stat-chip chip-warning">Auth Failure Ratio</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i data-lucide="ban" class="icon-lucide"></i></div>
+            <div class="stat-icon text-primary"><i class="fas fa-ban"></i></div>
             <div class="stat-value"><?= $deny_ratio ?>%</div>
             <span class="stat-chip chip-info">Traffic Denied</span>
         </div>
@@ -90,7 +106,7 @@ $score = round(($passed / count($checks)) * 100);
 </div>
 
 <div class="report-card">
-    <h5><i data-lucide="tasks" class="icon-lucide"></i> Posture Checklist</h5>
+    <h5><i class="fas fa-tasks"></i> Posture Checklist</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>Check</th><th>Status</th><th>Detail</th></tr></thead>

@@ -78,7 +78,7 @@ if (!function_exists('scoreClass')) {
 if (!function_exists('renderNoFirewallNotice')) {
     function renderNoFirewallNotice($has_firewall, $firewall_ip) {
         if ($has_firewall) {
-            echo '<div class="alert alert-info"><i data-lucide="shield" class="icon-lucide"></i> <strong>Automated Response Available:</strong> Connected to firewall <code>' . htmlspecialchars($firewall_ip) . '</code>.</div>';
+            echo '<div class="alert alert-info"><i class="fas fa-shield-alt"></i> <strong>Automated Response Available:</strong> Connected to firewall <code>' . htmlspecialchars($firewall_ip) . '</code>.</div>';
         }
     }
 }

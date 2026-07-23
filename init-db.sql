@@ -3,6 +3,7 @@
 CREATE DATABASE IF NOT EXISTS alogin;
 USE alogin;
 
+
 -- 1. Accounts Table
 CREATE TABLE IF NOT EXISTS accounts (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -222,13 +223,59 @@ INSERT IGNORE INTO syslog_sources (appliance_type, source_ip, is_active, added_b
 CREATE TABLE IF NOT EXISTS syslog_entries (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     source_id INT NULL,
-    appliance_type VARCHAR(100) NOT NULL,
-    source_ip VARCHAR(45) NOT NULL,
-    message TEXT NOT NULL,
-    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX (source_ip),
-    INDEX (received_at),
+    appliance_type VARCHAR(100) DEFAULT NULL,
+    source_ip VARCHAR(45) DEFAULT NULL,
+    facility INT DEFAULT NULL,
+    severity INT DEFAULT NULL,
+    message TEXT,
+    raw TEXT,
+    src_ip VARCHAR(45) DEFAULT NULL,
+    dst_ip VARCHAR(45) DEFAULT NULL,
+    dst_port INT DEFAULT NULL,
+    app VARCHAR(100) DEFAULT NULL,
+    service VARCHAR(50) DEFAULT NULL,
+    action VARCHAR(20) DEFAULT NULL,
+    sent_bytes BIGINT UNSIGNED DEFAULT 0,
+    rcvd_bytes BIGINT UNSIGNED DEFAULT 0,
+    duration INT UNSIGNED DEFAULT 0,
+    is_auth_failure TINYINT(1) DEFAULT 0,
+    is_remote_access TINYINT(1) DEFAULT 0,
+    is_malware TINYINT(1) DEFAULT 0,
+    is_notable TINYINT(1) DEFAULT 0,
+    received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_syslog_source (source_id),
+    INDEX idx_syslog_received (received_at),
+    INDEX idx_syslog_severity (severity),
+    INDEX idx_perf_traffic (received_at, action),
+    INDEX idx_perf_src (src_ip, received_at),
+    INDEX idx_perf_dst (dst_ip, received_at),
+    INDEX idx_perf_app (app, received_at),
+    INDEX idx_syslog_perf_flags (is_auth_failure, is_remote_access, is_malware, is_notable, received_at),
     FOREIGN KEY (source_id) REFERENCES syslog_sources(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS syslog_traffic_daily (
+    log_date DATE NOT NULL,
+    source_ip VARCHAR(45) NOT NULL,
+    destination_ip VARCHAR(45) NOT NULL,
+    app VARCHAR(100) NOT NULL,
+    service VARCHAR(50) NOT NULL,
+    action VARCHAR(20) NOT NULL,
+    flow_count INT UNSIGNED DEFAULT 0,
+    total_sent BIGINT UNSIGNED DEFAULT 0,
+    total_rcvd BIGINT UNSIGNED DEFAULT 0,
+    PRIMARY KEY (log_date, source_ip, destination_ip, app, service, action),
+    INDEX idx_date (log_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS syslog_traffic_hourly (
+    log_hour DATETIME NOT NULL,
+    source_ip VARCHAR(45) NOT NULL,
+    flow_count INT UNSIGNED DEFAULT 0,
+    total_sent BIGINT UNSIGNED DEFAULT 0,
+    total_rcvd BIGINT UNSIGNED DEFAULT 0,
+    PRIMARY KEY (log_hour, source_ip),
+    INDEX idx_hour (log_hour)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 16. IPAM Migration Script (ipam_v3_migrate.sql)
@@ -264,3 +311,4 @@ FROM janus_ipam;
 CREATE INDEX idx_log_ip     ON janus_ipam_log (ip);
 CREATE INDEX idx_log_acked  ON janus_ipam_log (acknowledged);
 CREATE INDEX idx_log_ts     ON janus_ipam_log (changed_at);
+CREATE TABLE IF NOT EXISTS syslog_entries_archive LIKE syslog_entries;

@@ -1,4 +1,6 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/traffic.php - Traffic Analysis (Tactical HUD visual pass, backend unchanged)
 
@@ -6,6 +8,7 @@ session_start();
 if (!isset($_SESSION['loggedin'])) {
     die('Unauthorized');
 }
+session_write_close();
 
 // Helper: format bytes
 function formatBytes($bytes) {
@@ -40,135 +43,164 @@ $device = $_GET['device'] ?? '';
 
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
+$range = $_GET['range'] ?? '24h';
+$is_large_range = ($range === '7d' || $range === '30d');
+
 $check_archive = mysqli_query($con, "SHOW TABLES LIKE 'syslog_entries_archive'");
 $has_archive = mysqli_num_rows($check_archive) > 0;
 
-$archive_query = $has_archive ? "
-        UNION ALL
-        SELECT message, received_at, source_ip
-        FROM syslog_entries_archive
-        WHERE received_at BETWEEN '$start' AND '$end'
-          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%')
-          $device_where
-" : "";
+require_once __DIR__ . '/../includes/cache.php';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("traffic", $start, $end, $device, $range);
 
-$query = "
-    SELECT message, received_at, source_ip
-    FROM (
-        SELECT message, received_at, source_ip
-        FROM syslog_entries
-        WHERE received_at BETWEEN '$start' AND '$end'
-          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%')
-          $device_where
-        $archive_query
-    ) AS combined
-    ORDER BY received_at DESC
-    LIMIT 100000
-";
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end, $device, $device_where, $is_large_range, $has_archive) {
+    if ($is_large_range) {
+        $rollup_device_where = $device ? "AND (source_ip = '" . mysqli_real_escape_string($con, $device) . "' OR destination_ip = '" . mysqli_real_escape_string($con, $device) . "')" : '';
+        $query = "
+            SELECT log_date AS received_at, source_ip AS src_ip, destination_ip AS dst_ip, 
+                   app, service, action, flow_count, total_sent AS sent_bytes, total_rcvd AS rcvd_bytes
+            FROM syslog_traffic_daily
+            WHERE log_date BETWEEN DATE('$start') AND DATE('$end')
+              $rollup_device_where
+        ";
+    } else {
+        $archive_query = $has_archive ? "
+            UNION ALL
+            SELECT src_ip, dst_ip, dst_port, app, service, action, sent_bytes, rcvd_bytes, received_at
+            FROM syslog_entries_archive
+            WHERE received_at BETWEEN '$start' AND '$end'
+              AND src_ip IS NOT NULL
+              $device_where
+        " : "";
 
-$result = mysqli_query($con, $query);
-if (!$result) {
-    echo '<div class="alert alert-danger">Query error: ' . mysqli_error($con) . '</div>';
+        $query = "
+            SELECT src_ip, dst_ip, dst_port, app, service, action, sent_bytes, rcvd_bytes, received_at
+            FROM (
+                SELECT src_ip, dst_ip, dst_port, app, service, action, sent_bytes, rcvd_bytes, received_at
+                FROM syslog_entries
+                WHERE received_at BETWEEN '$start' AND '$end'
+                  AND src_ip IS NOT NULL
+                  $device_where
+                $archive_query
+            ) AS combined
+            ORDER BY received_at DESC
+        ";
+    }
+
+    $result = mysqli_query($con, $query);
+    $num_rows = $result ? mysqli_num_rows($result) : 0;
+    @file_put_contents('/tmp/janus_traffic_debug.log', "Start: $start, End: $end, Query: $query, Rows: $num_rows\n", FILE_APPEND);
+    if (!$result) return null;
+
+    $total_flows = 0;
+    $total_sent = 0;
+    $total_received = 0;
+    $sources = [];
+    $destinations = [];
+    $bandwidth_timeline = [];
+    $traffic_dist = ['accepted' => 0, 'denied' => 0, 'timeout' => 0, 'other' => 0];
+    $applications = [];
+    $services = [];
+    $protocols = [];
+    $countries = [];
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        if (!isset($row['src_ip'], $row['dst_ip'])) continue;
+
+        $flows = isset($row['flow_count']) ? intval($row['flow_count']) : 1;
+        $total_flows += $flows;
+        
+        $sent = intval($row['sent_bytes'] ?? 0);
+        $rcvd = intval($row['rcvd_bytes'] ?? 0);
+        $total_sent += $sent;
+        $total_received += $rcvd;
+
+        $src = $row['src_ip'];
+        $dst = $row['dst_ip'];
+        $app = $row['app'] ?: 'Unknown';
+        $service = $row['service'] ?: 'Unknown';
+        $dstport = $row['dst_port'] ?? 'N/A';
+        $proto = $row['service'] ?: 'Unknown';
+        $action = strtolower($row['action'] ?? 'other');
+        $country = 'Unknown';
+
+        // Source tracking
+        if (!isset($sources[$src])) {
+            $sources[$src] = [
+                'ip' => $src, 'count' => 0, 'bandwidth' => 0,
+                'apps' => [], 'services' => [], 'ports' => [], 'countries' => [], 'protocols' => []
+            ];
+        }
+        $sources[$src]['count'] += $flows;
+        $sources[$src]['bandwidth'] += ($sent + $rcvd);
+        $sources[$src]['apps'][$app] = ($sources[$src]['apps'][$app] ?? 0) + $flows;
+        $sources[$src]['services'][$service] = ($sources[$src]['services'][$service] ?? 0) + $flows;
+        $sources[$src]['ports'][$dstport] = ($sources[$src]['ports'][$dstport] ?? 0) + $flows;
+        $sources[$src]['protocols'][$proto] = ($sources[$src]['protocols'][$proto] ?? 0) + $flows;
+
+        // Destination tracking
+        if (!isset($destinations[$dst])) {
+            $destinations[$dst] = [
+                'ip' => $dst, 'count' => 0, 'bandwidth' => 0,
+                'apps' => [], 'services' => [], 'ports' => [], 'countries' => [], 'protocols' => []
+            ];
+        }
+        $destinations[$dst]['count'] += $flows;
+        $destinations[$dst]['bandwidth'] += ($sent + $rcvd);
+        $destinations[$dst]['apps'][$app] = ($destinations[$dst]['apps'][$app] ?? 0) + $flows;
+        $destinations[$dst]['services'][$service] = ($destinations[$dst]['services'][$service] ?? 0) + $flows;
+        $destinations[$dst]['ports'][$dstport] = ($destinations[$dst]['ports'][$dstport] ?? 0) + $flows;
+        $destinations[$dst]['protocols'][$proto] = ($destinations[$dst]['protocols'][$proto] ?? 0) + $flows;
+
+        // Timeline
+        if ($is_large_range) {
+            $hour = date('Y-m-d', strtotime($row['received_at']));
+        } else {
+            $hour = date('Y-m-d H:00', strtotime($row['received_at']));
+        }
+        $bandwidth_timeline[$hour] = ($bandwidth_timeline[$hour] ?? 0) + ($sent + $rcvd);
+
+        // Traffic distribution
+        if ($action === 'accept' || $action === 'accepted') $traffic_dist['accepted'] += $flows;
+        elseif ($action === 'deny' || $action === 'denied') $traffic_dist['denied'] += $flows;
+        elseif ($action === 'timeout') $traffic_dist['timeout'] += $flows;
+        else $traffic_dist['other'] += $flows;
+
+        // Application stats
+        if (!isset($applications[$app])) { $applications[$app] = ['name' => $app, 'count' => 0, 'bandwidth' => 0]; }
+        $applications[$app]['count'] += $flows;
+        $applications[$app]['bandwidth'] += ($sent + $rcvd);
+
+        // Service stats
+        if (!isset($services[$service])) { $services[$service] = ['name' => $service, 'count' => 0, 'bandwidth' => 0]; }
+        $services[$service]['count'] += $flows;
+        $services[$service]['bandwidth'] += ($sent + $rcvd);
+
+        // Protocol stats
+        $protocols[$proto] = ($protocols[$proto] ?? 0) + $flows;
+    }
+
+    // Sort data
+    uasort($sources, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
+    uasort($destinations, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
+    uasort($applications, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
+    uasort($services, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
+    arsort($protocols);
+    arsort($countries);
+
+    return compact(
+        'total_flows', 'total_sent', 'total_received', 'sources', 'destinations',
+        'bandwidth_timeline', 'traffic_dist', 'applications', 'services', 'protocols', 'countries'
+    );
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please try again.</div>';
     mysqli_close($con);
     exit;
 }
-
-$total_flows = 0;
-$total_sent = 0;
-$total_received = 0;
-$sources = [];
-$destinations = [];
-$bandwidth_timeline = [];
-$traffic_dist = ['accepted' => 0, 'denied' => 0, 'timeout' => 0, 'other' => 0];
-$applications = [];
-$services = [];
-$protocols = [];
-$countries = [];
-
-while ($row = mysqli_fetch_assoc($result)) {
-    $parsed = parseMessage($row['message']);
-    if (!isset($parsed['srcip'], $parsed['dstip'])) continue;
-
-    $total_flows++;
-    $sent = intval($parsed['sentbyte'] ?? 0);
-    $rcvd = intval($parsed['rcvdbyte'] ?? 0);
-    $total_sent += $sent;
-    $total_received += $rcvd;
-
-    $src = $parsed['srcip'];
-    $dst = $parsed['dstip'];
-    $app = $parsed['app'] ?? $parsed['appcat'] ?? 'Unknown';
-    $service = $parsed['service'] ?? $parsed['proto'] ?? 'Unknown';
-    $dstport = $parsed['dstport'] ?? 'N/A';
-    $srcport = $parsed['srcport'] ?? 'N/A';
-    $proto = $parsed['proto'] ?? 'Unknown';
-    $action = strtolower($parsed['action'] ?? 'other');
-    $country = $parsed['srccountry'] ?? $parsed['dstcountry'] ?? 'Unknown';
-
-    // Source tracking
-    if (!isset($sources[$src])) {
-        $sources[$src] = [
-            'ip' => $src, 'count' => 0, 'bandwidth' => 0,
-            'apps' => [], 'services' => [], 'ports' => [], 'countries' => [], 'protocols' => []
-        ];
-    }
-    $sources[$src]['count']++;
-    $sources[$src]['bandwidth'] += ($sent + $rcvd);
-    $sources[$src]['apps'][$app] = ($sources[$src]['apps'][$app] ?? 0) + 1;
-    $sources[$src]['services'][$service] = ($sources[$src]['services'][$service] ?? 0) + 1;
-    $sources[$src]['ports'][$dstport] = ($sources[$src]['ports'][$dstport] ?? 0) + 1;
-    $sources[$src]['protocols'][$proto] = ($sources[$src]['protocols'][$proto] ?? 0) + 1;
-    if ($country !== 'Unknown') $sources[$src]['countries'][$country] = ($sources[$src]['countries'][$country] ?? 0) + 1;
-
-    // Destination tracking
-    if (!isset($destinations[$dst])) {
-        $destinations[$dst] = [
-            'ip' => $dst, 'count' => 0, 'bandwidth' => 0,
-            'apps' => [], 'services' => [], 'ports' => [], 'countries' => [], 'protocols' => []
-        ];
-    }
-    $destinations[$dst]['count']++;
-    $destinations[$dst]['bandwidth'] += ($sent + $rcvd);
-    $destinations[$dst]['apps'][$app] = ($destinations[$dst]['apps'][$app] ?? 0) + 1;
-    $destinations[$dst]['services'][$service] = ($destinations[$dst]['services'][$service] ?? 0) + 1;
-    $destinations[$dst]['ports'][$dstport] = ($destinations[$dst]['ports'][$dstport] ?? 0) + 1;
-    $destinations[$dst]['protocols'][$proto] = ($destinations[$dst]['protocols'][$proto] ?? 0) + 1;
-    if ($country !== 'Unknown') $destinations[$dst]['countries'][$country] = ($destinations[$dst]['countries'][$country] ?? 0) + 1;
-
-    // Timeline
-    $hour = date('Y-m-d H:00', strtotime($row['received_at']));
-    $bandwidth_timeline[$hour] = ($bandwidth_timeline[$hour] ?? 0) + ($sent + $rcvd);
-
-    // Traffic distribution
-    if ($action === 'accept') $traffic_dist['accepted']++;
-    elseif ($action === 'deny') $traffic_dist['denied']++;
-    elseif ($action === 'timeout') $traffic_dist['timeout']++;
-    else $traffic_dist['other']++;
-
-    // Application stats
-    if (!isset($applications[$app])) { $applications[$app] = ['name' => $app, 'count' => 0, 'bandwidth' => 0]; }
-    $applications[$app]['count']++;
-    $applications[$app]['bandwidth'] += ($sent + $rcvd);
-
-    // Service stats
-    if (!isset($services[$service])) { $services[$service] = ['name' => $service, 'count' => 0, 'bandwidth' => 0]; }
-    $services[$service]['count']++;
-    $services[$service]['bandwidth'] += ($sent + $rcvd);
-
-    // Protocol stats
-    $protocols[$proto] = ($protocols[$proto] ?? 0) + 1;
-
-    // Country stats
-    if ($country !== 'Unknown') { $countries[$country] = ($countries[$country] ?? 0) + 1; }
-}
-
-// Sort data
-uasort($sources, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
-uasort($destinations, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
-uasort($applications, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
-uasort($services, fn($a, $b) => $b['bandwidth'] <=> $a['bandwidth']);
-arsort($protocols);
-arsort($countries);
+extract($cached);
+@file_put_contents('/tmp/janus_traffic_debug.log', "Cache Loaded: Key = $cache_key, Total Flows = " . ($total_flows ?? 'null') . ", Total Sent = " . ($total_sent ?? 'null') . "\n", FILE_APPEND);
 
 $total_bw_all = $total_sent + $total_received;
 $accept_pct = $total_flows > 0 ? round(($traffic_dist['accepted'] / $total_flows) * 100, 1) : 0;
@@ -176,35 +208,35 @@ $accept_pct = $total_flows > 0 ? round(($traffic_dist['accepted'] / $total_flows
 mysqli_close($con);
 ?>
 
-<link rel="stylesheet" href="/css/theme.css">
-<link rel="stylesheet" href="/css/pages/ss_traffic.css">
+<link rel="stylesheet" href="/css/theme.css?v=<?= time() ?>">
+<link rel="stylesheet" href="/css/pages/ss_traffic.css?v=<?= time() ?>">
 
 <!-- Summary Statistics -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i data-lucide="arrow-right-left" class="icon-lucide"></i></div>
+            <div class="stat-icon text-info"><i class="fas fa-exchange-alt"></i></div>
             <div class="stat-value" data-raw="<?= (int)$total_flows ?>">0</div>
             <span class="stat-chip chip-info">Total Traffic Flows</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i data-lucide="arrow-up" class="icon-lucide"></i></div>
+            <div class="stat-icon text-success"><i class="fas fa-arrow-up"></i></div>
             <div class="stat-value"><?= formatBytes($total_sent) ?></div>
             <span class="stat-chip chip-success">Data Sent</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i data-lucide="arrow-down" class="icon-lucide"></i></div>
+            <div class="stat-icon text-primary"><i class="fas fa-arrow-down"></i></div>
             <div class="stat-value"><?= formatBytes($total_received) ?></div>
             <span class="stat-chip chip-info">Data Received</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i data-lucide="network" class="icon-lucide"></i></div>
+            <div class="stat-icon text-warning"><i class="fas fa-network-wired"></i></div>
             <div class="stat-value"><?= formatBytes($total_bw_all) ?></div>
             <span class="stat-chip chip-warning">Bandwidth &middot; <?= $accept_pct ?>% Accepted</span>
         </div>
@@ -215,7 +247,7 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-lg-8">
         <div class="report-card">
-            <h5><i data-lucide="line-chart" class="icon-lucide"></i> Bandwidth Timeline</h5>
+            <h5><i class="fas fa-chart-line"></i> Bandwidth Timeline</h5>
             <div class="chart-container">
                 <canvas id="bandwidthChart"></canvas>
             </div>
@@ -223,7 +255,7 @@ mysqli_close($con);
     </div>
     <div class="col-lg-4">
         <div class="report-card">
-            <h5><i data-lucide="chart-pie" class="icon-lucide"></i> Traffic Distribution</h5>
+            <h5><i class="fas fa-chart-pie"></i> Traffic Distribution</h5>
             <div class="chart-container">
                 <canvas id="trafficDistChart"></canvas>
             </div>
@@ -241,7 +273,7 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i data-lucide="arrow-up" class="icon-lucide"></i> Top Source IPs</h5>
+            <h5><i class="fas fa-arrow-up"></i> Top Source IPs</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead>
@@ -259,7 +291,7 @@ mysqli_close($con);
                                 <td><?= $rank + 1 ?></td>
                                 <td>
                                     <a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($s['ip']) ?>')" class="clickable-ip">
-                                        <i data-lucide="zoom-in" class="icon-lucide"></i><?= htmlspecialchars($s['ip']) ?>
+                                        <i class="fas fa-search-plus"></i><?= htmlspecialchars($s['ip']) ?>
                                     </a>
                                 </td>
                                 <td><?= number_format($s['count']) ?></td>
@@ -281,7 +313,7 @@ mysqli_close($con);
 
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i data-lucide="arrow-down" class="icon-lucide"></i> Top Destination IPs</h5>
+            <h5><i class="fas fa-arrow-down"></i> Top Destination IPs</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead>
@@ -299,7 +331,7 @@ mysqli_close($con);
                                 <td><?= $rank + 1 ?></td>
                                 <td>
                                     <a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($d['ip']) ?>')" class="clickable-ip">
-                                        <i data-lucide="zoom-in" class="icon-lucide"></i><?= htmlspecialchars($d['ip']) ?>
+                                        <i class="fas fa-search-plus"></i><?= htmlspecialchars($d['ip']) ?>
                                     </a>
                                 </td>
                                 <td><?= number_format($d['count']) ?></td>
@@ -324,7 +356,7 @@ mysqli_close($con);
 <div class="row g-3 mt-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i data-lucide="layers" class="icon-lucide"></i> Top Applications</h5>
+            <h5><i class="fas fa-layer-group"></i> Top Applications</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead><tr><th>Application</th><th>Flows</th><th>Bandwidth</th><th>% of Total</th></tr></thead>
@@ -348,7 +380,7 @@ mysqli_close($con);
 
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i data-lucide="network" class="icon-lucide"></i> Protocol Distribution</h5>
+            <h5><i class="fas fa-network-wired"></i> Protocol Distribution</h5>
             <div class="chart-container">
                 <canvas id="protocolChart"></canvas>
             </div>
@@ -361,7 +393,7 @@ mysqli_close($con);
 <div class="row g-3 mt-4">
     <div class="col-lg-12">
         <div class="report-card">
-            <h5><i data-lucide="globe" class="icon-lucide"></i> Geographic Distribution</h5>
+            <h5><i class="fas fa-globe"></i> Geographic Distribution</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead><tr><th>Country</th><th>Connections</th><th>Share</th></tr></thead>
@@ -389,6 +421,7 @@ mysqli_close($con);
 <?php endif; ?>
 
 <script>
+(() => {
 const bandwidthData = {
     labels: <?= json_encode(array_keys($bandwidth_timeline)) ?>,
     values: <?= json_encode(array_values($bandwidth_timeline)) ?>
@@ -472,4 +505,5 @@ createChart('protocolChart', {
         }
     }
 });
+})();
 </script>

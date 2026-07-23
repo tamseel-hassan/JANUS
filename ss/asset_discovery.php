@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/asset_discovery.php - Asset inventory derived from observed sources
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -35,26 +38,40 @@ if ($result) {
     }
 }
 
-// Sample one message per asset (cheap heuristic) to guess a device role
+// Sample one message per asset (cheap heuristic) to guess a device role in a single bulk query
 $roles = [];
-$sample_query = "
-    SELECT source_ip, message FROM (
-        SELECT source_ip, message, received_at FROM syslog_entries WHERE $where
-        UNION ALL
-        SELECT source_ip, message, received_at FROM syslog_entries_archive WHERE $where
-    ) AS combined
-    ORDER BY received_at DESC
-    LIMIT 3000
-";
-$sample_result = mysqli_query($con, $sample_query);
-if ($sample_result) {
-    while ($row = mysqli_fetch_assoc($sample_result)) {
-        if (isset($roles[$row['source_ip']])) continue;
-        $m = strtolower($row['message']);
-        if (strpos($m, 'type=traffic') !== false) $roles[$row['source_ip']] = 'Firewall/Gateway';
-        elseif (strpos($m, 'vpntunnel') !== false) $roles[$row['source_ip']] = 'VPN Endpoint';
-        elseif (strpos($m, 'cfgpath') !== false) $roles[$row['source_ip']] = 'Managed Device';
-        else $roles[$row['source_ip']] = 'Unclassified';
+if (!empty($assets)) {
+    $ip_list = array_column($assets, 'source_ip');
+    $ip_placeholders = implode(',', array_map(fn($ip) => "'" . mysqli_real_escape_string($con, $ip) . "'", $ip_list));
+
+    $role_query = "
+        SELECT source_ip, message FROM (
+            SELECT source_ip, message,
+                   ROW_NUMBER() OVER (PARTITION BY source_ip ORDER BY received_at DESC) as rn
+            FROM syslog_entries WHERE source_ip IN ($ip_placeholders)
+        ) AS ranked
+        WHERE rn = 1
+    ";
+
+    $role_res = mysqli_query($con, $role_query);
+    $latest_messages = [];
+    if ($role_res) {
+        while ($row = mysqli_fetch_assoc($role_res)) {
+            $latest_messages[$row['source_ip']] = strtolower($row['message']);
+        }
+    }
+
+    foreach ($assets as $a) {
+        $ip = $a['source_ip'];
+        if (isset($latest_messages[$ip])) {
+            $m = $latest_messages[$ip];
+            if (strpos($m, 'type=traffic') !== false) $roles[$ip] = 'Firewall/Gateway';
+            elseif (strpos($m, 'vpntunnel') !== false) $roles[$ip] = 'VPN Endpoint';
+            elseif (strpos($m, 'cfgpath') !== false) $roles[$ip] = 'Managed Device';
+            else $roles[$ip] = 'Unclassified';
+        } else {
+            $roles[$ip] = 'Unclassified';
+        }
     }
 }
 
@@ -62,33 +79,33 @@ mysqli_close($con);
 $new_last_24h = count(array_filter($assets, fn($a) => strtotime($a['first_seen']) > strtotime('-24 hours')));
 ?>
 
-<div class="alert alert-info"><i data-lucide="info" class="icon-lucide"></i> Assets here are inferred from observed <code>source_ip</code> values in your syslog stream, not a dedicated asset/CMDB scan. Device role is a rough heuristic from sampled log content.</div>
+<div class="alert alert-info"><i class="fas fa-info-circle"></i> Assets here are inferred from observed <code>source_ip</code> values in your syslog stream, not a dedicated asset/CMDB scan. Device role is a rough heuristic from sampled log content.</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i data-lucide="sitemap" class="icon-lucide"></i></div>
+            <div class="stat-icon text-info"><i class="fas fa-sitemap"></i></div>
             <div class="stat-value" data-raw="<?= count($assets) ?>">0</div>
             <span class="stat-chip chip-info">Assets Observed</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i data-lucide="plus-circle" class="icon-lucide"></i></div>
+            <div class="stat-icon text-success"><i class="fas fa-plus-circle"></i></div>
             <div class="stat-value" data-raw="<?= $new_last_24h ?>">0</div>
             <span class="stat-chip chip-success">First Seen (24h)</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i data-lucide="question-circle" class="icon-lucide"></i></div>
+            <div class="stat-icon text-warning"><i class="fas fa-question-circle"></i></div>
             <div class="stat-value" data-raw="<?= count(array_filter($roles, fn($r) => $r === 'Unclassified')) ?>">0</div>
             <span class="stat-chip chip-warning">Unclassified</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i data-lucide="shield" class="icon-lucide"></i></div>
+            <div class="stat-icon text-primary"><i class="fas fa-shield-alt"></i></div>
             <div class="stat-value" data-raw="<?= count(array_filter($roles, fn($r) => $r === 'Firewall/Gateway')) ?>">0</div>
             <span class="stat-chip chip-info">Firewalls/Gateways</span>
         </div>
@@ -96,7 +113,7 @@ $new_last_24h = count(array_filter($assets, fn($a) => strtotime($a['first_seen']
 </div>
 
 <div class="report-card">
-    <h5><i data-lucide="list" class="icon-lucide"></i> Asset Inventory</h5>
+    <h5><i class="fas fa-list"></i> Asset Inventory</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>IP Address</th><th>Inferred Role</th><th>Events</th><th>First Seen</th><th>Last Seen</th></tr></thead>

@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/ddos.php - Volumetric flood / DDoS detection
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -13,77 +16,110 @@ $end    = $_GET['end']    ?? date('Y-m-d H:i:s');
 $device = $_GET['device'] ?? '';
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-$where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
-          AND (message LIKE '%type=traffic%' OR message LIKE '%type=\"traffic\"%' OR message LIKE '%dos%' OR message LIKE '%flood%') $device_where";
+$check_archive = mysqli_query($con, "SHOW TABLES LIKE 'syslog_entries_archive'");
+$has_archive = mysqli_num_rows($check_archive) > 0;
 
-// Per-minute per-source counts, flag minutes exceeding a flood threshold.
-$flood_query = "
-    SELECT source_ip, DATE_FORMAT(received_at, '%Y-%m-%d %H:%i:00') AS minute_bucket, COUNT(*) AS cnt
-    FROM (
-        SELECT source_ip, received_at FROM syslog_entries WHERE $where
+$range = $_GET['range'] ?? '24h';
+
+require_once __DIR__ . '/../includes/cache.php';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("ddos", $start, $end, $device, $range);
+
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end, $device_where, $has_archive) {
+    $archive_query = $has_archive ? "
         UNION ALL
-        SELECT source_ip, received_at FROM syslog_entries_archive WHERE $where
-    ) AS combined
-    GROUP BY source_ip, minute_bucket
-    HAVING cnt >= 100
-    ORDER BY cnt DESC
-    LIMIT 200
-";
-$result = mysqli_query($con, $flood_query);
+        SELECT source_ip, received_at FROM syslog_entries_archive
+        WHERE received_at BETWEEN '$start' AND '$end' AND src_ip IS NOT NULL $device_where
+    " : "";
 
-$floods = [];
-$total_flood_events = 0;
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $floods[] = $row;
-        $total_flood_events += (int)$row['cnt'];
+    $timeline_archive_query = $has_archive ? "
+        UNION ALL
+        SELECT received_at FROM syslog_entries_archive
+        WHERE received_at BETWEEN '$start' AND '$end' AND src_ip IS NOT NULL $device_where
+    " : "";
+
+    $flood_query = "
+        SELECT source_ip, DATE_FORMAT(received_at, '%Y-%m-%d %H:%i:00') AS minute_bucket, COUNT(*) AS cnt
+        FROM (
+            SELECT source_ip, received_at FROM syslog_entries 
+            WHERE received_at BETWEEN '$start' AND '$end' AND src_ip IS NOT NULL $device_where
+            $archive_query
+        ) AS combined
+        GROUP BY source_ip, minute_bucket
+        HAVING cnt >= 100
+        ORDER BY cnt DESC
+        LIMIT 200
+    ";
+    
+    $result = mysqli_query($con, $flood_query);
+    $floods = [];
+    $total_flood_events = 0;
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $floods[] = $row;
+            $total_flood_events += (int)$row['cnt'];
+        }
     }
+
+    $affected_sources = count(array_unique(array_column($floods, 'source_ip')));
+
+    $timeline_query = "
+        SELECT DATE_FORMAT(received_at, '%Y-%m-%d %H:00') AS hour, COUNT(*) AS cnt
+        FROM (
+            SELECT received_at FROM syslog_entries 
+            WHERE received_at BETWEEN '$start' AND '$end' AND src_ip IS NOT NULL $device_where
+            $timeline_archive_query
+        ) AS combined GROUP BY hour ORDER BY hour ASC
+    ";
+    
+    $tl_result = mysqli_query($con, $timeline_query);
+    $timeline = [];
+    if ($tl_result) {
+        while ($row = mysqli_fetch_assoc($tl_result)) {
+            $timeline[$row['hour']] = (int)$row['cnt'];
+        }
+    }
+
+    return compact('floods', 'total_flood_events', 'affected_sources', 'timeline');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
 }
-
-$affected_sources = count(array_unique(array_column($floods, 'source_ip')));
-
-$timeline_query = "
-    SELECT DATE_FORMAT(received_at, '%Y-%m-%d %H:00') AS hour, COUNT(*) AS cnt
-    FROM (
-        SELECT received_at FROM syslog_entries WHERE $where
-        UNION ALL
-        SELECT received_at FROM syslog_entries_archive WHERE $where
-    ) AS combined GROUP BY hour ORDER BY hour ASC
-";
-$tl_result = mysqli_query($con, $timeline_query);
-$timeline = [];
-if ($tl_result) { while ($row = mysqli_fetch_assoc($tl_result)) { $timeline[$row['hour']] = (int)$row['cnt']; } }
+extract($cached);
 
 mysqli_close($con);
 ?>
 
-<div class="alert alert-info"><i data-lucide="info" class="icon-lucide"></i> Flood threshold: <strong>100+ events from one source within a single minute</strong>. Adjust the threshold in <code>ss/ddos.php</code> to match your baseline traffic levels.</div>
+<div class="alert alert-info"><i class="fas fa-info-circle"></i> Flood threshold: <strong>100+ events from one source within a single minute</strong>. Adjust the threshold in <code>ss/ddos.php</code> to match your baseline traffic levels.</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i data-lucide="radiation" class="icon-lucide"></i></div>
+            <div class="stat-icon text-danger"><i class="fas fa-radiation"></i></div>
             <div class="stat-value" data-raw="<?= count($floods) ?>">0</div>
             <span class="stat-chip chip-danger">Flood Windows Detected</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i data-lucide="server" class="icon-lucide"></i></div>
+            <div class="stat-icon text-warning"><i class="fas fa-server"></i></div>
             <div class="stat-value" data-raw="<?= $affected_sources ?>">0</div>
             <span class="stat-chip chip-warning">Sources Involved</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i data-lucide="hashtag" class="icon-lucide"></i></div>
+            <div class="stat-icon text-info"><i class="fas fa-hashtag"></i></div>
             <div class="stat-value" data-raw="<?= $total_flood_events ?>">0</div>
             <span class="stat-chip chip-info">Events in Flood Windows</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-<?= empty($floods) ? 'success' : 'danger' ?>"><i data-lucide="shield" class="icon-lucide"></i></div>
+            <div class="stat-icon text-<?= empty($floods) ? 'success' : 'danger' ?>"><i class="fas fa-shield-alt"></i></div>
             <div class="stat-value"><?= empty($floods) ? 'CLEAR' : 'ACTIVE' ?></div>
             <span class="stat-chip <?= empty($floods) ? 'chip-success' : 'chip-danger' ?>">DDoS Status</span>
         </div>
@@ -91,14 +127,14 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i data-lucide="line-chart" class="icon-lucide"></i> Total Traffic Volume</h5>
+    <h5><i class="fas fa-chart-line"></i> Total Traffic Volume</h5>
     <div class="chart-container">
         <canvas id="ddosTimelineChart"></canvas>
     </div>
 </div>
 
 <div class="report-card">
-    <h5><i data-lucide="radiation" class="icon-lucide"></i> Detected Flood Windows</h5>
+    <h5><i class="fas fa-radiation"></i> Detected Flood Windows</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>Source</th><th>Minute</th><th>Events/min</th><th>Severity</th><th>Actions</th></tr></thead>
@@ -111,7 +147,7 @@ mysqli_close($con);
                         <td><small><?= htmlspecialchars($f['minute_bucket']) ?></small></td>
                         <td><span class="badge bg-danger"><?= number_format($f['cnt']) ?></span></td>
                         <td><span class="sev-pill sev-<?= $sev ?>"><?= strtoupper($sev) ?></span></td>
-                        <td><a href="../responder.php?ip=<?= urlencode($f['source_ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank"><i data-lucide="settings" class="icon-lucide"></i></a></td>
+                        <td><a href="../responder.php?ip=<?= urlencode($f['source_ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank"><i class="fas fa-cog"></i></a></td>
                     </tr>
                 <?php endforeach; ?>
                 <?php if (empty($floods)): ?>

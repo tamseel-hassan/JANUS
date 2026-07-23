@@ -1,8 +1,11 @@
 <?php
+ini_set('memory_limit', '1024M');
+set_time_limit(300);
 require_once __DIR__ . '/../db_config.php';
 // ss/user_activity.php - Per-user activity audit trail
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -16,56 +19,73 @@ $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, 
 $where = "received_at BETWEEN '" . mysqli_real_escape_string($con, $start) . "' AND '" . mysqli_real_escape_string($con, $end) . "'
           AND (message LIKE '%user=%' OR message LIKE '%xauthuser=%') $device_where";
 
-$result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 8000);
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("user_activity", $start, $end, $device, $range);
 
-$users = [];
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $p = parseMessage($row['message']);
-        $user = $p['user'] ?? $p['xauthuser'] ?? null;
-        if (!$user || $user === 'N/A') continue;
-        $action = $p['action'] ?? ($p['status'] ?? 'event');
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $where) {
+    $result = unionQuery($con, 'message, source_ip, received_at', $where, 'received_at DESC', 8000);
 
-        if (!isset($users[$user])) {
-            $users[$user] = ['user' => $user, 'events' => 0, 'ips' => [], 'failed' => 0, 'last' => $row['received_at']];
+    $users = [];
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $p = parseMessage($row['message']);
+            $user = $p['user'] ?? $p['xauthuser'] ?? null;
+            if (!$user || $user === 'N/A') continue;
+            $action = $p['action'] ?? ($p['status'] ?? 'event');
+
+            if (!isset($users[$user])) {
+                $users[$user] = ['user' => $user, 'events' => 0, 'ips' => [], 'failed' => 0, 'last' => $row['received_at']];
+            }
+            $users[$user]['events']++;
+            $users[$user]['ips'][$row['source_ip']] = true;
+            if (stripos($row['message'], 'fail') !== false) $users[$user]['failed']++;
+            if (strtotime($row['received_at']) > strtotime($users[$user]['last'])) $users[$user]['last'] = $row['received_at'];
         }
-        $users[$user]['events']++;
-        $users[$user]['ips'][$row['source_ip']] = true;
-        if (stripos($row['message'], 'fail') !== false) $users[$user]['failed']++;
-        if (strtotime($row['received_at']) > strtotime($users[$user]['last'])) $users[$user]['last'] = $row['received_at'];
     }
-}
 
-uasort($users, fn($a, $b) => $b['events'] <=> $a['events']);
-$total_failed = array_sum(array_column($users, 'failed'));
+    uasort($users, fn($a, $b) => $b['events'] <=> $a['events']);
+    $total_failed = array_sum(array_column($users, 'failed'));
+
+    return compact('users', 'total_failed');
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please refresh.</div>';
+    mysqli_close($con);
+    exit;
+}
+extract($cached);
+
 mysqli_close($con);
 ?>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i data-lucide="user" class="icon-lucide s"></i></div>
+            <div class="stat-icon text-info"><i class="fas fa-users"></i></div>
             <div class="stat-value" data-raw="<?= count($users) ?>">0</div>
             <span class="stat-chip chip-info">Active Users</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i data-lucide="list" class="icon-lucide"></i></div>
+            <div class="stat-icon text-primary"><i class="fas fa-list"></i></div>
             <div class="stat-value" data-raw="<?= array_sum(array_column($users, 'events')) ?>">0</div>
             <span class="stat-chip chip-info">Total Events</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i data-lucide="user" class="icon-lucide -lock"></i></div>
+            <div class="stat-icon text-danger"><i class="fas fa-user-lock"></i></div>
             <div class="stat-value" data-raw="<?= $total_failed ?>">0</div>
             <span class="stat-chip chip-danger">Failed Actions</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i data-lucide="map-marker-alt" class="icon-lucide"></i></div>
+            <div class="stat-icon text-warning"><i class="fas fa-map-marker-alt"></i></div>
             <div class="stat-value" data-raw="<?= !empty($users) ? max(array_map(fn($u)=>count($u['ips']), $users)) : 0 ?>">0</div>
             <span class="stat-chip chip-warning">Most IPs / User</span>
         </div>
@@ -73,7 +93,7 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i data-lucide="user" class="icon-lucide -clock"></i> User Activity Summary</h5>
+    <h5><i class="fas fa-user-clock"></i> User Activity Summary</h5>
     <div class="table-container">
         <table class="table table-hover">
             <thead><tr><th>User</th><th>Events</th><th>Failed</th><th>Source IPs Used</th><th>Last Activity</th></tr></thead>

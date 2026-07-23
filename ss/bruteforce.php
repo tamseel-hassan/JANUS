@@ -1,4 +1,5 @@
 <?php
+ini_set('memory_limit', '1024M');
 require_once __DIR__ . '/../db_config.php';
 // ss/bruteforce.php - Brute Force Detection (Tactical HUD visual pass, backend unchanged)
 // Uses 2-phase SQL aggregation to avoid 504 timeout on 30d range
@@ -9,6 +10,7 @@ session_start();
 if (!isset($_SESSION['loggedin'])) {
     die('Unauthorized');
 }
+session_write_close();
 
 function getPortName($port) {
     $port_map = [
@@ -54,247 +56,329 @@ $device = $_GET['device'] ?? '';
 
 $device_where = $device ? "AND source_ip = '" . mysqli_real_escape_string($con, $device) . "'" : '';
 
-$has_firewall = false;
-$firewall_ip = '';
-$fw_result = mysqli_query($con, "SELECT firewall_ip FROM response_config WHERE is_active = 1 LIMIT 1");
-if ($fw_result && $fw_row = mysqli_fetch_assoc($fw_result)) {
-    $has_firewall = true;
-    $firewall_ip = $fw_row['firewall_ip'];
-}
+$auth_filter = "is_auth_failure = 1";
 
-$auth_filter = "(
-    message LIKE '%authentication%failed%'
-    OR message LIKE '%login%failed%'
-    OR message LIKE '%status=\"failure\"%'
-    OR message LIKE '%reason=%failure%'
-    OR (message LIKE '%Progress IPsec phase 2%' AND message LIKE '%result=\"ERROR\"%')
-    OR message LIKE '%logid=\"0101039424\"%'
-    OR message LIKE '%logid=\"0100032001\"%'
-    OR message LIKE '%logid=\"0100032002\"%'
-)";
+require_once __DIR__ . '/../includes/cache.php';
+$range = $_GET['range'] ?? '24h';
+$cache_ttl = cache_ttl_for_range($range);
+$cache_key = get_bucketed_cache_key("bruteforce", $start, $end, $device, $range);
 
-// PHASE 1: aggregation
-$agg_query = "
-    SELECT source_ip, COUNT(*) AS attempt_count
-    FROM (
-        SELECT source_ip, message FROM syslog_entries
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-        UNION ALL
-        SELECT source_ip, message FROM syslog_entries_archive
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-    ) AS combined
-    GROUP BY source_ip
-    HAVING attempt_count >= 3
-    ORDER BY attempt_count DESC
-    LIMIT 200
-";
+$cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end, $device_where, $auth_filter) {
+    $has_firewall = false;
+    $firewall_ip = '';
+    $fw_result = mysqli_query($con, "SELECT firewall_ip FROM response_config WHERE is_active = 1 LIMIT 1");
+    if ($fw_result && $fw_row = mysqli_fetch_assoc($fw_result)) {
+        $has_firewall = true;
+        $firewall_ip = $fw_row['firewall_ip'];
+    }
 
-$agg_result = mysqli_query($con, $agg_query);
-if (!$agg_result) {
-    echo '<div class="alert alert-danger">Query error (phase 1): ' . mysqli_error($con) . '</div>';
+    // PHASE 1: aggregation
+    $agg_query = "
+        SELECT source_ip, COUNT(*) AS attempt_count
+        FROM (
+            SELECT source_ip, message FROM syslog_entries
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+            UNION ALL
+            SELECT source_ip, message FROM syslog_entries_archive
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+        ) AS combined
+        GROUP BY source_ip
+        HAVING attempt_count >= 3
+        ORDER BY attempt_count DESC
+        LIMIT 200
+    ";
+
+    $agg_result = mysqli_query($con, $agg_query);
+    if (!$agg_result) return null;
+
+    $ip_counts = [];
+    while ($row = mysqli_fetch_assoc($agg_result)) {
+        $ip_counts[$row['source_ip']] = (int)$row['attempt_count'];
+    }
+
+    $timeline_query = "
+        SELECT DATE_FORMAT(received_at, '%Y-%m-%d %H:00') AS hour, COUNT(*) AS cnt
+        FROM (
+            SELECT received_at FROM syslog_entries
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+            UNION ALL
+            SELECT received_at FROM syslog_entries_archive
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+        ) AS combined
+        GROUP BY hour
+        ORDER BY hour ASC
+    ";
+    $tl_result = mysqli_query($con, $timeline_query);
+    $timeline = [];
+    if ($tl_result) {
+        while ($row = mysqli_fetch_assoc($tl_result)) {
+            $timeline[$row['hour']] = (int)$row['cnt'];
+        }
+    }
+
+    $breakdown_query = "
+        SELECT message
+        FROM (
+            SELECT message, received_at FROM syslog_entries
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+            UNION ALL
+            SELECT message, received_at FROM syslog_entries_archive
+            WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+        ) AS combined
+        ORDER BY received_at DESC
+    ";
+    $bd_result = mysqli_query($con, $breakdown_query);
+    $service_breakdown = [];
+    $port_breakdown = [];
+    if ($bd_result) {
+        while ($row = mysqli_fetch_assoc($bd_result)) {
+            $p = parseMessage($row['message']);
+            $svc = $p['vpntunnel'] ?? $p['service'] ?? $p['proto'] ?? 'unknown';
+            $port = $p['remport'] ?? $p['locport'] ?? $p['dstport'] ?? 'unknown';
+            $service_breakdown[$svc] = ($service_breakdown[$svc] ?? 0) + 1;
+            $port_breakdown[$port] = ($port_breakdown[$port] ?? 0) + 1;
+        }
+    }
+    arsort($service_breakdown);
+    arsort($port_breakdown);
+
+    // PHASE 2: detail for top 50 IPs
+    $brute_force_attacks = [];
+    $failed_attempts_detail = [];
+    $top_ip_list = array_keys(array_slice($ip_counts, 0, 50, true));
+
+    if (!empty($top_ip_list)) {
+        $ip_placeholders = implode(',', array_map(fn($ip) => "'" . mysqli_real_escape_string($con, $ip) . "'", $top_ip_list));
+
+        $detail_query = "
+            SELECT message, received_at, source_ip
+            FROM (
+                SELECT message, received_at, source_ip FROM syslog_entries
+                WHERE received_at BETWEEN '$start' AND '$end' AND source_ip IN ($ip_placeholders) AND $auth_filter
+                UNION ALL
+                SELECT message, received_at, source_ip FROM syslog_entries_archive
+                WHERE received_at BETWEEN '$start' AND '$end' AND source_ip IN ($ip_placeholders) AND $auth_filter
+            ) AS combined
+            ORDER BY received_at ASC
+        ";
+
+        $detail_result = mysqli_query($con, $detail_query);
+        if ($detail_result) {
+            while ($row = mysqli_fetch_assoc($detail_result)) {
+                $parsed = parseMessage($row['message']);
+                $srcip   = $parsed['remip'] ?? $parsed['srcip'] ?? $parsed['srcaddr'] ?? $row['source_ip'] ?? 'unknown';
+                $dstip   = $parsed['locip'] ?? $parsed['dstip'] ?? $parsed['dstaddr'] ?? 'unknown';
+                $user    = $parsed['user'] ?? $parsed['xauthuser'] ?? 'N/A';
+                $service = $parsed['vpntunnel'] ?? $parsed['service'] ?? $parsed['proto'] ?? 'unknown';
+                $port    = $parsed['remport'] ?? $parsed['locport'] ?? $parsed['dstport'] ?? 'unknown';
+
+                if ($srcip === 'unknown' || $srcip === $dstip) continue;
+
+                if (!isset($failed_attempts_detail[$srcip])) {
+                    $failed_attempts_detail[$srcip] = [
+                        'source_ip' => $srcip, 'target_ip' => $dstip, 'port' => $port,
+                        'service' => $service, 'attempts' => [], 'usernames' => []
+                    ];
+                }
+                $failed_attempts_detail[$srcip]['attempts'][] = $row['received_at'];
+                if ($user !== 'N/A' && $user !== $srcip && !in_array($user, $failed_attempts_detail[$srcip]['usernames'])) {
+                    $failed_attempts_detail[$srcip]['usernames'][] = $user;
+                }
+            }
+        }
+
+        foreach ($failed_attempts_detail as $ip => $data) {
+            $attempts = $data['attempts'];
+            if (count($attempts) < 3) continue;
+            sort($attempts);
+            for ($i = 0; $i < count($attempts) - 2; $i++) {
+                $first = strtotime($attempts[$i]);
+                $third = strtotime($attempts[$i + 2]);
+                $diff  = ($third - $first) / 60;
+                if ($diff <= 5) {
+                    $total = $ip_counts[$ip] ?? count($attempts);
+                    $score = min(99, 40 + ($total * 2));
+                    $brute_force_attacks[] = [
+                        'source_ip'     => $data['source_ip'],
+                        'target_ip'     => $data['target_ip'],
+                        'port'          => $data['port'],
+                        'port_name'     => getPortName($data['port']),
+                        'service'       => $data['service'],
+                        'attempt_count' => $total,
+                        'time_window'   => round($diff, 1) . ' min',
+                        'first_attempt' => $attempts[0],
+                        'last_attempt'  => end($attempts),
+                        'usernames'     => $data['usernames'],
+                        'risk_level'    => $total > 10 ? 'critical' : 'high',
+                        'score'         => $score
+                    ];
+                    break;
+                }
+            }
+        }
+    }
+
+    usort($brute_force_attacks, fn($a, $b) => strtotime($b['last_attempt']) <=> strtotime($a['last_attempt']));
+
+    $top_attackers = [];
+    foreach ($ip_counts as $ip => $count) {
+        $top_attackers[] = ['ip' => $ip, 'count' => $count];
+    }
+    $top_attackers = array_slice($top_attackers, 0, 10);
+
+    ksort($timeline);
+    $timeline_labels = array_keys($timeline);
+    $timeline_values = array_values($timeline);
+
+    $total_failed_sql = "
+        SELECT COUNT(*) AS total
+        FROM (
+            SELECT 1 FROM syslog_entries WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+            UNION ALL
+            SELECT 1 FROM syslog_entries_archive WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
+        ) AS combined
+    ";
+    $total_res = mysqli_query($con, $total_failed_sql);
+    $total_failed = $total_res ? (int)mysqli_fetch_assoc($total_res)['total'] : array_sum($ip_counts);
+
+    $critical_count = count(array_filter($brute_force_attacks, fn($a) => $a['risk_level'] === 'critical'));
+
+    return compact(
+        'has_firewall', 'firewall_ip', 'ip_counts', 'timeline', 'service_breakdown', 'port_breakdown',
+        'brute_force_attacks', 'top_attackers', 'timeline_labels', 'timeline_values', 'total_failed', 'critical_count'
+    );
+});
+
+if ($cached === null) {
+    echo '<div class="alert alert-danger">Query error — please try again.</div>';
     mysqli_close($con);
     exit;
 }
-
-$ip_counts = [];
-while ($row = mysqli_fetch_assoc($agg_result)) {
-    $ip_counts[$row['source_ip']] = (int)$row['attempt_count'];
-}
-
-$timeline_query = "
-    SELECT DATE_FORMAT(received_at, '%Y-%m-%d %H:00') AS hour, COUNT(*) AS cnt
-    FROM (
-        SELECT received_at FROM syslog_entries
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-        UNION ALL
-        SELECT received_at FROM syslog_entries_archive
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-    ) AS combined
-    GROUP BY hour
-    ORDER BY hour ASC
-";
-$tl_result = mysqli_query($con, $timeline_query);
-$timeline = [];
-if ($tl_result) {
-    while ($row = mysqli_fetch_assoc($tl_result)) {
-        $timeline[$row['hour']] = (int)$row['cnt'];
-    }
-}
-
-$breakdown_query = "
-    SELECT message
-    FROM (
-        SELECT message, received_at FROM syslog_entries
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-        UNION ALL
-        SELECT message, received_at FROM syslog_entries_archive
-        WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-    ) AS combined
-    ORDER BY received_at DESC
-    LIMIT 2000
-";
-$bd_result = mysqli_query($con, $breakdown_query);
-$service_breakdown = [];
-$port_breakdown = [];
-if ($bd_result) {
-    while ($row = mysqli_fetch_assoc($bd_result)) {
-        $p = parseMessage($row['message']);
-        $svc = $p['vpntunnel'] ?? $p['service'] ?? $p['proto'] ?? 'unknown';
-        $port = $p['remport'] ?? $p['locport'] ?? $p['dstport'] ?? 'unknown';
-        $service_breakdown[$svc] = ($service_breakdown[$svc] ?? 0) + 1;
-        $port_breakdown[$port] = ($port_breakdown[$port] ?? 0) + 1;
-    }
-}
-arsort($service_breakdown);
-arsort($port_breakdown);
-
-// PHASE 2: detail for top 50 IPs
-$brute_force_attacks = [];
-$failed_attempts_detail = [];
-$top_ip_list = array_keys(array_slice($ip_counts, 0, 50, true));
-
-if (!empty($top_ip_list)) {
-    $ip_placeholders = implode(',', array_map(fn($ip) => "'" . mysqli_real_escape_string($con, $ip) . "'", $top_ip_list));
-
-    $detail_query = "
-        SELECT message, received_at, source_ip
-        FROM (
-            SELECT message, received_at, source_ip FROM syslog_entries
-            WHERE received_at BETWEEN '$start' AND '$end' AND source_ip IN ($ip_placeholders) AND $auth_filter
-            UNION ALL
-            SELECT message, received_at, source_ip FROM syslog_entries_archive
-            WHERE received_at BETWEEN '$start' AND '$end' AND source_ip IN ($ip_placeholders) AND $auth_filter
-        ) AS combined
-        ORDER BY received_at ASC
-        LIMIT 5000
-    ";
-
-    $detail_result = mysqli_query($con, $detail_query);
-    if ($detail_result) {
-        while ($row = mysqli_fetch_assoc($detail_result)) {
-            $parsed = parseMessage($row['message']);
-            $srcip   = $parsed['remip'] ?? $parsed['srcip'] ?? $parsed['srcaddr'] ?? $row['source_ip'] ?? 'unknown';
-            $dstip   = $parsed['locip'] ?? $parsed['dstip'] ?? $parsed['dstaddr'] ?? 'unknown';
-            $user    = $parsed['user'] ?? $parsed['xauthuser'] ?? 'N/A';
-            $service = $parsed['vpntunnel'] ?? $parsed['service'] ?? $parsed['proto'] ?? 'unknown';
-            $port    = $parsed['remport'] ?? $parsed['locport'] ?? $parsed['dstport'] ?? 'unknown';
-
-            if ($srcip === 'unknown' || $srcip === $dstip) continue;
-
-            if (!isset($failed_attempts_detail[$srcip])) {
-                $failed_attempts_detail[$srcip] = [
-                    'source_ip' => $srcip, 'target_ip' => $dstip, 'port' => $port,
-                    'service' => $service, 'attempts' => [], 'usernames' => []
-                ];
-            }
-            $failed_attempts_detail[$srcip]['attempts'][] = $row['received_at'];
-            if ($user !== 'N/A' && $user !== $srcip && !in_array($user, $failed_attempts_detail[$srcip]['usernames'])) {
-                $failed_attempts_detail[$srcip]['usernames'][] = $user;
-            }
-        }
-    }
-
-    foreach ($failed_attempts_detail as $ip => $data) {
-        $attempts = $data['attempts'];
-        if (count($attempts) < 3) continue;
-        sort($attempts);
-        for ($i = 0; $i < count($attempts) - 2; $i++) {
-            $first = strtotime($attempts[$i]);
-            $third = strtotime($attempts[$i + 2]);
-            $diff  = ($third - $first) / 60;
-            if ($diff <= 5) {
-                $total = $ip_counts[$ip] ?? count($attempts);
-                $score = min(99, 40 + ($total * 2));
-                $brute_force_attacks[] = [
-                    'source_ip'     => $data['source_ip'],
-                    'target_ip'     => $data['target_ip'],
-                    'port'          => $data['port'],
-                    'port_name'     => getPortName($data['port']),
-                    'service'       => $data['service'],
-                    'attempt_count' => $total,
-                    'time_window'   => round($diff, 1) . ' min',
-                    'first_attempt' => $attempts[0],
-                    'last_attempt'  => end($attempts),
-                    'usernames'     => $data['usernames'],
-                    'risk_level'    => $total > 10 ? 'critical' : 'high',
-                    'score'         => $score
-                ];
-                break;
-            }
-        }
-    }
-}
-
-usort($brute_force_attacks, fn($a, $b) => strtotime($b['last_attempt']) <=> strtotime($a['last_attempt']));
-
-$top_attackers = [];
-foreach ($ip_counts as $ip => $count) {
-    $top_attackers[] = ['ip' => $ip, 'count' => $count];
-}
-$top_attackers = array_slice($top_attackers, 0, 10);
-
-ksort($timeline);
-$timeline_labels = array_keys($timeline);
-$timeline_values = array_values($timeline);
-
-$total_failed_sql = "
-    SELECT COUNT(*) AS total
-    FROM (
-        SELECT 1 FROM syslog_entries WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-        UNION ALL
-        SELECT 1 FROM syslog_entries_archive WHERE received_at BETWEEN '$start' AND '$end' AND $auth_filter $device_where
-    ) AS combined
-";
-$total_res = mysqli_query($con, $total_failed_sql);
-$total_failed = $total_res ? (int)mysqli_fetch_assoc($total_res)['total'] : array_sum($ip_counts);
-
-$critical_count = count(array_filter($brute_force_attacks, fn($a) => $a['risk_level'] === 'critical'));
+extract($cached);
 
 mysqli_close($con);
 ?>
 
-<link rel="stylesheet" href="/css/pages/ss_bruteforce.css">
+<style>
+/* Module-local additions on top of the shared HUD theme in reports.php */
+.attack-detail {
+    position: relative;
+    background: var(--panel-raised);
+    border: 1px solid var(--red-dim);
+    border-left: 3px solid var(--red);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    border-radius: 2px;
+}
+.attack-detail.risk-critical { border-left-color: var(--red); }
+.attack-detail.risk-critical::before {
+    content: '';
+    position: absolute;
+    top: 14px; right: 16px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 8px 1px var(--red);
+    animation: pulse-led 1.4s ease-in-out infinite;
+}
+.attack-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-hi);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.attack-body { font-size: 0.85rem; font-family: var(--font-sans); }
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-row code { font-family: var(--font-mono); color: var(--cyan); }
+.quarantine-btn { margin-top: 12px; display: flex; gap: 8px; }
+.port-badge {
+    background: rgba(157,140,255,0.12);
+    color: var(--violet);
+    border-left: 2px solid var(--violet);
+    padding: 3px 9px;
+    border-radius: 2px;
+    font-weight: 700;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+}
+
+.threat-meter {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.threat-meter .lvl {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 2px;
+}
+.threat-meter .lvl.high { background: rgba(255,77,94,0.12); color: var(--red); border-left: 2px solid var(--red); }
+.threat-meter .lvl.clear { background: rgba(43,232,164,0.12); color: var(--green); border-left: 2px solid var(--green); }
+
+.incidents-table tbody tr.incident-row { cursor: pointer; }
+.incidents-table tbody tr.incident-row:hover { background: rgba(41,211,238,0.05); }
+.incidents-table tbody tr.incident-row td { white-space: nowrap; }
+.incidents-table tbody tr.incident-row td:nth-child(4) { white-space: normal; }
+</style>
 
 <?php if ($has_firewall): ?>
 <div class="alert alert-info">
-    <i data-lucide="shield" class="icon-lucide"></i>
+    <i class="fas fa-shield-alt"></i>
     <strong>Automated Response Available:</strong> Connected to firewall <code><?= htmlspecialchars($firewall_ip) ?></code>. You can quarantine attacking IPs directly from this page.
 </div>
 <?php endif; ?>
 
 <div class="threat-meter">
     <?php if ($critical_count > 0): ?>
-        <span class="lvl high"><i data-lucide="triangle-alert" class="icon-lucide"></i> <?= $critical_count ?> Critical Threat<?= $critical_count > 1 ? 's' : '' ?> Detected</span>
+        <span class="lvl high"><i class="fas fa-exclamation-triangle"></i> <?= $critical_count ?> Critical Threat<?= $critical_count > 1 ? 's' : '' ?> Detected</span>
     <?php else: ?>
-        <span class="lvl clear"><i data-lucide="check-circle" class="icon-lucide"></i> No Critical Threats in Window</span>
+        <span class="lvl clear"><i class="fas fa-check-circle"></i> No Critical Threats in Window</span>
     <?php endif; ?>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-danger"><i data-lucide="lock" class="icon-lucide"></i></div>
+            <div class="stat-icon text-danger"><i class="fas fa-lock"></i></div>
             <div class="stat-value" data-raw="<?= (int)$total_failed ?>">0</div>
             <span class="stat-chip chip-danger">Failed Auth Attempts</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i data-lucide="user" class="icon-lucide -secret"></i></div>
+            <div class="stat-icon text-warning"><i class="fas fa-user-secret"></i></div>
             <div class="stat-value" data-raw="<?= count($brute_force_attacks) ?>">0</div>
             <span class="stat-chip chip-warning">Brute Force Attacks</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i data-lucide="user" class="icon-lucide s"></i></div>
+            <div class="stat-icon text-primary"><i class="fas fa-users"></i></div>
             <div class="stat-value" data-raw="<?= count($ip_counts) ?>">0</div>
             <span class="stat-chip chip-info">Unique Attack Sources</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i data-lucide="shield" class="icon-lucide"></i></div>
+            <div class="stat-icon text-info"><i class="fas fa-shield-alt"></i></div>
             <div class="stat-value"><?= $has_firewall ? 'ACTIVE' : 'INACTIVE' ?></div>
             <span class="stat-chip <?= $has_firewall ? 'chip-success' : 'chip-neutral' ?>">Auto-Response Status</span>
         </div>
@@ -305,7 +389,7 @@ mysqli_close($con);
 <div class="row g-3 mb-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i data-lucide="server" class="icon-lucide"></i> Targeted Services</h5>
+            <h5><i class="fas fa-server"></i> Targeted Services</h5>
             <div class="table-container" style="max-height: 300px;">
                 <table class="table table-hover">
                     <thead><tr><th>Service</th><th>Failed Attempts</th></tr></thead>
@@ -326,7 +410,7 @@ mysqli_close($con);
     </div>
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i data-lucide="door-open" class="icon-lucide"></i> Targeted Ports</h5>
+            <h5><i class="fas fa-door-open"></i> Targeted Ports</h5>
             <div class="table-container" style="max-height: 300px;">
                 <table class="table table-hover">
                     <thead><tr><th>Port</th><th>Service</th><th>Failed Attempts</th></tr></thead>
@@ -350,7 +434,7 @@ mysqli_close($con);
 
 <div class="report-card">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 4px;">
-        <h5 style="border-bottom:none; padding-bottom:0; margin-bottom:0;"><i data-lucide="user" class="icon-lucide -lock"></i> Authentication Brute Force Incidents</h5>
+        <h5 style="border-bottom:none; padding-bottom:0; margin-bottom:0;"><i class="fas fa-user-lock"></i> Authentication Brute Force Incidents</h5>
         <div style="display:flex; gap:14px; font-family:var(--font-mono); font-size:0.72rem; color:var(--text-mid);">
             <span><span class="score-badge score-red" style="width:18px;height:18px;font-size:0.6rem;"><?= count(array_filter($brute_force_attacks, fn($a)=>$a['risk_level']==='critical')) ?></span>Critical</span>
             <span><span class="score-badge score-amber" style="width:18px;height:18px;font-size:0.6rem;"><?= count(array_filter($brute_force_attacks, fn($a)=>$a['risk_level']==='high')) ?></span>High</span>
@@ -391,15 +475,15 @@ mysqli_close($con);
                             </td>
                             <td><code><?= htmlspecialchars($bf['target_ip']) ?></code></td>
                             <td><small><?= timeAgo($bf['last_attempt']) ?></small></td>
-                            <td><span class="badge bg-danger"><?= number_format($bf['attempt_count']) ?></span></td>
+                            <td><strong class="text-danger"><?= number_format($bf['attempt_count']) ?></strong></td>
                             <td onclick="event.stopPropagation()">
                                 <?php if ($has_firewall): ?>
                                     <button class="btn btn-danger btn-sm" onclick="quarantineIP('<?= htmlspecialchars($bf['source_ip']) ?>', '<?= htmlspecialchars($firewall_ip) ?>', 'Brute force attack - <?= $bf['attempt_count'] ?> attempts on <?= htmlspecialchars($bf['port_name']) ?>')">
-                                        <i data-lucide="ban" class="icon-lucide"></i>
+                                        <i class="fa fa-ban"></i>
                                     </button>
                                 <?php else: ?>
                                     <a href="../responder.php?ip=<?= urlencode($bf['source_ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank" onclick="event.stopPropagation()">
-                                        <i data-lucide="settings" class="icon-lucide"></i>
+                                        <i class="fa fa-cog"></i>
                                     </a>
                                 <?php endif; ?>
                             </td>
@@ -408,7 +492,7 @@ mysqli_close($con);
                 </tbody>
             </table>
         <?php else: ?>
-            <div class="alert alert-success"><i data-lucide="check-circle" class="icon-lucide"></i> No brute force attempts detected</div>
+            <div class="alert alert-success"><i class="fas fa-check-circle"></i> No brute force attempts detected</div>
         <?php endif; ?>
     </div>
 </div>
@@ -440,43 +524,43 @@ function showIncidentDetail(idx) {
     if (!bf) return;
     const modal = new bootstrap.Modal(document.getElementById('drillDownModal'));
     document.getElementById('drillDownModalLabel').innerHTML =
-        `<i data-lucide="user" class="icon-lucide -lock"></i> ${bf.id} &middot; Brute Force Attack`;
+        `<i class="fas fa-user-lock"></i> ${bf.id} &middot; Brute Force Attack`;
 
     const usernamesRow = bf.usernames.length
-        ? `<div class="detail-row"><span><i data-lucide="user" class="icon-lucide"></i> Usernames tried: ${bf.usernames.map(u => escapeHtml(u)).join(', ')}</span></div>`
+        ? `<div class="detail-row"><span><i class="fas fa-user"></i> Usernames tried: ${bf.usernames.map(u => escapeHtml(u)).join(', ')}</span></div>`
         : '';
 
     const actionHtml = bf.has_firewall
         ? `<div class="quarantine-btn">
-                <button class="btn btn-danger btn-sm" onclick="quarantineIP('${bf.source_ip}', '${bf.firewall_ip}', 'Brute force attack - ${bf.attempt_count} attempts on ${bf.port_name}')"><i data-lucide="ban" class="icon-lucide"></i> Quarantine This IP</button>
-                <button class="btn btn-warning btn-sm" onclick="window.open('../responder.php?ip=${encodeURIComponent(bf.source_ip)}', '_blank')"><i data-lucide="external-link-alt" class="icon-lucide"></i> Manual Block</button>
+                <button class="btn btn-danger btn-sm" onclick="quarantineIP('${bf.source_ip}', '${bf.firewall_ip}', 'Brute force attack - ${bf.attempt_count} attempts on ${bf.port_name}')"><i class="fas fa-ban"></i> Quarantine This IP</button>
+                <button class="btn btn-warning btn-sm" onclick="window.open('../responder.php?ip=${encodeURIComponent(bf.source_ip)}', '_blank')"><i class="fas fa-external-link-alt"></i> Manual Block</button>
            </div>`
         : `<div class="quarantine-btn">
-                <a href="../responder.php?ip=${encodeURIComponent(bf.source_ip)}" class="btn btn-outline-warning btn-sm" target="_blank"><i data-lucide="settings" class="icon-lucide"></i> Configure Firewall to Block</a>
+                <a href="../responder.php?ip=${encodeURIComponent(bf.source_ip)}" class="btn btn-outline-warning btn-sm" target="_blank"><i class="fas fa-cog"></i> Configure Firewall to Block</a>
            </div>`;
 
     document.getElementById('drillDownContent').innerHTML = `
         <div class="attack-detail risk-${bf.risk_level}">
             <div class="attack-header">
-                <span><i data-lucide="triangle-alert" class="icon-lucide"></i> ${bf.id}</span>
+                <span><i class="fas fa-exclamation-triangle"></i> ${bf.id}</span>
                 <span class="badge bg-${bf.risk_level === 'critical' ? 'danger' : 'warning'}">${bf.risk_level.toUpperCase()} &middot; SCORE ${bf.score}</span>
             </div>
             <div class="attack-body">
                 <div class="detail-row">
-                    <span><i data-lucide="user" class="icon-lucide -secret"></i> Attacker: <code>${bf.source_ip}</code></span>
-                    <span><i data-lucide="bullseye" class="icon-lucide"></i> Target: <code>${bf.target_ip}</code></span>
+                    <span><i class="fas fa-user-secret"></i> Attacker: <code>${bf.source_ip}</code></span>
+                    <span><i class="fas fa-bullseye"></i> Target: <code>${bf.target_ip}</code></span>
                 </div>
                 <div class="detail-row">
-                    <span><i data-lucide="hashtag" class="icon-lucide"></i> Failed Attempts: <strong>${bf.attempt_count}</strong></span>
-                    <span><i data-lucide="door-closed" class="icon-lucide"></i> Service: <strong>${bf.service}</strong></span>
+                    <span><i class="fas fa-hashtag"></i> Failed Attempts: <strong>${bf.attempt_count}</strong></span>
+                    <span><i class="fas fa-door-closed"></i> Service: <strong>${bf.service}</strong></span>
                 </div>
                 <div class="detail-row">
-                    <span><i data-lucide="hourglass-half" class="icon-lucide"></i> Time Window: ${bf.time_window}</span>
-                    <span><i data-lucide="clock" class="icon-lucide"></i> First: ${bf.first_attempt}</span>
+                    <span><i class="fas fa-hourglass-half"></i> Time Window: ${bf.time_window}</span>
+                    <span><i class="fas fa-clock"></i> First: ${bf.first_attempt}</span>
                 </div>
                 <div class="detail-row">
-                    <span><i data-lucide="network" class="icon-lucide"></i> Port: <code>${bf.port}</code> <span class="port-badge">${bf.port_name}</span></span>
-                    <span><i data-lucide="clock" class="icon-lucide"></i> Last: ${bf.last_attempt}</span>
+                    <span><i class="fas fa-network-wired"></i> Port: <code>${bf.port}</code> <span class="port-badge">${bf.port_name}</span></span>
+                    <span><i class="fas fa-clock"></i> Last: ${bf.last_attempt}</span>
                 </div>
                 ${usernamesRow}
                 ${actionHtml}
@@ -497,7 +581,7 @@ window.showIncidentDetail = showIncidentDetail;
 <div class="row g-3 mt-4">
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i data-lucide="map-marker-alt" class="icon-lucide"></i> Top Attacking IPs</h5>
+            <h5><i class="fas fa-map-marker-alt"></i> Top Attacking IPs</h5>
             <div class="table-container">
                 <table class="table table-hover">
                     <thead><tr><th>Rank</th><th>IP Address</th><th>Total Attempts</th><th>Risk Level</th><th>Actions</th></tr></thead>
@@ -513,11 +597,11 @@ window.showIncidentDetail = showIncidentDetail;
                                 <td>
                                     <?php if ($has_firewall): ?>
                                         <button class="btn btn-danger btn-sm" onclick="quarantineIP('<?= htmlspecialchars($att['ip']) ?>', '<?= htmlspecialchars($firewall_ip) ?>', 'Multiple failed login attempts')">
-                                            <i data-lucide="ban" class="icon-lucide"></i>
+                                            <i class="fas fa-ban"></i>
                                         </button>
                                     <?php else: ?>
                                         <a href="../responder.php?ip=<?= urlencode($att['ip']) ?>" class="btn btn-outline-warning btn-sm" target="_blank">
-                                            <i data-lucide="settings" class="icon-lucide"></i>
+                                            <i class="fas fa-cog"></i>
                                         </a>
                                     <?php endif; ?>
                                 </td>
@@ -533,7 +617,7 @@ window.showIncidentDetail = showIncidentDetail;
     </div>
     <div class="col-lg-6">
         <div class="report-card">
-            <h5><i data-lucide="line-chart" class="icon-lucide"></i> Attack Timeline</h5>
+            <h5><i class="fas fa-chart-line"></i> Attack Timeline</h5>
             <div class="chart-container">
                 <canvas id="bruteForceTimeline"></canvas>
             </div>
@@ -580,7 +664,7 @@ async function quarantineIP(ip, firewallIP, reason) {
     const btn = event.target.closest('button');
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader" class="icon-lucide fa-spin"></i> Blocking...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Blocking...';
     try {
         const formData = new FormData();
         formData.append('block_ip', '1');
@@ -590,7 +674,7 @@ async function quarantineIP(ip, firewallIP, reason) {
         const response = await fetch('../responder.php', { method: 'POST', body: formData });
         const text = await response.text();
         if (text.includes('blocked successfully')) {
-            btn.innerHTML = '<i data-lucide="check" class="icon-lucide"></i> Blocked';
+            btn.innerHTML = '<i class="fas fa-check"></i> Blocked';
             btn.classList.remove('btn-danger');
             btn.classList.add('btn-success');
             alert(`IP ${ip} has been successfully quarantined!`);

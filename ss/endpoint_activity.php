@@ -3,6 +3,7 @@ require_once __DIR__ . '/../db_config.php';
 // ss/endpoint_activity.php - Windows endpoint fleet overview
 session_start();
 if (!isset($_SESSION['loggedin'])) { die('Unauthorized'); }
+session_write_close();
 require_once __DIR__ . '/_helpers.php';
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -15,7 +16,7 @@ $end    = $_GET['end']    ?? date('Y-m-d H:i:s');
 
 $check_tables = mysqli_query($con, "SHOW TABLES LIKE 'endpoints'");
 if (!$check_tables || mysqli_num_rows($check_tables) === 0) {
-    echo '<div class="alert alert-warning"><i data-lucide="info" class="icon-lucide"></i> Endpoint tables not found yet. Run <code>sql/endpoint_schema.sql</code> against your database, deploy <code>agent/janus_agent.ps1</code> to a Windows client via Scheduled Task, and this page will populate automatically.</div>';
+    echo '<div class="alert alert-warning"><i class="fas fa-info-circle"></i> Endpoint tables not found yet. Run <code>sql/endpoint_schema.sql</code> against your database, deploy <code>agent/janus_agent.ps1</code> to a Windows client via Scheduled Task, and this page will populate automatically.</div>';
     mysqli_close($con);
     exit;
 }
@@ -36,33 +37,39 @@ $rdp_24h = $rdp_24h_res ? (int)mysqli_fetch_assoc($rdp_24h_res)['c'] : 0;
 mysqli_close($con);
 ?>
 
-<link rel="stylesheet" href="/css/pages/ss_endpoint_activity.css">
+<style>
+.endpoint-row { cursor: pointer; }
+.endpoint-row:hover { background: rgba(41,211,238,0.05); }
+.online-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+.online-dot.on { background: var(--green); box-shadow: 0 0 6px 1px var(--green); }
+.online-dot.off { background: var(--text-lo); }
+</style>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-info"><i data-lucide="monitor" class="icon-lucide"></i></div>
+            <div class="stat-icon text-info"><i class="fas fa-desktop"></i></div>
             <div class="stat-value" data-raw="<?= count($endpoints) ?>">0</div>
             <span class="stat-chip chip-info">Enrolled Endpoints</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-success"><i data-lucide="signal" class="icon-lucide"></i></div>
+            <div class="stat-icon text-success"><i class="fas fa-signal"></i></div>
             <div class="stat-value" data-raw="<?= $online_count ?>">0</div>
             <span class="stat-chip chip-success">Reporting Now</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-primary"><i data-lucide="th-large" class="icon-lucide"></i></div>
+            <div class="stat-icon text-primary"><i class="fas fa-th-large"></i></div>
             <div class="stat-value" data-raw="<?= $total_apps ?>">0</div>
             <span class="stat-chip chip-info">Distinct Apps Across Fleet</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-box">
-            <div class="stat-icon text-warning"><i data-lucide="monitor" class="icon-lucide"></i></div>
+            <div class="stat-icon text-warning"><i class="fas fa-desktop"></i></div>
             <div class="stat-value" data-raw="<?= $rdp_24h ?>">0</div>
             <span class="stat-chip chip-warning">Remote Session Events (24h)</span>
         </div>
@@ -70,7 +77,7 @@ mysqli_close($con);
 </div>
 
 <div class="report-card">
-    <h5><i data-lucide="monitor" class="icon-lucide"></i> Endpoint Fleet</h5>
+    <h5><i class="fas fa-desktop"></i> Endpoint Fleet</h5>
     <p class="text-muted small" style="font-family: var(--font-mono); font-size: 0.75rem; margin-top:-10px; margin-bottom:16px;">Click a row for logons, installed apps, listening ports, remote sessions, and correlated network traffic for that host</p>
     <div class="table-container">
         <table class="table table-hover">
@@ -107,7 +114,7 @@ async function showEndpointDetail(endpointId, hostname) {
     const modalTitle = document.getElementById('drillDownModalLabel');
     const modalBody = document.getElementById('drillDownContent');
 
-    modalTitle.innerHTML = `<i data-lucide="monitor" class="icon-lucide"></i> ${hostname}`;
+    modalTitle.innerHTML = `<i class="fas fa-desktop"></i> ${hostname}`;
     modalBody.innerHTML = `
         <div class="text-center py-5">
             <div class="loading-spinner mx-auto"></div>
@@ -132,7 +139,7 @@ async function showEndpointDetail(endpointId, hostname) {
             try { eval(script.textContent); } catch (e) { console.error('Script error:', e); }
         });
     } catch (error) {
-        modalBody.innerHTML = `<div class="alert alert-danger"><i data-lucide="triangle-alert" class="icon-lucide"></i> Error loading endpoint detail: ${error.message}</div>`;
+        modalBody.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error loading endpoint detail: ${error.message}</div>`;
     }
 }
 window.showEndpointDetail = showEndpointDetail;

@@ -70,6 +70,10 @@ if (!function_exists('_blank_entry')) {
             'severity'    => null,
             'raw'         => $raw,
             'parsed'      => false,
+            'is_auth_failure'  => 0,
+            'is_remote_access' => 0,
+            'is_malware'       => 0,
+            'is_notable'       => 0,
         ];
     }
 }
@@ -187,14 +191,74 @@ if (!function_exists('normalize_log_entry')) {
     {
         $vendor = detect_log_vendor($message);
         switch ($vendor) {
-            case 'fortigate':   return _normalize_fortigate($message, $source_ip);
-            case 'cisco_asa':   return _normalize_cisco_asa($message, $source_ip);
-            case 'paloalto':    return _normalize_paloalto($message, $source_ip);
-            case 'pfsense':     return _normalize_pfsense($message, $source_ip);
-            case 'checkpoint':  return _normalize_checkpoint($message, $source_ip);
-            case 'generic_kv':  return _normalize_generic_kv($message, $source_ip);
-            default:            return _blank_entry($vendor, $message, $source_ip);
+            case 'fortigate':   $e = _normalize_fortigate($message, $source_ip); break;
+            case 'cisco_asa':   $e = _normalize_cisco_asa($message, $source_ip); break;
+            case 'paloalto':    $e = _normalize_paloalto($message, $source_ip); break;
+            case 'pfsense':     $e = _normalize_pfsense($message, $source_ip); break;
+            case 'checkpoint':  $e = _normalize_checkpoint($message, $source_ip); break;
+            case 'generic_kv':  $e = _normalize_generic_kv($message, $source_ip); break;
+            default:            $e = _blank_entry($vendor, $message, $source_ip); break;
         }
+
+        $flags = classify_syslog_flags($message);
+        $e['is_auth_failure']  = $flags[0];
+        $e['is_remote_access'] = $flags[1];
+        $e['is_malware']       = $flags[2];
+        $e['is_notable']       = $flags[3];
+
+        return $e;
+    }
+}
+
+if (!function_exists('classify_syslog_flags')) {
+    function classify_syslog_flags(string $message): array
+    {
+        $lower = strtolower($message);
+
+        $is_auth_failure = (
+            strpos($lower, 'authentication failed') !== false
+            || strpos($lower, 'authentication_failed') !== false
+            || strpos($lower, 'login failed') !== false
+            || strpos($lower, 'login_failed') !== false
+            || strpos($lower, 'status="failure"') !== false
+            || strpos($lower, 'status=failure') !== false
+            || strpos($lower, 'reason=failure') !== false
+            || strpos($lower, 'reason="failure"') !== false
+            || (strpos($lower, 'progress ipsec phase 2') !== false && strpos($lower, 'result="error"') !== false)
+            || strpos($lower, 'logid="0101039424"') !== false
+            || strpos($lower, 'logid="0100032001"') !== false
+            || strpos($lower, 'logid="0100032002"') !== false
+        ) ? 1 : 0;
+
+        $is_remote_access = (
+            strpos($lower, 'vpntunnel') !== false
+            || strpos($lower, 'sslvpn') !== false
+            || strpos($lower, 'ipsec') !== false
+            || strpos($lower, 'xauthuser') !== false
+            || strpos($lower, 'ppp') !== false
+            || strpos($lower, 'tunnel') !== false
+        ) ? 1 : 0;
+
+        $is_malware = (
+            strpos($lower, 'virus') !== false
+            || strpos($lower, 'malware') !== false
+            || strpos($lower, 'botnet') !== false
+            || strpos($lower, 'quarantine') !== false
+        ) ? 1 : 0;
+
+        $is_notable = (
+            $is_malware === 1
+            || strpos($lower, 'exploit') !== false
+            || strpos($lower, 'ips') !== false
+            || strpos($lower, 'attack') !== false
+            || strpos($lower, 'blocked') !== false
+            || strpos($lower, 'denied') !== false
+            || strpos($lower, 'c2') !== false
+            || strpos($lower, 'anomaly') !== false
+            || strpos($lower, 'suspicious') !== false
+        ) ? 1 : 0;
+
+        return [$is_auth_failure, $is_remote_access, $is_malware, $is_notable];
     }
 }
 if (!function_exists('traffic_signature_sql')) {
