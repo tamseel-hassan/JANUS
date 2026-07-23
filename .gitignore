@@ -23,3 +23,4 @@ Thumbs.db
 # Dependencies and temp
 node_modules/
 scratch/
+nextjs-frontend/

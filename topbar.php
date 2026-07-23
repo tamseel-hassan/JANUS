@@ -38,12 +38,37 @@ mysqli_close($_tb_con);
 $theme = $_COOKIE['theme'] ?? 'dark';
 ?>
 
+<!-- Favicon & Metadata Main Page Icon (Direct & Dynamic Head Injection) -->
+<link rel="icon" type="image/svg+xml" href="/images/Group 2.svg">
+<link rel="shortcut icon" href="/images/Group 2.svg">
+<script>
+(function() {
+    try {
+        var head = document.head || document.getElementsByTagName('head')[0];
+        if (head) {
+            var existingIcons = head.querySelectorAll("link[rel*='icon']");
+            existingIcons.forEach(function(el) { el.remove(); });
+            
+            var icon = document.createElement('link');
+            icon.rel = 'icon';
+            icon.type = 'image/svg+xml';
+            icon.href = '/images/Group 2.svg?v=<?= time() ?>';
+            head.appendChild(icon);
+            
+            var shortcut = document.createElement('link');
+            shortcut.rel = 'shortcut icon';
+            shortcut.href = '/images/Group 2.svg?v=<?= time() ?>';
+            head.appendChild(shortcut);
+        }
+    } catch(e) {}
+})();
+</script>
 <!-- Lato Font -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <!-- Lucide Icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
-<link rel="stylesheet" href="/css/topbar.css">
+<link rel="stylesheet" href="/css/topbar.css?v=<?= time() ?>">
 <link rel="stylesheet" href="/css/theme.css?v=<?= time() ?>">
 
 <nav class="topbar">
@@ -57,28 +82,28 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">Incidents</a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/soc/report_incident.php">Report Incident</a></li>
-                    <li><a class="dropdown-item" href="/soc/my_tasks.php">My Tasks</a></li>
-                    <li><a class="dropdown-item" href="/soc/active_incidents.php">Active Incidents</a></li>
-                    <li><a class="dropdown-item" href="/soc/incidents_history.php">Incidents History</a></li>
-                    <li><a class="dropdown-item" href="/soc/manage_tickets.php">Manage Tickets</a></li>
+                    <li><a class="dropdown-item" href="/soc/report_incident.php"><i data-lucide="file-plus" class="icon-lucide me-2"></i>Report Incident</a></li>
+                    <li><a class="dropdown-item" href="/soc/my_tasks.php"><i data-lucide="check-square" class="icon-lucide me-2"></i>My Tasks</a></li>
+                    <li><a class="dropdown-item" href="/soc/active_incidents.php"><i data-lucide="alert-triangle" class="icon-lucide me-2"></i>Active Incidents</a></li>
+                    <li><a class="dropdown-item" href="/soc/incidents_history.php"><i data-lucide="history" class="icon-lucide me-2"></i>Incidents History</a></li>
+                    <li><a class="dropdown-item" href="/soc/manage_tickets.php"><i data-lucide="ticket" class="icon-lucide me-2"></i>Manage Tickets</a></li>
                 </ul>
             </li>
             <!-- Threat Detection Dropdown -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">Threat Detection</a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/modules/scanners/vuln_scan.php">Vulnerability scanner</a></li>
-                    <li><a class="dropdown-item" href="/malware_analysis.php">Malware Analysis</a></li>
-                    <li><a class="dropdown-item" href="/home.php#">Check Ip Reputation</a></li>
+                    <li><a class="dropdown-item" href="/modules/scanners/vuln_scan.php"><i data-lucide="shield-alert" class="icon-lucide me-2"></i>Vulnerability Scanner</a></li>
+                    <li><a class="dropdown-item" href="/malware_analysis.php"><i data-lucide="bug" class="icon-lucide me-2"></i>Malware Analysis</a></li>
+                    <li><a class="dropdown-item" href="/threat_intel.php"><i data-lucide="globe" class="icon-lucide me-2"></i>Check IP Reputation</a></li>
                 </ul>
             </li>
             <!-- Automation Dropdown -->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">Remediation & Automation</a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/modules/responder/index.php">Playbooks</a></li>
-                    <li><a class="dropdown-item" href="/modules/responder/automation.php">Response Automation</a></li>
+                    <li><a class="dropdown-item" href="/modules/responder/index.php"><i data-lucide="book-open" class="icon-lucide me-2"></i>Playbooks</a></li>
+                    <li><a class="dropdown-item" href="/modules/responder/automation.php"><i data-lucide="zap" class="icon-lucide me-2"></i>Response Automation</a></li>
                 </ul>
             </li>
         </ul>
@@ -106,7 +131,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <ul class="dropdown-menu dropdown-menu-end">
                 <?php if($notificationCount): ?>
                 <li class="dropdown-header">New Assignments</li>
-                <li><a class="dropdown-item" href="/soc/my_tasks.php">View all (<?= $notificationCount ?>)</a></li>
+                <li><a class="dropdown-item" href="/soc/my_tasks.php"><i data-lucide="inbox" class="icon-lucide me-2"></i>View all (<?= $notificationCount ?>)</a></li>
                 <?php else: ?>
                 <li class="dropdown-item text-muted">No new assignments</li>
                 <?php endif; ?>
@@ -121,9 +146,9 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <i data-lucide="circle-user" class="icon-lucide"></i> <?= $_SESSION['name'] ?>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/profile.php">Profile</a></li>
+                <li><a class="dropdown-item" href="/profile.php"><i data-lucide="user" class="icon-lucide me-2"></i>Profile</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger" href="/logout.php">Logout</a></li>
+                <li><a class="dropdown-item text-danger" href="/logout.php"><i data-lucide="log-out" class="icon-lucide me-2 text-danger"></i>Logout</a></li>
             </ul>
         </div>
     </div>

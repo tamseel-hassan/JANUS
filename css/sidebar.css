@@ -12,7 +12,7 @@
   );
   --sb-border: rgba(178, 132, 190, 0.18);
   --sb-text: #fff0f5;
-  --sb-text-muted: rgba(255, 240, 245, 0.55);
+  --sb-text-muted: rgba(255, 240, 245, 0.75);
   --sb-hover: rgba(178, 132, 190, 0.12);
   --sb-active: rgba(178, 132, 190, 0.22);
   --sb-accent: #b284be;

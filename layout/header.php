@@ -11,6 +11,10 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($page_title) ?> - Janus</title>
 
+    <!-- Favicon & Metadata Main Page Icon -->
+    <link rel="icon" type="image/svg+xml" href="/images/Group 2.svg">
+    <link rel="shortcut icon" href="/images/Group 2.svg">
+
     <!-- Bootstrap 5 CSS + JS Bundle (from CDN - fast & reliable) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

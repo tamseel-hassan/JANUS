@@ -22,10 +22,95 @@ body.fullscreen #header-row, body.fullscreen #lastUpdate, body.fullscreen #map-s
 #device-filter .filter-checkboxes label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
 /* Map container */
-#map-container { position: relative; width: 100%; height: 70vh; min-height: 600px; border: 1px solid var(--border); border-radius: 16px; background: var(--card-bg); overflow: auto; touch-action: none; transition: all .3s; cursor: grab; }
-#map-container.panning { cursor: grabbing; }
+#map-container { 
+  position: relative; 
+  width: 100%; 
+  height: 72vh; 
+  min-height: 600px; 
+  border: 1px solid var(--border); 
+  border-radius: 16px; 
+  background-color: var(--card-bg); 
+  background-image: radial-gradient(rgba(178, 132, 190, 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+  overflow: hidden; 
+  touch-action: none; 
+  transition: all .3s; 
+  cursor: grab; 
+  user-select: none;
+}
+#map-container.panning { cursor: grabbing !important; }
 body.fullscreen #map-container { overflow: hidden; height: 100vh; }
 #map-viewport { position: relative; width: 3000px; height: 3000px; transform-origin: 0 0; min-width: 3000px; min-height: 3000px; }
+
+/* Floating Navigation HUD */
+.map-nav-hud {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: rgba(48, 25, 52, 0.92) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 6px 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+.map-nav-hud button,
+.map-nav-hud .nav-btn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background: rgba(178, 132, 190, 0.15) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
+  font-family: var(--font), sans-serif !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  line-height: 1.2 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+  text-decoration: none !important;
+}
+
+.map-nav-hud button:hover,
+.map-nav-hud .nav-btn:hover {
+  background: var(--accent) !important;
+  color: #301934 !important;
+  border-color: var(--accent) !important;
+}
+
+.map-nav-hud button:active,
+.map-nav-hud .nav-btn:active {
+  transform: scale(0.96) !important;
+}
+
+.map-nav-hud .zoom-badge {
+  font-family: monospace !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+}
+
+.map-nav-hud button:hover .zoom-badge,
+.map-nav-hud .nav-btn:hover .zoom-badge {
+  color: #301934 !important;
+}
 
 /* Nodes */
 .node { position: absolute; width: 80px; height: auto; padding: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 0; background: transparent !important; border: none !important; color: var(--text); font-size: 12px; cursor: move; text-align: center; box-shadow: none; transition: transform .1s ease-out, box-shadow .2s; z-index: 10; user-select: none; }

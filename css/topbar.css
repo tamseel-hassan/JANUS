@@ -6,7 +6,7 @@
   --bg: #301934;
   --card-bg: #3d2248;
   --text: #fff0f5;
-  --text-muted: rgba(255, 240, 245, 0.55);
+  --text-muted: rgba(255, 240, 245, 0.75);
   --accent: #b284be;
   --accent-hover: #c49ecf;
   --border: rgba(178, 132, 190, 0.18);
@@ -51,6 +51,75 @@
 }
 
 /* ============================================================
+   SEARCH FORM
+   ============================================================ */
+.search-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 240px;
+}
+
+form.search-form input,
+form.search-form input[type="text"],
+.search-form input {
+  width: 100% !important;
+  background-color: rgba(40, 17, 47, 0.6) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 20px !important;
+  padding-left: 40px !important;
+  padding-right: 14px !important;
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
+  font-size: 0.85rem !important;
+  line-height: 1.4 !important;
+  transition: all 0.25s ease !important;
+}
+
+.search-form input::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.8 !important;
+}
+
+.search-form input:focus {
+  background-color: rgba(48, 25, 52, 0.95) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(178, 132, 190, 0.25) !important;
+  width: 270px !important;
+}
+
+.search-btn {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--text-muted) !important;
+  cursor: pointer !important;
+  z-index: 2;
+  transition: color 0.2s ease !important;
+}
+
+.search-btn:hover {
+  color: var(--accent) !important;
+}
+
+.search-btn .icon-lucide,
+.search-btn svg,
+.search-btn i {
+  width: 16px !important;
+  height: 16px !important;
+  font-size: 14px !important;
+}
+
+/* ============================================================
    NAV MENU
    ============================================================ */
 .nav-menu {
@@ -67,17 +136,16 @@
   align-items: center;
 }
 
-.nav-menu a {
+.nav-menu a:not(.dropdown-item) {
   color: var(--text-muted);
   text-decoration: none;
-  font-weight: 400;
+  font-weight: 500;
   font-size: 0.9rem;
-  /* Spec: hover = clean color transition only */
   transition: color 0.2s ease;
 }
 
-.nav-menu a:hover,
-.nav-menu a.active {
+.nav-menu a:not(.dropdown-item):hover,
+.nav-menu a:not(.dropdown-item).active {
   color: var(--text);
 }
 
@@ -184,7 +252,8 @@
   font-family: "Lato", sans-serif;
 }
 
-.badge {
+.status-item .badge,
+.topbar .badge {
   position: absolute;
   top: -5px;
   right: -5px;

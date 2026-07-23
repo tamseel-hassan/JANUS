@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>Loading resource utilization data from resources.php...</p>
             </div>
         `;
-        fetch('snmonitor.php')
+        fetch('resources.php')
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return response.text();
@@ -633,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 resourceContent.innerHTML = `
                     <div class="alert alert-danger m-4">
                         <h5><i class="fa fa-exclamation-triangle me-2"></i>Failed to Load Resource Data</h5>
-                        <p class="mb-2">Could not load data from snmonitor.php</p>
+                        <p class="mb-2">Could not load data from resources.php</p>
                         <p class="mb-3"><small>Error: ${error.message}</small></p>
                         <button class="btn btn-sm btn-outline-danger" onclick="loadResourceUtilization()">
                             <i class="fa fa-refresh me-1"></i> Try Again

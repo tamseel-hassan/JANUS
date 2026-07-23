@@ -167,8 +167,8 @@ mysqli_close($con);
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/font-awesome/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/theme.css">
-    <link rel="stylesheet" href="/css/pages/maps.css">
+    <link rel="stylesheet" href="css/theme.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/pages/maps.css?v=<?= time() ?>">
 </head>
 <body class="loggedin">
 <?php include 'topbar.php'; ?>
@@ -229,8 +229,24 @@ mysqli_close($con);
 
     <!-- Map selector -->
     <div id="map-selector">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong><i data-lucide="layers" class="icon-lucide"></i> Select Map:</strong>
+        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <strong><i data-lucide="layers" class="icon-lucide"></i> Select Map:</strong>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i data-lucide="map" class="icon-lucide me-1"></i> <?= htmlspecialchars($current_map['name'] ?? 'Select Map') ?>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <?php foreach ($all_maps as $map): ?>
+                        <li>
+                            <a class="dropdown-item <?= $map['id'] == $current_map_id ? 'active' : '' ?>" href="maps.php?map_id=<?= $map['id'] ?>">
+                                <i data-lucide="map-pin" class="icon-lucide me-2"></i> <?= htmlspecialchars($map['name']) ?>
+                            </a>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
             <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#createMapModal">
                 <i data-lucide="plus" class="icon-lucide"></i> New Map
             </button>
@@ -280,6 +296,28 @@ mysqli_close($con);
 
     <!-- Map canvas -->
     <div id="map-container">
+        <!-- Floating Navigation HUD Controls -->
+        <div id="map-nav-controls" class="map-nav-hud">
+            <button type="button" class="nav-btn" onclick="zoomIn()" title="Zoom In (+)">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button type="button" class="nav-btn" onclick="zoomOut()" title="Zoom Out (-)">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button type="button" class="nav-btn" onclick="resetZoom()" title="Reset Scale (100%)">
+                <span id="zoom-level-indicator" class="zoom-badge">100%</span>
+            </button>
+            <button type="button" class="nav-btn" onclick="fitToView()" title="Fit / Center All Devices">
+                <i class="fas fa-crosshairs"></i> <span>Fit View</span>
+            </button>
+            <button type="button" class="nav-btn" onclick="autoLayoutNodes()" title="Auto Organize Cluster">
+                <i class="fas fa-th-large"></i> <span>Auto Layout</span>
+            </button>
+            <button type="button" class="nav-btn" onclick="toggleFullscreenMap()" title="Maximize / Fullscreen">
+                <i class="fas fa-expand"></i>
+            </button>
+        </div>
+
         <div id="map-viewport">
             <?php foreach ($devices as $device):
                 if (!$device['is_visible']) continue;
@@ -731,41 +769,167 @@ function applyIconSize(node, size) {
     })
     .catch(err => showToast('Error: ' + err.message, 'danger'));
 }
-let scale=1, panX=0, panY=0, isPanning=false, startPanX, startPanY;
+let scale = 1, panX = 0, panY = 0, isPanning = false, startPanX, startPanY;
 
 function loadViewportState() {
     try {
         const s = JSON.parse(localStorage.getItem(`mapViewport_${currentMapId}`) || '{}');
-        scale = s.scale || 1; panX = s.panX || 0; panY = s.panY || 0;
+        if (s.scale && s.panX !== undefined && s.panY !== undefined) {
+            scale = s.scale; panX = s.panX; panY = s.panY;
+            updateTransform();
+            return;
+        }
     } catch(e) {}
-    updateTransform();
+    fitToView();
 }
+
 function saveViewportState() {
-    localStorage.setItem(`mapViewport_${currentMapId}`, JSON.stringify({scale,panX,panY}));
+    localStorage.setItem(`mapViewport_${currentMapId}`, JSON.stringify({ scale, panX, panY }));
 }
+
 function updateTransform() {
     mapViewport.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`;
+    const indicator = document.getElementById('zoom-level-indicator');
+    if (indicator) indicator.textContent = `${Math.round(scale * 100)}%`;
     saveViewportState();
 }
-function zoomIn()    { scale = Math.min(scale*1.2, 3);   updateTransform(); }
-function zoomOut()   { scale = Math.max(scale/1.2, 0.3); updateTransform(); }
-function resetZoom() { scale=1; panX=0; panY=0; updateTransform(); }
+
+function zoomIn() { 
+    scale = Math.min(scale * 1.2, 3.0); 
+    updateTransform(); 
+}
+
+function zoomOut() { 
+    scale = Math.max(scale / 1.2, 0.25); 
+    updateTransform(); 
+}
+
+function resetZoom() { 
+    scale = 1; 
+    panX = 0; 
+    panY = 0; 
+    updateTransform(); 
+}
+
+function fitToView() {
+    const visibleNodes = [...document.querySelectorAll('.node')].filter(n => n.style.display !== 'none');
+    if (!visibleNodes.length) {
+        resetZoom();
+        return;
+    }
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    visibleNodes.forEach(node => {
+        const x = parseFloat(node.style.left) || 0;
+        const y = parseFloat(node.style.top) || 0;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    });
+
+    const rect = mapContainer.getBoundingClientRect();
+    const containerW = rect.width || 1000;
+    const containerH = rect.height || 600;
+
+    const pad = 140;
+    const bboxW = Math.max((maxX - minX) + pad * 2, 200);
+    const bboxH = Math.max((maxY - minY) + pad * 2, 200);
+
+    const scaleX = containerW / bboxW;
+    const scaleY = containerH / bboxH;
+    scale = Math.min(scaleX, scaleY, 1.4);
+    scale = Math.max(scale, 0.35);
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    panX = (containerW / 2) - (centerX * scale);
+    panY = (containerH / 2) - (centerY * scale);
+
+    updateTransform();
+}
+
+function autoLayoutNodes() {
+    const visibleNodes = [...document.querySelectorAll('.node')].filter(n => n.style.display !== 'none');
+    if (!visibleNodes.length) return;
+
+    const rect = mapContainer.getBoundingClientRect();
+    const centerX = 1000, centerY = 700;
+    const radius = Math.max(220, visibleNodes.length * 50);
+    const step = (2 * Math.PI) / visibleNodes.length;
+
+    visibleNodes.forEach((node, idx) => {
+        const angle = idx * step - (Math.PI / 2);
+        const x = Math.round(centerX + radius * Math.cos(angle));
+        const y = Math.round(centerY + radius * Math.sin(angle));
+
+        node.style.left = x + 'px';
+        node.style.top = y + 'px';
+
+        const dev = devices.find(d => d.id == node.dataset.id);
+        if (dev) { dev.x = x; dev.y = y; }
+
+        fetch('save_position_map.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `device_id=${node.dataset.id}&x=${x}&y=${y}&map_id=${currentMapId}`
+        }).catch(console.error);
+    });
+
+    drawLinks();
+    fitToView();
+    showToast('Auto-layout arranged & saved', 'success');
+}
+
+function toggleFullscreenMap() {
+    document.body.classList.toggle('fullscreen');
+    mapContainer.classList.toggle('fullscreen');
+    setTimeout(fitToView, 120);
+}
+
+const mainFsBtn = document.getElementById('toggle-fullscreen-btn');
+if (mainFsBtn) mainFsBtn.addEventListener('click', toggleFullscreenMap);
 
 mapContainer.addEventListener('mousedown', e => {
-    // Only pan on background, not on nodes
-    if (e.target.closest('.node')) return;
+    if (e.target.closest('.node') || e.target.closest('.map-nav-hud')) return;
     isPanning = true;
-    startPanX = e.clientX - panX; startPanY = e.clientY - panY;
+    startPanX = e.clientX - panX; 
+    startPanY = e.clientY - panY;
     mapContainer.classList.add('panning');
     e.preventDefault();
 });
+
 document.addEventListener('mousemove', e => {
     if (!isPanning) return;
-    panX = e.clientX - startPanX; panY = e.clientY - startPanY;
+    panX = e.clientX - startPanX; 
+    panY = e.clientY - startPanY;
     updateTransform();
 });
-document.addEventListener('mouseup', () => { if (isPanning) { isPanning=false; mapContainer.classList.remove('panning'); saveViewportState(); } });
-mapContainer.addEventListener('wheel', e => { e.preventDefault(); e.deltaY < 0 ? zoomIn() : zoomOut(); });
+
+document.addEventListener('mouseup', () => { 
+    if (isPanning) { 
+        isPanning = false; 
+        mapContainer.classList.remove('panning'); 
+        saveViewportState(); 
+    } 
+});
+
+mapContainer.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = mapContainer.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY < 0 ? 1.15 : (1 / 1.15);
+    const newScale = Math.min(Math.max(scale * zoomFactor, 0.25), 3.0);
+
+    panX = mouseX - (mouseX - panX) * (newScale / scale);
+    panY = mouseY - (mouseY - panY) * (newScale / scale);
+    scale = newScale;
+
+    updateTransform();
+}, { passive: false });
 
 // ── Drag & drop ───────────────────────────────────────────────────────────────
 let activeNode=null, dragStartX, dragStartY, nodeStartX, nodeStartY;
