@@ -44,6 +44,11 @@ $theme = $_COOKIE['theme'] ?? 'dark';
 <script>
 (function() {
     try {
+        var match = document.cookie.match(new RegExp('(?:^|; )theme=([^;]*)'));
+        var theme = match ? decodeURIComponent(match[1]) : '<?= $theme ?>';
+        if (theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+        }
         var head = document.head || document.getElementsByTagName('head')[0];
         if (head) {
             var existingIcons = head.querySelectorAll("link[rel*='icon']");
@@ -160,13 +165,10 @@ if (themeSwitch) {
     themeSwitch.addEventListener('change', () => {
         const newTheme = themeSwitch.checked ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', newTheme);
-        document.cookie = "theme=" + newTheme + "; path=/; max-age=" + 60*60*24*30;
-        
-        // Dynamically change logo
-        const logo = document.querySelector('.logo-img');
-        if (logo) {
-            logo.src = '/images/' + (newTheme === 'light' ? 'Group 3.svg' : 'Group 2.svg');
+        if (document.body) {
+            document.body.setAttribute('data-theme', newTheme);
         }
+        document.cookie = "theme=" + newTheme + "; path=/; max-age=" + 60*60*24*30;
     });
 }
 

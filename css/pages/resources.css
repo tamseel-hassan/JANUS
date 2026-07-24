@@ -92,7 +92,8 @@
 }
 
 /* Accordion header button - dark themed */
-.accordion-button {
+.accordion-button,
+.accordion-button.collapsed {
     background-color: rgba(178, 132, 190, 0.12) !important;
     background: rgba(178, 132, 190, 0.12) !important;
     color: var(--text) !important;
@@ -113,13 +114,16 @@
 }
 
 /* Chevron indicator */
-.accordion-button::after {
+.accordion-button::after,
+.accordion-button.collapsed::after {
     filter: invert(1) brightness(2) sepia(1) hue-rotate(220deg) saturate(0.5) !important;
 }
 
-.accordion-button:focus {
+.accordion-button:focus,
+.accordion-button.collapsed:focus {
     box-shadow: none !important;
     border-color: var(--border) !important;
+    color: var(--text) !important;
 }
 
 .accordion-body {

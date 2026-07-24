@@ -416,7 +416,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                     <div class="col-md-4">
                         <label class="form-label">Device</label>
                         <select class="form-select" name="device_id" required>
-                            <option value="">-- Select Device --</option>
+                            <option value="">Select Device</option>
                             <?php foreach ($devices as $dev): ?>
                                 <option value="<?= $dev['id'] ?>" <?= $dev['id'] == $selected_device_id ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($dev['name']) ?>

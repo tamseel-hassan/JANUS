@@ -41,7 +41,7 @@ function _sb_can(string $page): bool {
 <div id="sidebar" class="sidebar glassy">
     <div class="sidebar-header">
         <a href="/home.php" class="sidebar-title">
-            <img src="/images/<?= $theme === 'light' ? 'Group 3.svg' : 'Group 2.svg' ?>" class="logo-img" alt="Janus">
+            <img src="/images/Group 2.svg" class="logo-img" alt="Janus">
         </a>
         <button id="toggle-btn" class="toggle-btn" title="Collapse / Expand">
             <i data-lucide="menu" class="icon-lucide"></i>
