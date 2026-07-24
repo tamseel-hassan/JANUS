@@ -291,3 +291,81 @@
     font-size: 0.75rem;
     font-style: italic;
 }
+
+/* ============================================================
+   LIGHT THEME OVERRIDES — RESOURCES & INTERFACES ACCORDION
+   ============================================================ */
+[data-theme="light"] .accordion,
+[data-theme="light"] .accordion-item,
+[data-theme="light"] .accordion-collapse,
+[data-theme="light"] .accordion-body {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #1e152a !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .accordion-button,
+[data-theme="light"] .accordion-button.collapsed {
+    background-color: rgba(124, 58, 237, 0.08) !important;
+    background: rgba(124, 58, 237, 0.08) !important;
+    color: #1e152a !important;
+}
+
+[data-theme="light"] .accordion-button:not(.collapsed) {
+    background-color: rgba(124, 58, 237, 0.14) !important;
+    background: rgba(124, 58, 237, 0.14) !important;
+    color: #7c3aed !important;
+}
+
+[data-theme="light"] .accordion-button::after,
+[data-theme="light"] .accordion-button.collapsed::after {
+    filter: none !important;
+}
+
+[data-theme="light"] .accordion-body .table,
+[data-theme="light"] .accordion-body .table th,
+[data-theme="light"] .accordion-body .table td {
+    color: #1e152a !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .accordion-body .table th {
+    background-color: rgba(124, 58, 237, 0.06) !important;
+    color: rgba(30, 21, 42, 0.75) !important;
+}
+
+[data-theme="light"] .accordion-body .table td:first-child {
+    color: #7c3aed !important;
+}
+
+[data-theme="light"] .accordion-body .table tr:hover td {
+    background-color: rgba(124, 58, 237, 0.04) !important;
+}
+
+[data-theme="light"] .ifc-panel,
+[data-theme="light"] .ifc-body {
+    background-color: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .ifc-toggle {
+    background: rgba(124, 58, 237, 0.08) !important;
+    color: #1e152a !important;
+}
+
+[data-theme="light"] .ifc-table th {
+    color: rgba(30, 21, 42, 0.75) !important;
+    background: rgba(124, 58, 237, 0.06) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .ifc-table td {
+    color: #1e152a !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .ifc-bytes-in,
+[data-theme="light"] .ifc-bytes-out {
+    color: rgba(30, 21, 42, 0.7) !important;
+}

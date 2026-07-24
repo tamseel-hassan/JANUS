@@ -112,6 +112,36 @@ body.fullscreen #map-container { overflow: hidden; height: 100vh; }
   color: #301934 !important;
 }
 
+/* Light Theme Overrides — Map Nav HUD */
+[data-theme="light"] .map-nav-hud {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .map-nav-hud button,
+[data-theme="light"] .map-nav-hud .nav-btn {
+  background: rgba(124, 58, 237, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #1e152a !important;
+}
+
+[data-theme="light"] .map-nav-hud button:hover,
+[data-theme="light"] .map-nav-hud .nav-btn:hover {
+  background: #7c3aed !important;
+  color: #ffffff !important;
+  border-color: #7c3aed !important;
+}
+
+[data-theme="light"] .map-nav-hud .zoom-badge {
+  color: #1e152a !important;
+}
+
+[data-theme="light"] .map-nav-hud button:hover .zoom-badge,
+[data-theme="light"] .map-nav-hud .nav-btn:hover .zoom-badge {
+  color: #ffffff !important;
+}
+
 /* Nodes */
 .node { position: absolute; width: 80px; height: auto; padding: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 0; background: transparent !important; border: none !important; color: var(--text); font-size: 12px; cursor: move; text-align: center; box-shadow: none; transition: transform .1s ease-out, box-shadow .2s; z-index: 10; user-select: none; }
 .node img { width: 36px; height: 36px; margin-bottom: 2px; pointer-events: none; transition: width .2s, height .2s; }

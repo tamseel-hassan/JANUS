@@ -169,18 +169,12 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="col-12">
                 <div class="card p-3">
                     <label class="form-label"><i data-lucide="filter" class="icon-lucide me-2"></i>Filter by Device</label>
-                    <div class="dropdown d-inline-block">
-                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i data-lucide="server" class="icon-lucide me-2"></i>
-                            <?= $sid && isset($dl[$sid]) ? htmlspecialchars($dl[$sid]['name']) : 'All Devices' ?>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="?">All Devices</a></li>
-                            <?php foreach ($dl as $id => $dev): ?>
-                            <li><a class="dropdown-item" href="?device=<?=$id?>"><?= htmlspecialchars($dev['name']) ?> (<?=$dev['ip']?>)</a></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
+                    <select class="form-select w-auto" style="max-width: 320px;" onchange="location.href=this.value">
+                        <option value="?" <?= empty($sid) ? 'selected' : '' ?>>All Devices</option>
+                        <?php foreach ($dl as $id => $dev): ?>
+                        <option value="?device=<?=$id?>" <?= $sid == $id ? 'selected' : '' ?>><?= htmlspecialchars($dev['name']) ?> (<?=$dev['ip']?>)</option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
             </div>
         </div>
