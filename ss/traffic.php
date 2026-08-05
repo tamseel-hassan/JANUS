@@ -54,16 +54,9 @@ $cache_ttl = cache_ttl_for_range($range);
 $cache_key = get_bucketed_cache_key("traffic", $start, $end, $device, $range);
 
 $cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end, $device, $device_where, $is_large_range, $has_archive) {
-    if ($is_large_range) {
-        $rollup_device_where = $device ? "AND (source_ip = '" . mysqli_real_escape_string($con, $device) . "' OR destination_ip = '" . mysqli_real_escape_string($con, $device) . "')" : '';
-        $query = "
-            SELECT log_date AS received_at, source_ip AS src_ip, destination_ip AS dst_ip, 
-                   app, service, action, flow_count, total_sent AS sent_bytes, total_rcvd AS rcvd_bytes
-            FROM syslog_traffic_daily
-            WHERE log_date BETWEEN DATE('$start') AND DATE('$end')
-              $rollup_device_where
-        ";
-    } else {
+    $recent_log_records = [];
+
+    $run_raw_query = function() use ($con, $start, $end, $device_where, $has_archive) {
         $archive_query = $has_archive ? "
             UNION ALL
             SELECT src_ip, dst_ip, dst_port, app, service, action, sent_bytes, rcvd_bytes, received_at
@@ -85,11 +78,28 @@ $cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end
             ) AS combined
             ORDER BY received_at DESC
         ";
+        return mysqli_query($con, $query);
+    };
+
+    if ($is_large_range) {
+        $rollup_device_where = $device ? "AND (source_ip = '" . mysqli_real_escape_string($con, $device) . "' OR destination_ip = '" . mysqli_real_escape_string($con, $device) . "')" : '';
+        $query = "
+            SELECT log_date AS received_at, source_ip AS src_ip, destination_ip AS dst_ip, 
+                   app, service, action, flow_count, total_sent AS sent_bytes, total_rcvd AS rcvd_bytes
+            FROM syslog_traffic_daily
+            WHERE log_date BETWEEN DATE('$start') AND DATE('$end')
+              $rollup_device_where
+        ";
+        $result = mysqli_query($con, $query);
+        if (!$result || mysqli_num_rows($result) === 0) {
+            $result = $run_raw_query();
+        }
+    } else {
+        $result = $run_raw_query();
     }
 
-    $result = mysqli_query($con, $query);
     $num_rows = $result ? mysqli_num_rows($result) : 0;
-    @file_put_contents('/tmp/janus_traffic_debug.log', "Start: $start, End: $end, Query: $query, Rows: $num_rows\n", FILE_APPEND);
+    @file_put_contents('/tmp/janus_traffic_debug.log', "Start: $start, End: $end, Rows: $num_rows\n", FILE_APPEND);
     if (!$result) return null;
 
     $total_flows = 0;
@@ -123,6 +133,28 @@ $cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end
         $proto = $row['service'] ?: 'Unknown';
         $action = strtolower($row['action'] ?? 'other');
         $country = 'Unknown';
+
+        $devname = $row['devname'] ?? $row['source_ip'] ?? ($device ?: 'Firewall');
+        $sev_label = ($action === 'deny' || $action === 'denied') ? 'HIGH' : (($action === 'timeout') ? 'MEDIUM' : 'INFO');
+        $sev_badge = ($action === 'deny' || $action === 'denied') ? 'danger' : (($action === 'timeout') ? 'warning' : 'success');
+
+        if (count($recent_log_records) < 300) {
+            $recent_log_records[] = [
+                'time' => $row['received_at'],
+                'src_ip' => $src,
+                'dst_ip' => $dst,
+                'dst_port' => $dstport,
+                'app' => $app,
+                'service' => $service,
+                'action' => $action,
+                'severity' => $sev_label,
+                'sev_badge' => $sev_badge,
+                'device' => $devname,
+                'sent' => $sent,
+                'rcvd' => $rcvd,
+                'details' => "Flow $src -> $dst ($service / $app) - " . strtoupper($action)
+            ];
+        }
 
         // Source tracking
         if (!isset($sources[$src])) {
@@ -190,7 +222,7 @@ $cached = query_cache($cache_key, $cache_ttl, function() use ($con, $start, $end
 
     return compact(
         'total_flows', 'total_sent', 'total_received', 'sources', 'destinations',
-        'bandwidth_timeline', 'traffic_dist', 'applications', 'services', 'protocols', 'countries'
+        'bandwidth_timeline', 'traffic_dist', 'applications', 'services', 'protocols', 'countries', 'recent_log_records'
     );
 });
 
@@ -419,6 +451,72 @@ mysqli_close($con);
     </div>
 </div>
 <?php endif; ?>
+
+<!-- Detailed Log Records for Selected Window -->
+<div class="row g-3 mt-4">
+    <div class="col-12">
+        <div class="report-card">
+            <h5><i data-lucide="list" class="icon-lucide"></i> Detailed Log Records (<?= htmlspecialchars(strtoupper($range)) ?> Window)</h5>
+            <div class="table-container" style="max-height: 480px; overflow-y: auto;">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Event Timestamp</th>
+                            <th>Severity</th>
+                            <th>Source</th>
+                            <th>Destination</th>
+                            <th>Service / App</th>
+                            <th>Action</th>
+                            <th>Device</th>
+                            <th>Bandwidth</th>
+                            <th>Monitoring Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($recent_log_records)): ?>
+                            <?php foreach ($recent_log_records as $log): ?>
+                                <tr>
+                                    <td><small class="font-monospace text-nowrap"><?= htmlspecialchars($log['time']) ?></small></td>
+                                    <td>
+                                        <span class="badge bg-<?= htmlspecialchars($log['sev_badge']) ?>">
+                                            <?= htmlspecialchars($log['severity']) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($log['src_ip']) ?>')" class="clickable-ip">
+                                            <?= htmlspecialchars($log['src_ip']) ?>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($log['dst_ip']) ?>')" class="clickable-ip">
+                                            <?= htmlspecialchars($log['dst_ip']) ?>:<?= htmlspecialchars($log['dst_port']) ?>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <strong><?= htmlspecialchars($log['app']) ?></strong>
+                                        <div class="small text-muted"><?= htmlspecialchars($log['service']) ?></div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<?= ($log['action'] === 'accept' || $log['action'] === 'accepted') ? 'success' : (($log['action'] === 'deny' || $log['action'] === 'denied') ? 'danger' : 'warning') ?>">
+                                            <?= strtoupper(htmlspecialchars($log['action'])) ?>
+                                        </span>
+                                    </td>
+                                    <td><code><?= htmlspecialchars($log['device']) ?></code></td>
+                                    <td><small><i data-lucide="arrow-up" class="icon-lucide"></i> <?= formatBytes($log['sent']) ?> &middot; <i data-lucide="arrow-down" class="icon-lucide"></i> <?= formatBytes($log['rcvd']) ?></small></td>
+                                    <td class="small text-truncate" style="max-width: 250px;" title="<?= htmlspecialchars($log['details']) ?>">
+                                        <?= htmlspecialchars($log['details']) ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="9" class="text-center py-4 text-muted">No log records found for the selected time range.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 (() => {

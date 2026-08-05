@@ -130,20 +130,48 @@ while ($row = $result->fetch_assoc()) {
         }
     }
     
-    $logType = 'unknown';
-    if (stripos($msg, 'type=ips') !== false) {
+    $logType = 'app-ctrl';
+    if (!empty($parsed['attack'])) {
         $logType = 'ips';
-    } elseif (stripos($msg, 'type=app-ctrl') !== false) {
+    } elseif (!empty($parsed['app'])) {
         $logType = 'app-ctrl';
+    } elseif (!empty($parsed['type'])) {
+        $t = strtolower($parsed['type']);
+        if (str_contains($t, 'ips')) {
+            $logType = 'ips';
+        } elseif (str_contains($t, 'app') || str_contains($t, 'utm')) {
+            $logType = 'app-ctrl';
+        }
+    } elseif (stripos($msg, 'type=ips') !== false || stripos($msg, 'type="ips"') !== false) {
+        $logType = 'ips';
+    } elseif (stripos($msg, 'type=app-ctrl') !== false || stripos($msg, 'type="app-ctrl"') !== false || stripos($msg, 'app=') !== false) {
+        $logType = 'app-ctrl';
+    }
+    
+    $sev = strtolower(
+        $parsed['severity'] ??
+        $parsed['crlevel']  ??
+        $parsed['level']    ??
+        $parsed['priority'] ??
+        $parsed['sec_level'] ??
+        ''
+    );
+
+    if (empty($sev) || $sev === '-' || $sev === 'none') {
+        if ($logType === 'ips') {
+            $sev = !empty($parsed['attack']) ? 'high' : 'medium';
+        } else {
+            $sev = 'low';
+        }
     }
     
     $logs[] = [
         'log_id' => $row['log_id'],
         'time' => $row['received_at'],
         'type' => $logType,
-        'severity' => $parsed['severity'] ?? '-',
-        'srcip' => $parsed['srcip'] ?? '-',
-        'dstip' => $parsed['dstip'] ?? '-',
+        'severity' => $sev,
+        'srcip' => $parsed['srcip'] ?? $parsed['src_ip'] ?? '-',
+        'dstip' => $parsed['dstip'] ?? $parsed['dst_ip'] ?? '-',
         'attack' => $parsed['attack'] ?? $parsed['app'] ?? '-',
         'action' => strtolower($parsed['action'] ?? 'detected'),
         'devname' => $parsed['devname'] ?? $row['source_ip'],

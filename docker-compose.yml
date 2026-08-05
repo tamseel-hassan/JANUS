@@ -3,13 +3,16 @@ services:
     image: mysql:8.0
     container_name: janus-mysql-db
     restart: always
+    stop_signal: SIGKILL
+    security_opt:
+      - apparmor:unconfined
     environment:
       MYSQL_DATABASE: alogin
       MYSQL_ROOT_PASSWORD: Janus@DB@Root@Password@2026
       MYSQL_USER: janus_user
       MYSQL_PASSWORD: Janus@DB@2026
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -24,8 +27,13 @@ services:
       dockerfile: Dockerfile.web
     container_name: janus-web-frontend
     restart: always
+    stop_signal: SIGKILL
+    security_opt:
+      - apparmor:unconfined
     environment:
       DB_HOST: db
+      POC_LICENSE_TOKEN: "${POC_LICENSE_TOKEN:-eyJjbGllbnQiOiJEb2NrZXIgRGVwbG95bWVudCIsImV4cGlyZXMiOiIyMDMwLTAxLTAxIDAwOjAwOjAwIiwiaXNzdWVkIjoiMjAyNi0wOC0wNCAwNTowNToyNCIsInZlcnNpb24iOjF9.1754bc56f16abd7c9ba0a3a564e6fc0bb1c28b5093ef088b8ae3c5ca37779a52}"
+      POC_SIGNING_KEY: "${POC_SIGNING_KEY:-003ec963046500a33fa0505c8556cb23f42776307467b1fc3570a82409aec213}"
     ports:
       - "8000:80"
     volumes:
@@ -40,13 +48,16 @@ services:
       dockerfile: Dockerfile.syslog
     container_name: janus-syslog-receiver
     restart: always
+    stop_signal: SIGKILL
+    security_opt:
+      - apparmor:unconfined
+    network_mode: host
     environment:
-      DB_HOST: db
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3307"
       DB_USER: janus_user
       DB_PASS: Janus@DB@2026
       DB_NAME: alogin
-    ports:
-      - "514:514/udp"
     volumes:
       - syslog-logs:/var/log/janus_siem
     depends_on:

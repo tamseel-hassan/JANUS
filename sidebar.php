@@ -103,7 +103,7 @@ function _sb_can(string $page): bool {
         </li>
         <?php endif; ?>
 
-        <?php if (_sb_can('nac.php') || _sb_can('ipam.php')): ?>
+        <?php if (_sb_can('nac.php') || _sb_can('ipam.php') || _sb_can('printers.php')): ?>
         <li class="has-submenu">
             <a href="#" class="submenu-toggle"><i data-lucide="wrench" class="icon-lucide"></i> <span class="label">NOC Tools</span></a>
             <ul class="submenu" style="display:none;">
@@ -113,6 +113,7 @@ function _sb_can(string $page): bool {
                 <?php if (_sb_can('nac.php')): ?>
                 <li><a href="/modules/nac/nac.php"><i data-lucide="plug" class="icon-lucide"></i> <span class="label">Layer 2 Monitoring</span></a></li>
                 <?php endif; ?>
+                <li><a href="/modules/printers/printers.php"><i data-lucide="printer" class="icon-lucide"></i> <span class="label">Printer Fleet</span></a></li>
             </ul>
         </li>
         <?php endif; ?>

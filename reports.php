@@ -274,6 +274,7 @@ const REPORT_CATALOG = {
     ]},
     assets: { label: 'Asset & Inventory', icon: 'fa-sitemap', reports: [
         { type: 'asset_discovery', label: 'Asset Discovery', icon: 'fa-radar' },
+        { type: 'printer_activity', label: 'Printer Activity & Security', icon: 'fa-print' },
         { type: 'vulnerability', label: 'Vulnerabilities', icon: 'fa-shield-alt' },
         { type: 'endpoint_activity', label: 'Endpoint Activity', icon: 'fa-desktop' },
     ]},
@@ -526,20 +527,126 @@ async function drillDownTechnique(techniqueId, techniqueName) {
 }
 
 function refreshReport() { loadReportContent(currentType); }
-function exportReport() { window.print(); }
+
+function exportContainerToCSV(containerId, filename, reportTitle = 'Report') {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        alert('No content available to export.');
+        return;
+    }
+
+    let csvLines = [];
+    const dateStr = new Date().toLocaleString();
+
+    // 1. Report Header
+    csvLines.push(`"${reportTitle.replace(/"/g, '""')}"`);
+    csvLines.push(`"Generated At: ${dateStr}"`);
+    csvLines.push(`"Time Range: ${typeof currentRange !== 'undefined' ? currentRange : 'N/A'}"`);
+    if (typeof currentDevice !== 'undefined' && currentDevice) {
+        csvLines.push(`"Device Filter: ${currentDevice.replace(/"/g, '""')}"`);
+    }
+    csvLines.push('');
+
+    // 2. Extract Stat Cards / Metric Summaries if available
+    const statCards = container.querySelectorAll('.stat-card, .kpi-card, .metric-card, .stat-item, .card-stat');
+    if (statCards.length > 0) {
+        csvLines.push('"SUMMARY METRICS"');
+        const summaryHeaders = [];
+        const summaryValues = [];
+        statCards.forEach(card => {
+            const labelEl = card.querySelector('.stat-label, .stat-title, .kpi-label, .metric-label, .card-title');
+            const valEl = card.querySelector('.stat-value, .stat-number, .kpi-value, .metric-value, .stat-data');
+            if (labelEl && valEl) {
+                summaryHeaders.push(labelEl.textContent.trim().replace(/\s+/g, ' '));
+                summaryValues.push(valEl.textContent.trim().replace(/\s+/g, ' '));
+            }
+        });
+        if (summaryHeaders.length > 0) {
+            csvLines.push(summaryHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(','));
+            csvLines.push(summaryValues.map(v => `"${v.replace(/"/g, '""')}"`).join(','));
+            csvLines.push('');
+        }
+    }
+
+    // 3. Extract Tables
+    const tables = container.querySelectorAll('table');
+    if (tables.length === 0 && statCards.length === 0) {
+        const items = container.querySelectorAll('.list-group-item, .log-entry, p, li');
+        if (items.length > 0) {
+            csvLines.push('"DATA CONTENT"');
+            items.forEach(item => {
+                const txt = item.textContent.trim().replace(/\s+/g, ' ');
+                if (txt) {
+                    csvLines.push(`"${txt.replace(/"/g, '""')}"`);
+                }
+            });
+        }
+    } else {
+        tables.forEach((table, index) => {
+            let prevHeading = table.previousElementSibling;
+            while (prevHeading && !['H1','H2','H3','H4','H5','H6'].includes(prevHeading.tagName)) {
+                prevHeading = prevHeading.previousElementSibling;
+            }
+            if (prevHeading) {
+                csvLines.push(`"${prevHeading.textContent.trim().replace(/\s+/g, ' ').replace(/"/g, '""')}"`);
+            } else if (tables.length > 1) {
+                csvLines.push(`"Table ${index + 1}"`);
+            }
+
+            const headers = [];
+            table.querySelectorAll('thead th, tr:first-child th').forEach(th => {
+                let cellText = th.textContent.trim().replace(/\s+/g, ' ');
+                headers.push(`"${cellText.replace(/"/g, '""')}"`);
+            });
+            if (headers.length > 0) {
+                csvLines.push(headers.join(','));
+            }
+
+            const rows = table.querySelectorAll('tbody tr');
+            const targetRows = rows.length > 0 ? rows : table.querySelectorAll('tr:not(:first-child)');
+
+            targetRows.forEach(tr => {
+                const cells = tr.querySelectorAll('td, th');
+                if (cells.length === 0) return;
+                const rowData = [];
+                cells.forEach(td => {
+                    let cellText = td.textContent.trim().replace(/\s+/g, ' ');
+                    rowData.push(`"${cellText.replace(/"/g, '""')}"`);
+                });
+                csvLines.push(rowData.join(','));
+            });
+
+            csvLines.push('');
+        });
+    }
+
+    const csvString = '\uFEFF' + csvLines.join('\r\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function exportReport() {
+    const dateStr = new Date().toISOString().slice(0,10);
+    const typeLabel = typeof currentType !== 'undefined' ? currentType : 'analytics';
+    const rangeLabel = typeof currentRange !== 'undefined' ? currentRange : '24h';
+    const filename = `janus_report_${typeLabel}_${rangeLabel}_${dateStr}.csv`;
+    exportContainerToCSV('reportContent', filename, `JANUS ${typeLabel.replace(/_/g, ' ').toUpperCase()} REPORT`);
+}
 
 function exportDrillDown() {
-    const content = document.getElementById('drillDownContent');
-    const title = document.getElementById('drillDownModalLabel').textContent;
-    const printWindow = window.open('', '', 'height=600,width=800');
-    printWindow.document.write('<html><head><title>' + title + '</title>');
-    printWindow.document.write(`<link rel="stylesheet" href="/css/theme.css">
-<link rel="stylesheet" href="/css/pages/reports.css">`);
-    printWindow.document.write('</head><body><h2>' + title + '</h2>');
-    printWindow.document.write(content.innerHTML);
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    printWindow.print();
+    const titleEl = document.getElementById('drillDownModalLabel');
+    const rawTitle = titleEl ? titleEl.textContent.trim() : 'drilldown_analysis';
+    const cleanTitle = rawTitle.replace(/[^a-zA-Z0-9_\-]/g, '_').toLowerCase();
+    const dateStr = new Date().toISOString().slice(0,10);
+    const filename = `janus_drilldown_${cleanTitle}_${dateStr}.csv`;
+    exportContainerToCSV('drillDownContent', filename, rawTitle);
 }
 
 function scheduledReports() {

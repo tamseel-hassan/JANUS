@@ -1,6 +1,15 @@
 <?php
 session_start();
 require_once __DIR__ . '/db_config.php';
+require_once __DIR__ . '/license_check.php';
+
+// ── License gate — block login before any credential check ───────────────────
+// If the POC license is expired or revoked, nobody can log in at all.
+if (!janus_license_is_valid()) {
+    session_destroy();
+    header('Location: /license_expired.php');
+    exit;
+}
 
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if (!$con) {

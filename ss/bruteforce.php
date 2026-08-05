@@ -396,7 +396,7 @@ mysqli_close($con);
                                 <a href="javascript:void(0)" onclick="event.stopPropagation(); drillDownIP('<?= htmlspecialchars($bf['source_ip']) ?>')" class="clickable-ip"><?= htmlspecialchars($bf['source_ip']) ?></a>
                             </td>
                             <td><code><?= htmlspecialchars($bf['target_ip']) ?></code></td>
-                            <td><small><?= timeAgo($bf['last_attempt']) ?></small></td>
+                            <td><small class="font-monospace text-nowrap"><?= htmlspecialchars($bf['last_attempt']) ?></small><div class="small text-muted"><?= timeAgo($bf['last_attempt']) ?></div></td>
                             <td><strong class="text-danger"><?= number_format($bf['attempt_count']) ?></strong></td>
                             <td onclick="event.stopPropagation()">
                                 <?php if ($has_firewall): ?>

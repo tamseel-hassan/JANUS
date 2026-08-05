@@ -1769,10 +1769,46 @@ async function submitAddSwitch() {
 
   if (r && r.ok) {
     closeModal('addSwitchModal');
+    // Clear form fields for next add
+    ['sw-hostname','sw-ip','sw-model','sw-user','sw-pass','sw-location','sw-notes'].forEach(function(id) {
+      var el = document.getElementById(id); if (el) el.value = '';
+    });
     loadDashboard();
-    // Auto-poll the new switch
-    await nacAjax('poll_switch', { id: r.id });
-    loadDashboard();
+
+    // Show spinner toast — poll runs in background, never blocks the UI
+    var toast = document.createElement('div');
+    toast.id = 'nac-poll-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;' +
+      'background:var(--nac-card);border:1px solid var(--nac-border);' +
+      'border-left:4px solid var(--nac-accent);border-radius:10px;' +
+      'padding:14px 18px;min-width:290px;box-shadow:0 8px 32px rgba(0,0,0,.35);' +
+      'display:flex;align-items:center;gap:12px;font-size:.85rem;';
+    toast.innerHTML = '<div class="spinner" style="flex-shrink:0"></div>' +
+      '<div><strong style="color:var(--nac-text)">' + escHtml(hostname || ip) + ' saved</strong>' +
+      '<div style="color:var(--nac-muted);font-size:.78rem;margin-top:2px">Polling switch via SNMP…</div></div>';
+    document.body.appendChild(toast);
+
+    // Fire poll without await
+    nacAjax('poll_switch', { id: r.id }).then(function(pr) {
+      var t = document.getElementById('nac-poll-toast');
+      if (t) t.remove();
+      loadDashboard();
+      if (pr && !pr.ok) {
+        var et = document.createElement('div');
+        et.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;' +
+          'background:var(--nac-card);border:1px solid var(--nac-border);' +
+          'border-left:4px solid var(--nac-orange);border-radius:10px;' +
+          'padding:14px 18px;min-width:290px;box-shadow:0 8px 32px rgba(0,0,0,.35);' +
+          'display:flex;align-items:center;gap:12px;font-size:.85rem;';
+        et.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:var(--nac-orange);flex-shrink:0"></i>' +
+          '<div><strong style="color:var(--nac-text)">Poll warning</strong>' +
+          '<div style="color:var(--nac-muted);font-size:.78rem;margin-top:2px">' +
+          escHtml(pr.error || 'Could not reach switch yet — will retry next poll cycle.') +
+          '</div></div>';
+        document.body.appendChild(et);
+        setTimeout(function() { et.remove(); }, 8000);
+      }
+    });
   } else {
     alert('Error: ' + (r?.error || 'Unknown error'));
   }
@@ -2162,14 +2198,23 @@ function showTraceModal(mac, chain) {
   const summary = accessHops.length
     ? `<div style="margin-top:12px;padding:10px 14px;background:rgba(34,197,94,.08);
            border:1px solid rgba(34,197,94,.25);border-radius:8px;font-size:.85rem">
-         <strong>Access port found:</strong>
+         <strong style="color:var(--nac-green)">✓ Access Port Found:</strong>
          ${escHtml(accessHops[0].switch_name)} → Port <strong>${escHtml(accessHops[0].port)}</strong>
          <span class="vlan-badge" style="margin-left:6px">${escHtml(accessHops[0].vlan||'—')}</span>
        </div>`
+    : trunkHops.length
+    ? `<div style="margin-top:12px;padding:10px 14px;background:rgba(163,113,247,.08);
+           border:1px solid rgba(163,113,247,.25);border-radius:8px;font-size:.82rem">
+         <strong style="color:var(--nac-purple)">🔀 Tracked on Trunk / Downstream Link:</strong><br>
+         MAC is active on <strong>${escHtml(trunkHops[0].switch_name)} (${escHtml(trunkHops[0].switch_ip)})</strong> via trunk port <strong>${escHtml(trunkHops[0].port)}</strong>.
+         <div style="color:var(--nac-muted);font-size:.75rem;margin-top:4px">
+           The end device is connected to a downstream switch behind this trunk link. Add the downstream switch to Janus to trace to the exact access port.
+         </div>
+       </div>`
     : `<div style="margin-top:12px;padding:10px 14px;background:rgba(234,179,8,.08);
            border:1px solid rgba(234,179,8,.25);border-radius:8px;font-size:.85rem">
-         <strong>⚠ Could not resolve to an access port.</strong>
-         The MAC may be on a switch not yet added to NAC, or LLDP topology is incomplete.
+         <strong>⚠ No switch path found.</strong>
+         This MAC address has not been observed on any configured switch ports.
        </div>`;
 
   const modal = document.createElement('div');
@@ -2210,9 +2255,20 @@ async function nacAjax(action, data = {}) {
     const fd = new FormData();
     fd.append('action', action);
     Object.entries(data).forEach(([k,v]) => fd.append(k, v));
-    const r = await fetch('/modules/nac/nac_ajax.php', { method: 'POST', body: fd });
-    return await r.json();
-  } catch(e) { console.error('nacAjax error:', e); return null; }
+    const res = await fetch('/modules/nac/nac_ajax.php', { method: 'POST', body: fd });
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch(parseErr) {
+      console.error('nacAjax JSON parse error for action=' + action + ':', parseErr);
+      console.error('Raw server response:', text.substring(0, 2000));
+      // Return structured error so callers can show a meaningful message
+      return { error: 'Server response error — check browser console (F12) for details. First 200 chars: ' + text.substring(0, 200) };
+    }
+  } catch(e) {
+    console.error('nacAjax fetch error:', e);
+    return { error: 'Network error: ' + e.message };
+  }
 }
 
 function setText(id, val) {

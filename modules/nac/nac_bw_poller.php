@@ -1,11 +1,10 @@
-#!/usr/bin/env php
-require_once __DIR__ . '/../../db_config.php';
 <?php
 /**
  * NAC Bandwidth Poller - Final Working Version
  * Maps ifName (high indices) to ifDescr (low indices) for correct speed/counter retrieval
  */
 define('NAC_BW_RETAIN_HOURS', 24);
+require_once __DIR__ . '/../../db_config.php';
 require_once __DIR__ . '/drivers/driver_snmp.php';
 
 $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -15,7 +14,7 @@ if ($db->connect_error) {
 }
 $db->set_charset('utf8mb4');
 
-// Ensure table exists
+// Ensure table and all required columns exist
 $db->query("CREATE TABLE IF NOT EXISTS nac_port_bw (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     switch_id INT UNSIGNED NOT NULL,
@@ -30,6 +29,23 @@ $db->query("CREATE TABLE IF NOT EXISTS nac_port_bw (
     INDEX idx_sw_port_time (switch_id, port_name, polled_at),
     INDEX idx_polled (polled_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$bw_cols = [
+    'if_index'   => "ALTER TABLE nac_port_bw ADD COLUMN if_index INT UNSIGNED NOT NULL DEFAULT 0",
+    'in_errors'  => "ALTER TABLE nac_port_bw ADD COLUMN in_errors BIGINT UNSIGNED NOT NULL DEFAULT 0",
+    'out_errors' => "ALTER TABLE nac_port_bw ADD COLUMN out_errors BIGINT UNSIGNED NOT NULL DEFAULT 0",
+    'speed_bps'  => "ALTER TABLE nac_port_bw ADD COLUMN speed_bps BIGINT UNSIGNED NOT NULL DEFAULT 0",
+];
+foreach ($bw_cols as $col => $sql) {
+    $chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_port_bw' AND COLUMN_NAME='$col'");
+    if ($chk && (int)$chk->fetch_row()[0] === 0) {
+        $db->query($sql);
+    }
+    $chk && $chk->free();
+}
+
+// Ensure old port_id column is nullable
+@$db->query("ALTER TABLE nac_port_bw MODIFY COLUMN port_id INT NULL DEFAULT NULL");
 
 // Purge old records
 $db->query("DELETE FROM nac_port_bw WHERE polled_at < DATE_SUB(NOW(), INTERVAL " . NAC_BW_RETAIN_HOURS . " HOUR)");
@@ -91,26 +107,37 @@ foreach ($switches as $sw) {
             }
         }
         
-        // Get counters and speeds using ifDescr indices
-        $hc_in = _snmp_walk_simple($ip, $community, $snmp_port, '1.3.6.1.2.1.31.1.1.1.6');
-        $hc_out = _snmp_walk_simple($ip, $community, $snmp_port, '1.3.6.1.2.1.31.1.1.1.10');
+        // Get 64-bit counters, 32-bit fallback counters, and interface speeds
+        $hc_in    = _snmp_walk_simple($ip, $community, $snmp_port, '1.3.6.1.2.1.31.1.1.1.6');
+        $hc_out   = _snmp_walk_simple($ip, $community, $snmp_port, '1.3.6.1.2.1.31.1.1.1.10');
+        $std_in   = _snmp_walk_simple($ip, $community, $snmp_port, '1.3.6.1.2.1.2.2.1.10');
+        $std_out  = _snmp_walk_simple($ip, $community, $snmp_port, '1.3.6.1.2.1.2.2.1.16');
         $if_speed = _snmp_walk_simple($ip, $community, $snmp_port, '1.3.6.1.2.1.2.2.1.5');
         
+        $lookup_val = function(array $arr, int $idx): int {
+            foreach ($arr as $key => $val) {
+                $parts = explode('.', trim($key, '.'));
+                if ((int)end($parts) === $idx) {
+                    return (int)$val;
+                }
+            }
+            return 0;
+        };
+
         $stmt = $db->prepare("INSERT INTO nac_port_bw 
             (switch_id, port_name, if_index, in_octets, out_octets, in_errors, out_errors, speed_bps, polled_at) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(3))");
         
         $inserted = 0;
         foreach ($name_to_descr_idx as $pname => $idx) {
-            // Build keys with 'iso.' prefix (what _snmp_walk_simple returns)
-            $in_key = 'iso.3.6.1.2.1.31.1.1.1.6.' . $idx;
-            $out_key = 'iso.3.6.1.2.1.31.1.1.1.10.' . $idx;
-            $speed_key = 'iso.3.6.1.2.1.2.2.1.5.' . $idx;
-            
-            $in_val = (int)($hc_in[$in_key] ?? 0);
-            $out_val = (int)($hc_out[$out_key] ?? 0);
-            $speed_bps = (int)($if_speed[$speed_key] ?? 0);
-            $in_err = 0;
+            $in_val  = $lookup_val($hc_in, $idx);
+            if ($in_val === 0) $in_val = $lookup_val($std_in, $idx);
+
+            $out_val = $lookup_val($hc_out, $idx);
+            if ($out_val === 0) $out_val = $lookup_val($std_out, $idx);
+
+            $speed_bps = $lookup_val($if_speed, $idx);
+            $in_err  = 0;
             $out_err = 0;
             
             $stmt->bind_param('isiiiiii', $sw_id, $pname, $idx, $in_val, $out_val, $in_err, $out_err, $speed_bps);

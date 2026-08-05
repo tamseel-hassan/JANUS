@@ -14,6 +14,7 @@
  */
 
 require_once __DIR__ . '/db_config.php';
+require_once __DIR__ . '/license_check.php';
 
 // ── 1. Session guard ──────────────────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -23,7 +24,15 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 
-// ── 2. Disabled account guard ─────────────────────────────────────────────────
+// ── 2. POC License gate ──────────────────────────────────────────────────────
+// Checks the poc_licenses table once per hour (cached in session).
+// Redirects to license_expired.php if the key is missing, revoked, or past expires_at.
+if (!janus_license_is_valid()) {
+    header('Location: /license_expired.php');
+    exit;
+}
+
+// ── 3. Disabled account guard ─────────────────────────────────────────────────
 // Cache result for 5 minutes to avoid per-request queries
 $_now = time();
 if (!isset($_SESSION['_ac_checked']) || ($_now - $_SESSION['_ac_checked']) > 300) {
@@ -49,7 +58,7 @@ if (!empty($_SESSION['_ac_disabled'])) {
     exit;
 }
 
-// ── 3. Page permission map ────────────────────────────────────────────────────
+// ── 4. Page permission map ────────────────────────────────────────────────────
 $PAGE_PERMISSIONS = [
     'home.php'              => ['admin', 'analyst'],
     'manage.php'            => ['admin', 'analyst'],
@@ -78,7 +87,7 @@ $PAGE_PERMISSIONS = [
 
 $DEFAULT_ALLOW_ROLES = ['admin', 'analyst'];
 
-// ── 4. Enforce access ─────────────────────────────────────────────────────────
+// ── 5. Enforce access ─────────────────────────────────────────────────────────
 $_current_page  = basename($_SERVER['PHP_SELF']);
 $_current_role  = $_SESSION['role'] ?? 'analyst';
 $_allowed_roles = $PAGE_PERMISSIONS[$_current_page] ?? $DEFAULT_ALLOW_ROLES;
@@ -90,7 +99,7 @@ if (!in_array($_current_role, $_allowed_roles, true)) {
 }
 session_write_close();
 
-// ── 5. Helper function ────────────────────────────────────────────────────────
+// ── 6. Helper function ────────────────────────────────────────────────────────
 function nac_can_access(string $page): bool {
     global $PAGE_PERMISSIONS, $DEFAULT_ALLOW_ROLES;
     $role    = $_SESSION['role'] ?? 'analyst';

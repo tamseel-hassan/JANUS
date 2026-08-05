@@ -803,13 +803,14 @@ function exportToCSV() {
         ]);
     });
     
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'traffic_flows_' + new Date().toISOString().slice(0,10) + '_' + '<?= $view_mode ?>' + '.csv';
     a.click();
+    window.URL.revokeObjectURL(url);
 }
 
 // Initialize

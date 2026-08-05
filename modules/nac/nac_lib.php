@@ -763,17 +763,49 @@ function nac_poll_switch(mysqli $db, array $switch): array {
     // switches in a poll_all — avoids hammering INFORMATION_SCHEMA.
     static $cmd_vlans_checked = false;
     if (!$cmd_vlans_checked) {
-        $col_chk = $db->query(
-            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE()
-               AND TABLE_NAME   = 'nac_platforms'
-               AND COLUMN_NAME  = 'cmd_vlans'"
-        );
-        $col_exists = $col_chk && ((int)$col_chk->fetch_row()[0] > 0);
-        $col_chk && $col_chk->free();
-        if (!$col_exists) {
-            $db->query("ALTER TABLE nac_platforms ADD COLUMN cmd_vlans VARCHAR(120) DEFAULT NULL");
+        $plat_cols = [
+            'platform_key'   => "ALTER TABLE nac_platforms ADD COLUMN platform_key VARCHAR(50) DEFAULT NULL",
+            'vendor'         => "ALTER TABLE nac_platforms ADD COLUMN vendor VARCHAR(50) DEFAULT NULL",
+            'model_pattern'  => "ALTER TABLE nac_platforms ADD COLUMN model_pattern VARCHAR(255) DEFAULT NULL",
+            'cmd_mac_table'  => "ALTER TABLE nac_platforms ADD COLUMN cmd_mac_table TEXT DEFAULT NULL",
+            'cmd_interfaces' => "ALTER TABLE nac_platforms ADD COLUMN cmd_interfaces TEXT DEFAULT NULL",
+            'cmd_lldp'       => "ALTER TABLE nac_platforms ADD COLUMN cmd_lldp TEXT DEFAULT NULL",
+            'cmd_vlans'      => "ALTER TABLE nac_platforms ADD COLUMN cmd_vlans VARCHAR(120) DEFAULT NULL",
+        ];
+        foreach ($plat_cols as $cname => $sql) {
+            $col_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_platforms' AND COLUMN_NAME='$cname'");
+            if ($col_chk && (int)$col_chk->fetch_row()[0] === 0) {
+                $db->query($sql);
+            }
+            $col_chk && $col_chk->free();
         }
+
+        // Ensure legacy 'name' column in nac_platforms doesn't block INSERTs if present
+        $db->query("ALTER TABLE nac_platforms MODIFY COLUMN name VARCHAR(100) DEFAULT NULL");
+
+        // Seed default platform definitions if nac_platforms is empty
+        if (function_exists('driver_all_meta')) {
+            foreach (driver_all_meta() as $pkey => $meta) {
+                $esc_name  = $db->real_escape_string($meta['name'] ?? $pkey);
+                $esc_key   = $db->real_escape_string($pkey);
+                $esc_v     = $db->real_escape_string($meta['vendor'] ?? '');
+                $esc_pat   = $db->real_escape_string($meta['model_pattern'] ?? '');
+                $esc_mac   = $db->real_escape_string($meta['cmd_mac_table'] ?? '');
+                $esc_ifc   = $db->real_escape_string($meta['cmd_interfaces'] ?? '');
+                $esc_lldp  = $db->real_escape_string($meta['cmd_lldp'] ?? '');
+                $esc_vlans = $db->real_escape_string($meta['cmd_vlans'] ?? '');
+
+                $chk_row = $db->query("SELECT COUNT(*) FROM nac_platforms WHERE platform_key='$esc_key'");
+                if ($chk_row && (int)$chk_row->fetch_row()[0] === 0) {
+                    $db->query(
+                        "INSERT INTO nac_platforms (name, platform_key, vendor, model_pattern, cmd_mac_table, cmd_interfaces, cmd_lldp, cmd_vlans)
+                         VALUES ('$esc_name', '$esc_key', '$esc_v', '$esc_pat', '$esc_mac', '$esc_ifc', '$esc_lldp', '$esc_vlans')"
+                    );
+                }
+                $chk_row && $chk_row->free();
+            }
+        }
+
         // Seed 'show vlans' for all JunOS platform rows that don't have it yet
         $db->query(
             "UPDATE nac_platforms SET cmd_vlans='show vlans'
@@ -1600,6 +1632,80 @@ function nac_persist_poll(mysqli $db, int $switch_id, array $parsed): array {
         }
     }
     unset($p);
+
+    // Auto-add missing columns for nac_ports
+    static $nac_ports_cols_checked = false;
+    if (!$nac_ports_cols_checked) {
+        $nac_ports_cols = [
+            'port_name'    => "ALTER TABLE nac_ports ADD COLUMN port_name VARCHAR(100) DEFAULT NULL",
+            'port_type'    => "ALTER TABLE nac_ports ADD COLUMN port_type VARCHAR(50) DEFAULT 'access'",
+            'admin_status' => "ALTER TABLE nac_ports ADD COLUMN admin_status VARCHAR(20) DEFAULT 'up'",
+            'link_status'  => "ALTER TABLE nac_ports ADD COLUMN link_status VARCHAR(20) DEFAULT 'down'",
+            'vlan_names'   => "ALTER TABLE nac_ports ADD COLUMN vlan_names VARCHAR(255) DEFAULT NULL",
+            'is_trunk'     => "ALTER TABLE nac_ports ADD COLUMN is_trunk TINYINT(1) DEFAULT 0",
+            'mac_count'    => "ALTER TABLE nac_ports ADD COLUMN mac_count INT DEFAULT 0",
+            'description'  => "ALTER TABLE nac_ports ADD COLUMN description VARCHAR(255) DEFAULT NULL",
+            'last_updated' => "ALTER TABLE nac_ports ADD COLUMN last_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+        ];
+        foreach ($nac_ports_cols as $cname => $sql) {
+            $col_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_ports' AND COLUMN_NAME='$cname'");
+            if ($col_chk && (int)$col_chk->fetch_row()[0] === 0) {
+                $db->query($sql);
+            }
+            $col_chk && $col_chk->free();
+        }
+
+        $nac_pm_cols = [
+            'port_name'  => "ALTER TABLE nac_port_macs ADD COLUMN port_name VARCHAR(100) DEFAULT NULL",
+            'vlan_name'  => "ALTER TABLE nac_port_macs ADD COLUMN vlan_name VARCHAR(100) DEFAULT NULL",
+            'mac_type'   => "ALTER TABLE nac_port_macs ADD COLUMN mac_type VARCHAR(20) DEFAULT 'D'",
+            'first_seen' => "ALTER TABLE nac_port_macs ADD COLUMN first_seen DATETIME DEFAULT CURRENT_TIMESTAMP",
+            'last_seen'  => "ALTER TABLE nac_port_macs ADD COLUMN last_seen DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+        ];
+        foreach ($nac_pm_cols as $cname => $sql) {
+            $col_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_port_macs' AND COLUMN_NAME='$cname'");
+            if ($col_chk && (int)$col_chk->fetch_row()[0] === 0) {
+                $db->query($sql);
+            }
+            $col_chk && $col_chk->free();
+        }
+
+        $nac_evt_cols = [
+            'event_type'   => "ALTER TABLE nac_mac_events ADD COLUMN event_type VARCHAR(50) DEFAULT NULL",
+            'old_port'     => "ALTER TABLE nac_mac_events ADD COLUMN old_port VARCHAR(100) DEFAULT NULL",
+            'new_port'     => "ALTER TABLE nac_mac_events ADD COLUMN new_port VARCHAR(100) DEFAULT NULL",
+            'old_vlan'     => "ALTER TABLE nac_mac_events ADD COLUMN old_vlan VARCHAR(100) DEFAULT NULL",
+            'new_vlan'     => "ALTER TABLE nac_mac_events ADD COLUMN new_vlan VARCHAR(100) DEFAULT NULL",
+            'details'      => "ALTER TABLE nac_mac_events ADD COLUMN details TEXT DEFAULT NULL",
+            'is_alarm'     => "ALTER TABLE nac_mac_events ADD COLUMN is_alarm TINYINT(1) DEFAULT 0",
+            'acknowledged' => "ALTER TABLE nac_mac_events ADD COLUMN acknowledged TINYINT(1) DEFAULT 0",
+            'ack_by'       => "ALTER TABLE nac_mac_events ADD COLUMN ack_by VARCHAR(100) DEFAULT NULL",
+            'ack_note'     => "ALTER TABLE nac_mac_events ADD COLUMN ack_note TEXT DEFAULT NULL",
+            'ack_at'       => "ALTER TABLE nac_mac_events ADD COLUMN ack_at DATETIME DEFAULT NULL",
+        ];
+        foreach ($nac_evt_cols as $cname => $sql) {
+            $col_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_mac_events' AND COLUMN_NAME='$cname'");
+            if ($col_chk && (int)$col_chk->fetch_row()[0] === 0) {
+                $db->query($sql);
+            }
+            $col_chk && $col_chk->free();
+        }
+
+        // Guarantee UNIQUE indexes exist so ON DUPLICATE KEY UPDATE works properly
+        $idx_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_ports' AND INDEX_NAME='uq_switch_port'");
+        if ($idx_chk && (int)$idx_chk->fetch_row()[0] === 0) {
+            $db->query("ALTER TABLE nac_ports ADD UNIQUE KEY uq_switch_port (switch_id, port_name)");
+        }
+        $idx_chk && $idx_chk->free();
+
+        $idx_chk2 = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_port_macs' AND INDEX_NAME='uq_switch_port_mac'");
+        if ($idx_chk2 && (int)$idx_chk2->fetch_row()[0] === 0) {
+            $db->query("ALTER TABLE nac_port_macs ADD UNIQUE KEY uq_switch_port_mac (switch_id, port_name, mac)");
+        }
+        $idx_chk2 && $idx_chk2->free();
+
+        $nac_ports_cols_checked = true;
+    }
     foreach ($parsed['macs'] as &$m) {
         if (!preg_match('/^irb\./i', $m['port']) && !preg_match('/^vlan$/i', $m['port'])) {
             $m['port'] = preg_replace('/\.0$/', '', $m['port']);
@@ -2076,6 +2182,29 @@ function nac_rebuild_mac_ip_map(mysqli $db): void {
     // Strategy: use a subquery that ranks nac_port_macs rows per MAC,
     // ordering by is_trunk ASC (access=0 sorts before trunk=1), then by
     // switch_id ASC as tiebreaker. Only the top-ranked row per MAC is used.
+    static $nac_map_cols_checked = false;
+    if (!$nac_map_cols_checked) {
+        $nac_map_cols = [
+            'subnet'          => "ALTER TABLE nac_mac_ip_map ADD COLUMN subnet VARCHAR(43) DEFAULT NULL",
+            'ipam_status'     => "ALTER TABLE nac_mac_ip_map ADD COLUMN ipam_status VARCHAR(50) DEFAULT NULL",
+            'ipam_last_seen'  => "ALTER TABLE nac_mac_ip_map ADD COLUMN ipam_last_seen DATETIME DEFAULT NULL",
+            'nac_switch_id'   => "ALTER TABLE nac_mac_ip_map ADD COLUMN nac_switch_id INT DEFAULT NULL",
+            'nac_switch_name' => "ALTER TABLE nac_mac_ip_map ADD COLUMN nac_switch_name VARCHAR(255) DEFAULT NULL",
+            'nac_port'        => "ALTER TABLE nac_mac_ip_map ADD COLUMN nac_port VARCHAR(100) DEFAULT NULL",
+            'nac_vlan'        => "ALTER TABLE nac_mac_ip_map ADD COLUMN nac_vlan VARCHAR(100) DEFAULT NULL",
+            'oui_vendor'      => "ALTER TABLE nac_mac_ip_map ADD COLUMN oui_vendor VARCHAR(100) DEFAULT NULL",
+            'updated_at'      => "ALTER TABLE nac_mac_ip_map ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+        ];
+        foreach ($nac_map_cols as $cname => $sql) {
+            $col_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_mac_ip_map' AND COLUMN_NAME='$cname'");
+            if ($col_chk && (int)$col_chk->fetch_row()[0] === 0) {
+                $db->query($sql);
+            }
+            $col_chk && $col_chk->free();
+        }
+        $nac_map_cols_checked = true;
+    }
+
     $db->query("TRUNCATE TABLE nac_mac_ip_map");
     $db->query(
         "INSERT INTO nac_mac_ip_map
@@ -2240,7 +2369,7 @@ function nac_oui_lookup(string $mac): string {
         'EC:EB:B8' => 'Supermicro',   '00:60:16' => 'EMC',
         '28:80:23' => 'HP',           '50:EB:1A' => 'SuperMicro',
         '00:10:18' => 'Brocade',      '00:1A:64' => 'Cisco',
-        'DC:68:0C' => 'AMD/Supermicro','AE:B6:1D'=> 'Random/VM',
+        'DC:68:0C' => 'AMD/Supermicro','AE:B6:1D' => 'Random/VM',
         '64:00:6A' => 'Cisco',        '40:5B:7F' => 'Cisco',
         '48:4D:7E' => 'Cisco SFP',    'F4:8E:38' => 'Cisco',
         '6C:A8:49' => 'Yealink',      'C8:1F:66' => 'Yealink',
@@ -2248,6 +2377,15 @@ function nac_oui_lookup(string $mac): string {
         'F0:92:1C' => 'Lenovo',       'DC:DC:E2' => 'Realtek',
         '00:31:46' => 'Supermicro',   '8C:EC:4B' => 'Supermicro',
         '3C:52:A1' => 'Cisco',
+        // Additional Vendors & Devices
+        '00:15:5D' => 'Microsoft',    '00:08:80' => 'Ruijie',
+        '00:17:61' => 'Ruijie',       '00:26:73' => 'Ruijie',
+        '04:32:01' => 'Ruijie',       '04:37:01' => 'Ruijie',
+        '0C:EA:14' => 'Aruba/HP',     '0C:FA:14' => 'Aruba/HP',
+        '0C:LA:14' => 'Aruba/HP',     '10:02:30' => 'Intel',
+        'B8:38:61' => 'Intel',        'D4:F5:EF' => 'Apple',
+        'F4:D1:08' => 'Apple',        'E8:9A:8F' => 'TP-Link',
+        'F8:E4:3B' => 'Ubiquiti',     'D8:50:E6' => 'ASUSTek',
     ];
     $prefix = strtoupper(substr($mac, 0, 8));
     return $oui[$prefix] ?? 'Unknown';
@@ -2262,7 +2400,7 @@ function nac_oui_lookup(string $mac): string {
    Returns chain: [{'switch','port','vlan','is_access'}...]
 ═══════════════════════════════════════════════════════════════ */
 function nac_mac_trace(mysqli $db, string $mac): array {
-    $mac  = strtoupper(str_replace(['-','.',' '], ':', $mac));
+    $mac  = strtoupper(str_replace(['-','.',' '], ':', trim($mac)));
     $esc  = $db->real_escape_string($mac);
     $chain = [];
     $visited = []; // prevent infinite loops
@@ -2275,7 +2413,7 @@ function nac_mac_trace(mysqli $db, string $mac): array {
          FROM nac_port_macs npm
          JOIN nac_switches ns ON npm.switch_id = ns.id
          LEFT JOIN nac_ports p ON p.switch_id=npm.switch_id AND p.port_name=npm.port_name
-         WHERE npm.mac='$esc'
+         WHERE npm.mac='$esc' OR LOWER(npm.mac)=LOWER('$esc')
          ORDER BY COALESCE(p.is_trunk,0) ASC"
     );
     $hits = [];

@@ -7,11 +7,13 @@
 function nac_snmp_poll(string $ip, string $community, int $snmp_port = 161,
                        int $version = 2, string $plkey = ''): array
 {
-    if (!function_exists('snmp2_real_walk')) {
-        throw new RuntimeException('PHP SNMP extension not loaded');
+    if (!function_exists('snmp2_real_walk') && !file_exists('/usr/bin/snmpwalk')) {
+        throw new RuntimeException('Neither PHP SNMP extension nor snmpwalk CLI tool is available');
     }
-    snmp_set_quick_print(true);
-    snmp_set_oid_output_format(SNMP_OID_OUTPUT_NUMERIC);
+    if (function_exists('snmp_set_quick_print')) {
+        snmp_set_quick_print(true);
+        snmp_set_oid_output_format(SNMP_OID_OUTPUT_NUMERIC);
+    }
     
     $is_cisco  = str_contains($plkey, 'ios');
     $is_junos  = str_contains($plkey, 'junos');
@@ -404,16 +406,23 @@ function _snmp_skip_interface(string $name): bool
 
 function nac_snmp_test(string $ip, string $community, int $snmp_port = 161): array
 {
-    if (!function_exists('snmp2_real_walk')) {
-        return ['ok' => false, 'error' => 'PHP snmp extension not installed'];
+    if (function_exists('snmp2_real_walk')) {
+        if (function_exists('snmp_set_quick_print')) snmp_set_quick_print(true);
+        set_error_handler(fn() => null);
+        $sysname = @snmpget($ip . ':' . $snmp_port, $community, '1.3.6.1.2.1.1.5.0', 3000000, 2);
+        $sysdescr = @snmpget($ip . ':' . $snmp_port, $community, '1.3.6.1.1.1.0', 3000000, 2);
+        restore_error_handler();
+        if ($sysname !== false && $sysname !== null) {
+            return ['ok' => true, 'sysname' => _snmp_strip_type((string)$sysname), 'sysdescr' => _snmp_strip_type((string)$sysdescr)];
+        }
     }
-    snmp_set_quick_print(true);
-    set_error_handler(fn() => null);
-    $sysname = @snmpget($ip . ':' . $snmp_port, $community, SNMP_OID_SYSNAME, 3000000, 2);
-    $sysdescr = @snmpget($ip . ':' . $snmp_port, $community, SNMP_OID_SYSDESCR, 3000000, 2);
-    restore_error_handler();
-    if ($sysname === false || $sysname === null) {
-        return ['ok' => false, 'error' => 'SNMP unreachable'];
+
+    $esc_ip = escapeshellarg($ip . ':' . $snmp_port);
+    $esc_comm = escapeshellarg($community);
+    exec("snmpget -v2c -c $esc_comm -Oq $esc_ip 1.3.6.1.2.1.1.5.0 2>/dev/null", $out1);
+    exec("snmpget -v2c -c $esc_comm -Oq $esc_ip 1.3.6.1.1.1.0 2>/dev/null", $out2);
+    if (!empty($out1)) {
+        return ['ok' => true, 'sysname' => trim(implode(' ', $out1)), 'sysdescr' => trim(implode(' ', $out2))];
     }
-    return ['ok' => true, 'sysname' => _snmp_strip_type((string)$sysname), 'sysdescr' => _snmp_strip_type((string)$sysdescr)];
+    return ['ok' => false, 'error' => 'SNMP unreachable'];
 }

@@ -1,10 +1,18 @@
 FROM php:8.1-apache
 
-# Install MySQL extensions for PHP
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+# Install system dependencies and ping utility
+RUN apt-get update && apt-get install -y \
+    iputils-ping \
+    libsnmp-dev \
+    snmp \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install MySQL and SNMP extensions for PHP
+RUN docker-php-ext-install mysqli pdo pdo_mysql snmp
 
 # Enable Apache rewrite rules
 RUN a2enmod rewrite
 
-# Copy local code directory inside web root
+# Set working directory
 WORKDIR /var/www/html
+

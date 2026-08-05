@@ -50,6 +50,7 @@ $cached = query_cache($cache_key, $cache_ttl, function() use ($con, $where, $tac
     $techniques = [];
     $tactic_counts = [];
     $total_events = 0;
+    $security_log_records = [];
 
     if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {
@@ -65,6 +66,24 @@ $cached = query_cache($cache_key, $cache_ttl, function() use ($con, $where, $tac
                         $techniques[$key]['sources'][$row['source_ip']] = true;
                         $tactic_counts[$rule['tactic']] = ($tactic_counts[$rule['tactic']] ?? 0) + 1;
                         $total_events++;
+
+                        if (count($security_log_records) < 300) {
+                            $parsed = parseMessage($row['message']);
+                            $dst_ip = $parsed['dstip'] ?? $parsed['dstaddr'] ?? $parsed['locip'] ?? 'N/A';
+                            $severity = strtoupper($parsed['level'] ?? $parsed['severity'] ?? ($rule['tactic'] === 'Credential Access' || $rule['tactic'] === 'Impact' ? 'HIGH' : 'MEDIUM'));
+                            $sev_badge = ($severity === 'HIGH' || $severity === 'CRITICAL') ? 'danger' : (($severity === 'MEDIUM') ? 'warning' : 'info');
+
+                            $security_log_records[] = [
+                                'time' => $row['received_at'],
+                                'source_ip' => $row['source_ip'],
+                                'dst_ip' => $dst_ip,
+                                'severity' => $severity,
+                                'sev_badge' => $sev_badge,
+                                'technique' => $rule['technique'],
+                                'tactic' => $rule['tactic'],
+                                'message' => $row['message']
+                            ];
+                        }
                         break 2;
                     }
                 }
@@ -75,7 +94,7 @@ $cached = query_cache($cache_key, $cache_ttl, function() use ($con, $where, $tac
     uasort($techniques, fn($a, $b) => $b['count'] <=> $a['count']);
     arsort($tactic_counts);
 
-    return compact('techniques', 'tactic_counts', 'total_events');
+    return compact('techniques', 'tactic_counts', 'total_events', 'security_log_records');
 });
 
 if ($cached === null) {
@@ -151,6 +170,57 @@ mysqli_close($con);
                 <?php endforeach; ?>
                 <?php if (empty($techniques)): ?>
                     <tr><td colspan="6" class="text-center">No mapped technique activity in this window</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+<div class="report-card mt-4">
+    <h5><i data-lucide="list" class="icon-lucide"></i> Detailed Security Event Logs (<?= htmlspecialchars(strtoupper($range)) ?> Window)</h5>
+    <div class="table-container" style="max-height: 480px; overflow-y: auto;">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Event Timestamp</th>
+                    <th>Severity</th>
+                    <th>Source IP</th>
+                    <th>Destination IP</th>
+                    <th>Tactic</th>
+                    <th>Technique</th>
+                    <th>Log Message / Event Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($security_log_records)): ?>
+                    <?php foreach ($security_log_records as $log): ?>
+                        <tr>
+                            <td><small class="font-monospace text-nowrap"><?= htmlspecialchars($log['time']) ?></small></td>
+                            <td>
+                                <span class="badge bg-<?= htmlspecialchars($log['sev_badge']) ?>">
+                                    <?= htmlspecialchars($log['severity']) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($log['source_ip']) ?>')" class="clickable-ip">
+                                    <?= htmlspecialchars($log['source_ip']) ?>
+                                </a>
+                            </td>
+                            <td>
+                                <?php if ($log['dst_ip'] !== 'N/A'): ?>
+                                    <a href="javascript:void(0)" onclick="drillDownIP('<?= htmlspecialchars($log['dst_ip']) ?>')" class="clickable-ip">
+                                        <?= htmlspecialchars($log['dst_ip']) ?>
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted">N/A</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><span class="badge bg-secondary"><?= htmlspecialchars($log['tactic']) ?></span></td>
+                            <td><strong><?= htmlspecialchars($log['technique']) ?></strong></td>
+                            <td class="small text-truncate" style="max-width: 400px;" title="<?= htmlspecialchars($log['message']) ?>">
+                                <code><?= htmlspecialchars($log['message']) ?></code>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr><td colspan="5" class="text-center py-4 text-muted">No classified security logs found in this window.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>

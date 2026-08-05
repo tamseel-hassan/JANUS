@@ -397,6 +397,9 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             <span class="badge bg-success ms-2" id="liveCount"><?= count($live_logs) ?></span>
                         </h5>
                         <div>
+                            <button class="btn btn-sm btn-outline-success" onclick="exportSiemLogsToCSV()">
+                                <i data-lucide="download" class="icon-lucide"></i> Export CSV
+                            </button>
                             <button class="btn btn-sm btn-siem" onclick="refreshLogs()">
                                 <i data-lucide="refresh-ccw" class="icon-lucide"></i> Refresh
                             </button>
@@ -464,6 +467,30 @@ function refreshLogs() {
 
 function clearLogView() {
     document.getElementById('logViewer').innerHTML = '<div class="text-muted">View cleared. Click Refresh to reload.</div>';
+}
+
+function exportSiemLogsToCSV() {
+    const entries = document.querySelectorAll('#logViewer .log-entry');
+    if (!entries || entries.length === 0) {
+        alert('No log entries available to export.');
+        return;
+    }
+    const rows = [['Timestamp', 'Type', 'Source IP', 'Message']];
+    entries.forEach(el => {
+        const time = el.querySelector('.log-timestamp')?.textContent.replace(/^\[|\]$/g, '').trim() || '';
+        const type = el.querySelector('.log-type')?.textContent.replace(/^\[|\]$/g, '').trim() || '';
+        const ip = el.querySelector('.log-ip')?.textContent.trim() || '';
+        const msg = el.querySelector('.log-message')?.textContent.trim() || '';
+        rows.push([time, type, ip, msg]);
+    });
+    const csv = '\uFEFF' + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'siem_logs_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 // Auto-refresh every 30 seconds

@@ -3,19 +3,38 @@ require_once __DIR__ . '/../../db_config.php';
 /**
  * noc/nac_ajax.php – All NAC AJAX endpoints
  */
+
+// Buffer ALL output so PHP warnings/notices never corrupt the JSON response
+ob_start();
+
+// Catch any fatal errors that slip through and return them as JSON
+register_shutdown_function(function() {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        ob_end_clean();
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'PHP Fatal: ' . $err['message'] . ' in ' . basename($err['file']) . ':' . $err['line']]);
+    } else {
+        // Flush buffered normal output (should be JSON already set by exit())
+        ob_end_flush();
+    }
+});
+
 session_start();
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['loggedin']) || !$_SESSION['loggedin']) {
+    ob_end_clean();
     exit(json_encode(['error' => 'Unauthorized']));
 }
 
 error_reporting(E_ERROR | E_PARSE);
+@ini_set('display_errors', '0');
 
 require_once __DIR__ . '/nac_lib.php';
 
 $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-if ($db->connect_error) exit(json_encode(['error' => 'DB Error']));
+if ($db->connect_error) { ob_end_clean(); exit(json_encode(['error' => 'DB Error: ' . $db->connect_error])); }
 $db->set_charset('utf8mb4');
 
 $action = trim($_POST['action'] ?? $_GET['action'] ?? '');
@@ -49,6 +68,15 @@ if ($action === 'add_switch') {
     if ($conn_type === 'telnet' && $port === 22) $port = 23;
 
     if (!filter_var($ip, FILTER_VALIDATE_IP)) exit(json_encode(['error' => 'Invalid IP']));
+
+    $chk_ip = $db->query("SELECT id, hostname FROM nac_switches WHERE ip='" . $db->real_escape_string($ip) . "' LIMIT 1");
+    if ($chk_ip && $row = $chk_ip->fetch_assoc()) {
+        $chk_ip->free();
+        $db->close();
+        exit(json_encode(['error' => "Switch with IP $ip already exists (" . ($row['hostname'] ?: 'unnamed') . ")"]));
+    }
+    if ($chk_ip) $chk_ip->free();
+
     if (!in_array($conn_type, ['ssh','telnet','snmp'], true)) $conn_type = 'ssh';
 
     if ($conn_type !== 'snmp') {
@@ -58,13 +86,38 @@ if ($action === 'add_switch') {
         exit(json_encode(['error' => 'SNMP community string required']));
     }
 
-    // Auto-add connection_type column if missing
-    $col_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_switches' AND COLUMN_NAME='connection_type'");
-    if ($col_chk && (int)$col_chk->fetch_row()[0] === 0) {
-        $db->query("ALTER TABLE nac_switches ADD COLUMN connection_type VARCHAR(10) NOT NULL DEFAULT 'ssh' AFTER ssh_port");
+    // Auto-add ALL potentially missing columns for older DB schemas (no AFTER clauses — safe on any schema)
+    $cols_needed = [
+        'hostname'        => "ALTER TABLE nac_switches ADD COLUMN hostname VARCHAR(255) NOT NULL DEFAULT ''",
+        'model'           => "ALTER TABLE nac_switches ADD COLUMN model VARCHAR(100) DEFAULT NULL",
+        'vendor'          => "ALTER TABLE nac_switches ADD COLUMN vendor VARCHAR(50) DEFAULT NULL",
+        'platform_key'    => "ALTER TABLE nac_switches ADD COLUMN platform_key VARCHAR(50) DEFAULT 'ios'",
+        'ssh_user'        => "ALTER TABLE nac_switches ADD COLUMN ssh_user VARCHAR(100) DEFAULT NULL",
+        'ssh_port'        => "ALTER TABLE nac_switches ADD COLUMN ssh_port INT NOT NULL DEFAULT 22",
+        'connection_type' => "ALTER TABLE nac_switches ADD COLUMN connection_type VARCHAR(10) NOT NULL DEFAULT 'ssh'",
+        'snmp_community'  => "ALTER TABLE nac_switches ADD COLUMN snmp_community VARCHAR(128) DEFAULT NULL",
+        'snmp_version'    => "ALTER TABLE nac_switches ADD COLUMN snmp_version INT NOT NULL DEFAULT 2",
+        'snmp_port'       => "ALTER TABLE nac_switches ADD COLUMN snmp_port INT NOT NULL DEFAULT 161",
+        'location'        => "ALTER TABLE nac_switches ADD COLUMN location VARCHAR(255) DEFAULT NULL",
+        'notes'           => "ALTER TABLE nac_switches ADD COLUMN notes TEXT DEFAULT NULL",
+        'enabled'         => "ALTER TABLE nac_switches ADD COLUMN enabled TINYINT(1) NOT NULL DEFAULT 1",
+        'poll_status'     => "ALTER TABLE nac_switches ADD COLUMN poll_status VARCHAR(20) DEFAULT 'pending'",
+        'poll_error'      => "ALTER TABLE nac_switches ADD COLUMN poll_error TEXT DEFAULT NULL",
+        'last_polled'     => "ALTER TABLE nac_switches ADD COLUMN last_polled DATETIME DEFAULT NULL",
+        'updated_at'      => "ALTER TABLE nac_switches ADD COLUMN updated_at DATETIME DEFAULT NULL",
+        'group_id'        => "ALTER TABLE nac_switches ADD COLUMN group_id INT DEFAULT NULL",
+    ];
+    foreach ($cols_needed as $col_name => $alter_sql) {
+        $col_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_switches' AND COLUMN_NAME='$col_name'");
+        if ($col_chk && (int)$col_chk->fetch_row()[0] === 0) {
+            $db->query($alter_sql);
+        }
+        $col_chk && $col_chk->free();
     }
-    $col_chk && $col_chk->free();
+
+    // Ensure legacy 'name' column in nac_switches doesn't block INSERTs if present
+    $db->query("ALTER TABLE nac_switches MODIFY COLUMN name VARCHAR(100) DEFAULT NULL");
 
     if ($conn_type !== 'snmp') {
         nac_save_credential($ip, $user, $pass, $enable_pass);
@@ -159,19 +212,23 @@ if ($action === 'delete_switch') {
 
 /* ─── LIST SWITCHES ─── */
 if ($action === 'list_switches') {
-    $col = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_switches' AND COLUMN_NAME='connection_type'");
-    if ($col && (int)$col->fetch_row()[0] === 0) {
-        $db->query("ALTER TABLE nac_switches ADD COLUMN connection_type VARCHAR(10) NOT NULL DEFAULT 'ssh' AFTER ssh_port");
+    // Auto-add all missing columns for older DB schemas
+    $cols_needed = [
+        'ssh_port'        => "ALTER TABLE nac_switches ADD COLUMN ssh_port INT NOT NULL DEFAULT 22 AFTER ssh_user",
+        'snmp_community'  => "ALTER TABLE nac_switches ADD COLUMN snmp_community VARCHAR(128) DEFAULT NULL",
+        'snmp_version'    => "ALTER TABLE nac_switches ADD COLUMN snmp_version INT NOT NULL DEFAULT 2",
+        'snmp_port'       => "ALTER TABLE nac_switches ADD COLUMN snmp_port INT NOT NULL DEFAULT 161",
+        'connection_type' => "ALTER TABLE nac_switches ADD COLUMN connection_type VARCHAR(10) NOT NULL DEFAULT 'ssh'",
+        'group_id'        => "ALTER TABLE nac_switches ADD COLUMN group_id INT DEFAULT NULL AFTER id",
+    ];
+    foreach ($cols_needed as $col_name => $alter_sql) {
+        $col_chk = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_switches' AND COLUMN_NAME='$col_name'");
+        if ($col_chk && (int)$col_chk->fetch_row()[0] === 0) {
+            $db->query($alter_sql);
+        }
+        $col_chk && $col_chk->free();
     }
-    $col && $col->free();
-
-    $col2 = $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nac_switches' AND COLUMN_NAME='group_id'");
-    if ($col2 && (int)$col2->fetch_row()[0] === 0) {
-        $db->query("ALTER TABLE nac_switches ADD COLUMN group_id INT DEFAULT NULL AFTER id");
-    }
-    $col2 && $col2->free();
 
     _nac_ensure_groups_table($db);
 
@@ -227,7 +284,22 @@ if ($action === 'switch_detail') {
          WHERE npm.switch_id=$id
          ORDER BY COALESCE(p.is_trunk,0) ASC, npm.port_name, npm.mac"
     );
-    if ($r) { while ($row=$r->fetch_assoc()) $macs[] = $row; $r->free(); }
+    if ($r) { 
+        while ($row=$r->fetch_assoc()) {
+            if (empty($row['oui_vendor']) || $row['oui_vendor'] === 'Unknown') {
+                $v = nac_oui_lookup($row['mac']);
+                $row['oui_vendor'] = ($v !== 'Unknown') ? $v : '';
+            }
+            if (!empty($row['ip']) && empty($row['hostname'])) {
+                $host = @gethostbyaddr($row['ip']);
+                if ($host && $host !== $row['ip']) {
+                    $row['hostname'] = $host;
+                }
+            }
+            $macs[] = $row;
+        }
+        $r->free(); 
+    }
 
     $events = [];
     $r = $db->query(
